@@ -21,6 +21,16 @@ describe('resolveApiUrl', () => {
   it('strips trailing slashes from a configured URL', () => {
     expect(resolveApiUrl('http://example.test:9000//')).toBe('http://example.test:9000');
   });
+
+  it('resolves "/" to same-origin relative requests, as used behind the nginx proxy', async () => {
+    const baseUrl = resolveApiUrl('/');
+    const fetchImpl = vi.fn<FetchLike>(async () => new Response(JSON.stringify({ screenings: [] }), { status: 200 }));
+
+    await createApiClient({ baseUrl, fetchImpl }).getScreenings();
+
+    expect(baseUrl).toBe('');
+    expect(fetchImpl.mock.calls[0]?.[0]).toMatch(/^\/api\/screenings/);
+  });
 });
 
 describe('createApiClient', () => {

@@ -83,3 +83,18 @@ Data flow:
 4. Selecting a token loads `/api/tokens/:mint`; its score line combines the stored history with live readings.
 
 Charts are inline SVG; there is no chart library.
+
+## Docker
+
+The production image builds the app and serves it with nginx, proxying `/api` (including
+the `/api/stream` Server-Sent Events) to the backend, so the browser only talks to one origin.
+
+```bash
+docker build -t lessfomo-frontend .
+docker run -p 8080:80 -e BACKEND_URL=http://lessfomo-backend:3001 lessfomo-frontend
+```
+
+| Variable | When | Default | Description |
+| --- | --- | --- | --- |
+| `VITE_API_URL` | build arg | `/` | `/` means same-origin requests through the nginx proxy |
+| `BACKEND_URL` | runtime | `http://lessfomo-backend:3001` | Internal URL of the backend on the Docker network |
