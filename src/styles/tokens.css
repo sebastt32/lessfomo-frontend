@@ -1,0 +1,69 @@
+/*
+ * Design tokens. Light: cool grey-green "instrument" paper with ink and a cobalt signal.
+ * Dark: deep slate, not pure black. Up/down/caution colors keep 4.5:1 contrast on their surfaces.
+ */
+:root {
+  color-scheme: light dark;
+
+  --font-display: 'Bricolage Grotesque', 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Instrument Sans', 'Inter', 'Segoe UI', system-ui, sans-serif;
+
+  --text-xs: 0.78rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.25rem;
+  --text-display: clamp(2.4rem, 6vw, 3.75rem);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2.5rem;
+  --gutter: 1rem;
+
+  --radius-panel: 6px;
+  --radius-inner: 4px;
+
+  --color-bg: #eef1ee;
+  --color-surface: #fbfcfa;
+  --color-ink: #17222b;
+  --color-muted: #56636d;
+  --color-line: #d3dad5;
+  --color-track: #dfe5e1;
+  --color-hover: #f1f4f1;
+  --color-accent: #2440c8;
+  --color-accent-soft: #e5e9fb;
+  --color-up: #0a6b4b;
+  --color-up-soft: #e2f2ea;
+  --color-down: #ae2318;
+  --color-down-soft: #fbe9e7;
+  --color-caution: #7f5200;
+  --color-caution-soft: #f8efd9;
+}
+
+@media (min-width: 40rem) {
+  :root {
+    --gutter: 1.5rem;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0f171d;
+    --color-surface: #16212a;
+    --color-ink: #e4ebee;
+    --color-muted: #9aa8b2;
+    --color-line: #2a3843;
+    --color-track: #263440;
+    --color-hover: #1b2832;
+    --color-accent: #93a6ff;
+    --color-accent-soft: #212f52;
+    --color-up: #52c893;
+    --color-up-soft: #15322a;
+    --color-down: #ff8f80;
+    --color-down-soft: #3a1f1f;
+    --color-caution: #e6b85a;
+    --color-caution-soft: #33291a;
+  }
+}

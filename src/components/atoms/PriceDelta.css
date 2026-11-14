@@ -1,0 +1,24 @@
+.price-delta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.price-delta__glyph {
+  font-size: 0.7em;
+}
+
+.price-delta--up {
+  color: var(--color-up);
+}
+
+.price-delta--down {
+  color: var(--color-down);
+}
+
+.price-delta--flat {
+  color: var(--color-muted);
+}

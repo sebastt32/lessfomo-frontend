@@ -1,0 +1,21 @@
+.offline-notice {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-down);
+  border-inline-start-width: 4px;
+  border-radius: var(--radius-panel);
+  background: var(--color-down-soft);
+}
+
+.offline-notice__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+}
+
+.offline-notice p {
+  margin: 0;
+  max-inline-size: 70ch;
+}

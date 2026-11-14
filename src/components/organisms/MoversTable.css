@@ -1,0 +1,76 @@
+.movers-table__scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.movers-table__scroll:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.movers-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.movers-table th,
+.movers-table td {
+  padding: var(--space-2) 0.6rem;
+  text-align: start;
+  vertical-align: middle;
+  border-block-end: 1px solid var(--color-line);
+}
+
+.movers-table thead th {
+  position: sticky;
+  inset-block-start: 0;
+  background: var(--color-surface);
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.movers-table abbr {
+  text-decoration: none;
+  cursor: help;
+}
+
+.movers-table tbody tr:last-child > * {
+  border-block-end: 0;
+}
+
+.movers-table__row {
+  cursor: pointer;
+}
+
+.movers-table__row:hover {
+  background: var(--color-hover);
+}
+
+.movers-table__row--selected,
+.movers-table__row--selected:hover {
+  background: var(--color-accent-soft);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.movers-table__rank {
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+  inline-size: 2.5rem;
+}
+
+.movers-table__num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.movers-table th.movers-table__num {
+  text-align: end;
+}
+
+.movers-table__token {
+  font-weight: inherit;
+}

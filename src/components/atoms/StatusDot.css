@@ -1,0 +1,32 @@
+.status-dot {
+  display: inline-block;
+  inline-size: 0.6rem;
+  block-size: 0.6rem;
+  border-radius: 50%;
+  flex: none;
+}
+
+.status-dot--good {
+  background: var(--color-up);
+}
+
+.status-dot--warn {
+  background: transparent;
+  border: 2px solid var(--color-caution);
+}
+
+.status-dot--bad {
+  background: var(--color-down);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .status-dot--warn {
+    animation: status-dot-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes status-dot-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}

@@ -1,0 +1,8 @@
+.disclaimer {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-inline-start: 3px solid var(--color-caution);
+  background: var(--color-caution-soft);
+  font-size: var(--text-sm);
+  max-inline-size: 80ch;
+}
