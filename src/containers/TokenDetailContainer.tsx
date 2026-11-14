@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { Panel } from '../components/molecules/Panel';
 import { EmptyState, ErrorState, LoadingState } from '../components/molecules/SectionState';
 import { TokenDetail } from '../components/organisms/TokenDetail';
@@ -15,6 +15,11 @@ export interface TokenDetailContainerProps {
 }
 
 const PANEL_ID = 'token-detail';
+
+// The chart library is only needed once a token is opened: load it as its own chunk.
+const TokenChartContainer = lazy(() =>
+  import('./TokenChartContainer').then((module) => ({ default: module.TokenChartContainer })),
+);
 
 export function TokenDetailContainer({ mint, onClose, now }: TokenDetailContainerProps) {
   const { state: feed, meta } = useLiveFeedContext();
@@ -33,7 +38,18 @@ export function TokenDetailContainer({ mint, onClose, now }: TokenDetailContaine
   let body;
   switch (state.status) {
     case 'ready':
-      body = <TokenDetail detail={state.data} scores={scores} now={now} />;
+      body = (
+        <TokenDetail
+          detail={state.data}
+          scores={scores}
+          now={now}
+          chart={
+            <Suspense fallback={<LoadingState>Loading chart…</LoadingState>}>
+              <TokenChartContainer mint={mint} symbol={state.data.token.symbol || shortenMint(mint)} />
+            </Suspense>
+          }
+        />
+      );
       break;
     case 'not-found':
       body = (

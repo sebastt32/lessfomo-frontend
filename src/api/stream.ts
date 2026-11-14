@@ -1,9 +1,10 @@
-import type { StreamEvent } from './types';
+import type { StreamEvent, TokenStreamEvent } from './types';
 
 /** Connection state of the live SSE feed, as shown to the user. */
 export type ConnectionState = 'connecting' | 'connected' | 'reconnecting' | 'offline';
 
 const EVENT_TYPES = ['token', 'screening', 'momentum', 'status'] as const satisfies readonly StreamEvent['type'][];
+const TOKEN_EVENT_TYPES = ['trade', 'sol-price'] as const satisfies readonly TokenStreamEvent['type'][];
 
 const CLOSED = 2;
 
@@ -18,15 +19,20 @@ export interface EventSourceLike {
 
 export type EventSourceConstructor = new (url: string) => EventSourceLike;
 
-export interface StreamOptions {
+interface BaseStreamOptions<E> {
   url: string;
-  onEvent: (event: StreamEvent) => void;
+  onEvent: (event: E) => void;
   onConnectionChange: (state: ConnectionState) => void;
   /** Defaults to the global EventSource; `undefined` means SSE is unavailable. */
   EventSourceImpl?: EventSourceConstructor | undefined;
   /** Delays used when the browser gives up and the source must be recreated. */
   retryDelaysMs?: readonly number[];
 }
+
+export type StreamOptions = BaseStreamOptions<StreamEvent>;
+
+/** Options for GET /api/tokens/:mint/stream (`trade` and `sol-price` events). */
+export type TokenStreamOptions = BaseStreamOptions<TokenStreamEvent>;
 
 export interface StreamHandle {
   close(): void;
@@ -38,11 +44,24 @@ function defaultEventSource(): EventSourceConstructor | undefined {
   return typeof EventSource === 'undefined' ? undefined : (EventSource as unknown as EventSourceConstructor);
 }
 
+/** Subscribes to GET /api/stream (token, screening, momentum and status events). */
+export function connectStream(options: StreamOptions): StreamHandle {
+  return connectEventSource(options, EVENT_TYPES);
+}
+
+/** Subscribes to GET /api/tokens/:mint/stream (trade and sol-price events of one token). */
+export function connectTokenStream(options: TokenStreamOptions): StreamHandle {
+  return connectEventSource(options, TOKEN_EVENT_TYPES);
+}
+
 /**
- * Subscribes to GET /api/stream. The browser retries dropped connections on its own;
+ * Shared SSE connection. The browser retries dropped connections on its own;
  * when it gives up (readyState CLOSED) the source is recreated with backoff.
  */
-export function connectStream(options: StreamOptions): StreamHandle {
+function connectEventSource<E extends { type: string; data: unknown }>(
+  options: BaseStreamOptions<E>,
+  eventTypes: readonly E['type'][],
+): StreamHandle {
   const { url, onEvent, onConnectionChange } = options;
   const Impl = 'EventSourceImpl' in options ? options.EventSourceImpl : defaultEventSource();
   const delays = options.retryDelaysMs ?? DEFAULT_RETRY_DELAYS_MS;
@@ -91,7 +110,7 @@ export function connectStream(options: StreamOptions): StreamHandle {
       }
     };
 
-    for (const type of EVENT_TYPES) {
+    for (const type of eventTypes) {
       es.addEventListener(type, (message) => {
         if (disposed || source !== es) return;
         let data: unknown;
@@ -100,7 +119,7 @@ export function connectStream(options: StreamOptions): StreamHandle {
         } catch {
           return;
         }
-        onEvent({ type, data } as StreamEvent);
+        onEvent({ type, data } as E);
       });
     }
   }

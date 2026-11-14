@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { connectStream, type ConnectionState, type EventSourceLike } from './stream';
-import type { StreamEvent } from './types';
+import { connectStream, connectTokenStream, type ConnectionState, type EventSourceLike } from './stream';
+import type { StreamEvent, TokenStreamEvent } from './types';
 
 type Listener = (event: MessageEvent<string>) => void;
 
@@ -180,5 +180,61 @@ describe('connectStream', () => {
       onConnectionChange: (state) => states.push(state),
     });
     expect(states).toEqual(['offline']);
+  });
+});
+
+describe('connectTokenStream', () => {
+  const TOKEN_URL = 'http://api.test/api/tokens/MINT/stream';
+
+  function setupToken() {
+    const events: TokenStreamEvent[] = [];
+    const states: ConnectionState[] = [];
+    const handle = connectTokenStream({
+      url: TOKEN_URL,
+      EventSourceImpl: FakeEventSource,
+      onEvent: (event) => events.push(event),
+      onConnectionChange: (state) => states.push(state),
+      retryDelaysMs: [1000],
+    });
+    return { events, states, handle, source: () => FakeEventSource.instances.at(-1)! };
+  }
+
+  it('subscribes to the trade and sol-price events of the token stream URL', () => {
+    const { source, states } = setupToken();
+    expect(source().url).toBe(TOKEN_URL);
+    expect(source().listenerTypes()).toEqual(['sol-price', 'trade']);
+    expect(states).toEqual(['connecting']);
+  });
+
+  it('forwards parsed trade and sol-price events and ignores invalid JSON', () => {
+    const { source, events } = setupToken();
+    const trade = {
+      signature: 'sig',
+      trader: 'wallet',
+      side: 'buy',
+      solAmount: 0.5,
+      tokenAmount: 1000,
+      priceSol: 0.0000005,
+      isDev: false,
+      time: 1_763_064_000,
+    };
+    source().emit('trade', JSON.stringify(trade));
+    source().emit('sol-price', JSON.stringify({ solUsd: 150 }));
+    source().emit('trade', '{oops');
+    expect(events).toEqual([
+      { type: 'trade', data: trade },
+      { type: 'sol-price', data: { solUsd: 150 } },
+    ]);
+  });
+
+  it('reuses the reconnect backoff and stops on close()', () => {
+    const { source, states, handle } = setupToken();
+    source().open();
+    source().fail(FakeEventSource.CLOSED);
+    expect(states).toEqual(['connecting', 'connected', 'reconnecting']);
+    vi.advanceTimersByTime(1000);
+    expect(FakeEventSource.instances).toHaveLength(2);
+    handle.close();
+    expect(FakeEventSource.instances[1]?.closed).toBe(true);
   });
 });

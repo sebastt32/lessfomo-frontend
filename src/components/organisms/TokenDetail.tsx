@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { TokenDetailResponse } from '../../api/types';
 import type { ScorePoint } from '../../state/liveFeed';
 import { ExternalLink } from '../atoms/ExternalLink';
@@ -20,6 +21,8 @@ export interface TokenDetailProps {
   /** Score over time, oldest first (stored history plus live readings). */
   scores: readonly ScorePoint[];
   now: number;
+  /** Slot for the live price chart, rendered above the momentum score and safety history. */
+  chart?: ReactNode;
 }
 
 function isHttpsUrl(value: string): boolean {
@@ -37,7 +40,7 @@ function describeSeries(scores: readonly ScorePoint[]): string {
   return `Momentum score over ${scores.length} readings, from ${formatScore(first.score)} to ${formatScore(last.score)} out of 100`;
 }
 
-export function TokenDetail({ detail, scores, now }: TokenDetailProps) {
+export function TokenDetail({ detail, scores, now, chart }: TokenDetailProps) {
   const { token, status, screenings } = detail;
   const values = scores.map((point) => point.score);
   const latest = scores.at(-1);
@@ -83,6 +86,8 @@ export function TokenDetail({ detail, scores, now }: TokenDetailProps) {
           </div>
         ) : null}
       </dl>
+
+      {chart}
 
       <figure className="token-detail__chart">
         <figcaption>

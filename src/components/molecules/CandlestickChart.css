@@ -1,0 +1,11 @@
+.candlestick-chart {
+  position: relative;
+  inline-size: 100%;
+  block-size: 18rem;
+}
+
+@media (max-width: 40rem) {
+  .candlestick-chart {
+    block-size: 15rem;
+  }
+}

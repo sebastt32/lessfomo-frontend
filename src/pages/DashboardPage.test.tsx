@@ -5,7 +5,7 @@ import { ApiError, type ApiClient } from '../api/client';
 import type { ConnectionState, StreamOptions } from '../api/stream';
 import { LiveFeedProvider } from '../containers/LiveFeedProvider';
 import { DashboardPage } from './DashboardPage';
-import { makeDetail, makeMover, makeScreening, MINT_A, MINT_B } from '../test/fixtures';
+import { makeCandles, makeDetail, makeMover, makeScreening, MINT_A, MINT_B } from '../test/fixtures';
 
 const networkError = () => new ApiError(0, 'NETWORK_ERROR', 'Could not reach the lessfomo API at http://api.test.');
 
@@ -21,6 +21,8 @@ function fakeClient(overrides: Partial<ApiClient> = {}): ApiClient {
     getMovers: vi.fn(async () => ({ at: '2026-11-13T20:05:00.000Z', movers: [makeMover()] })),
     getScreenings: vi.fn(async () => ({ screenings: [makeScreening({ mint: MINT_B, symbol: 'CAT' })] })),
     getToken: vi.fn(async () => makeDetail()),
+    getCandles: vi.fn(async () => makeCandles()),
+    tokenStreamUrl: (mint: string) => `http://api.test/api/tokens/${mint}/stream`,
     ...overrides,
   };
 }
@@ -114,6 +116,23 @@ describe('DashboardPage', () => {
 
     await user.click(within(panel).getByRole('button', { name: 'Close' }));
     expect(screen.queryByRole('region', { name: 'FROG' })).not.toBeInTheDocument();
+  });
+
+  it('shows the live price chart above the safety history in the token detail', async () => {
+    const client = fakeClient();
+    const user = userEvent.setup();
+    renderPage(client, fakeConnect().connect);
+
+    await user.click(await screen.findByRole('button', { name: 'Show details for FROG' }));
+    const panel = await screen.findByRole('region', { name: 'FROG' });
+    const chart = await within(panel).findByRole('img', { name: 'Price of FROG in SOL, 1m candles, 2 candles' });
+    expect(client.getCandles).toHaveBeenCalledWith(MINT_A, expect.objectContaining({ interval: '1m' }));
+
+    const history = within(panel).getByText('Safety check history');
+    expect(chart.compareDocumentPosition(history) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    await user.click(within(panel).getByRole('button', { name: '5m' }));
+    expect(client.getCandles).toHaveBeenLastCalledWith(MINT_A, expect.objectContaining({ interval: '5m' }));
   });
 
   it('explains a token the API has never seen (404 TOKEN_NOT_FOUND)', async () => {

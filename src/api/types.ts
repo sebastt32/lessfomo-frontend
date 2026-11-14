@@ -121,3 +121,58 @@ export type StreamEvent =
   | { type: 'screening'; data: ScreeningView }
   | { type: 'momentum'; data: MomentumEvent }
   | { type: 'status'; data: StatusEvent };
+
+// Candles and per-token stream (GET /api/tokens/:mint/candles, GET /api/tokens/:mint/stream)
+
+export type CandleInterval = '1s' | '1m' | '5m';
+
+export interface Candle {
+  /** Bucket start, Unix seconds (UTC). */
+  time: number;
+  /** Prices in SOL per token. */
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volumeSol: number;
+  buyVolumeSol: number;
+  sellVolumeSol: number;
+  trades: number;
+}
+
+export interface DevTrade {
+  /** Unix seconds. */
+  time: number;
+  side: 'buy' | 'sell';
+  solAmount: number;
+}
+
+export interface TradeView {
+  signature: string;
+  trader: string;
+  side: 'buy' | 'sell';
+  solAmount: number;
+  tokenAmount: number;
+  priceSol: number;
+  /** The trader is the token creator. */
+  isDev: boolean;
+  /** Unix seconds. */
+  time: number;
+}
+
+export interface CandlesResponse {
+  mint: string;
+  interval: CandleInterval;
+  totalSupply: number;
+  /** Latest SOL/USD price, or null when unavailable. */
+  solUsd: number | null;
+  /** Oldest first; buckets without trades are omitted. */
+  candles: Candle[];
+  devTrades: DevTrade[];
+}
+
+export interface SolPriceEvent {
+  solUsd: number;
+}
+
+export type TokenStreamEvent = { type: 'trade'; data: TradeView } | { type: 'sol-price'; data: SolPriceEvent };

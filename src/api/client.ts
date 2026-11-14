@@ -1,5 +1,7 @@
 import type {
   ApiErrorBody,
+  CandleInterval,
+  CandlesResponse,
   HealthResponse,
   MoversResponse,
   ScreeningsResponse,
@@ -39,6 +41,11 @@ export interface ListOptions extends RequestOptions {
   limit?: number;
 }
 
+export interface CandlesOptions extends RequestOptions {
+  interval: CandleInterval;
+  limit?: number;
+}
+
 export interface ApiClient {
   readonly baseUrl: string;
   readonly streamUrl: string;
@@ -46,6 +53,9 @@ export interface ApiClient {
   getMovers(options?: ListOptions): Promise<MoversResponse>;
   getScreenings(options?: ListOptions): Promise<ScreeningsResponse>;
   getToken(mint: string, options?: RequestOptions): Promise<TokenDetailResponse>;
+  getCandles(mint: string, options: CandlesOptions): Promise<CandlesResponse>;
+  /** URL of GET /api/tokens/:mint/stream (relative when the base URL is empty). */
+  tokenStreamUrl(mint: string): string;
 }
 
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -64,6 +74,10 @@ function isApiErrorBody(value: unknown): value is ApiErrorBody {
     typeof (error as { code?: unknown }).code === 'string' &&
     typeof (error as { message?: unknown }).message === 'string'
   );
+}
+
+function tokenPath(mint: string): string {
+  return `/api/tokens/${encodeURIComponent(mint)}`;
 }
 
 function withLimit(path: string, limit: number | undefined): string {
@@ -111,6 +125,12 @@ export function createApiClient({ baseUrl, fetchImpl }: ApiClientConfig): ApiCli
     getMovers: (options = {}) => request<MoversResponse>(withLimit('/api/movers', options.limit), options),
     getScreenings: (options = {}) =>
       request<ScreeningsResponse>(withLimit('/api/screenings', options.limit), options),
-    getToken: (mint, options) => request<TokenDetailResponse>(`/api/tokens/${encodeURIComponent(mint)}`, options),
+    getToken: (mint, options) => request<TokenDetailResponse>(tokenPath(mint), options),
+    getCandles: (mint, options) => {
+      const query = new URLSearchParams({ interval: options.interval });
+      if (options.limit !== undefined) query.set('limit', String(options.limit));
+      return request<CandlesResponse>(`${tokenPath(mint)}/candles?${query.toString()}`, options);
+    },
+    tokenStreamUrl: (mint) => `${baseUrl}${tokenPath(mint)}/stream`,
   };
 }

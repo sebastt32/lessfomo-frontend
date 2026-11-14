@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError, createApiClient, DEFAULT_API_URL, resolveApiUrl, type FetchLike } from './client';
-import type { HealthResponse, MoversResponse, ScreeningsResponse, TokenDetailResponse } from './types';
+import type { CandlesResponse, HealthResponse, MoversResponse, ScreeningsResponse, TokenDetailResponse } from './types';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -142,5 +142,63 @@ describe('createApiClient', () => {
     const client = createApiClient({ baseUrl: 'http://api.test', fetchImpl: vi.fn() });
     expect(client.streamUrl).toBe('http://api.test/api/stream');
     expect(client.baseUrl).toBe('http://api.test');
+  });
+
+  it('GETs /api/tokens/:mint/candles with interval and limit and returns the parsed body', async () => {
+    const body: CandlesResponse = {
+      mint: MINT,
+      interval: '5m',
+      totalSupply: 1_000_000_000,
+      solUsd: 142.31,
+      candles: [
+        {
+          time: 1_763_064_000,
+          open: 0.00000003,
+          high: 0.00000004,
+          low: 0.00000002,
+          close: 0.000000035,
+          volumeSol: 2,
+          buyVolumeSol: 1.5,
+          sellVolumeSol: 0.5,
+          trades: 4,
+        },
+      ],
+      devTrades: [{ time: 1_763_064_010, side: 'buy', solAmount: 1 }],
+    };
+    const fetchImpl = vi.fn<FetchLike>(async () => jsonResponse(body));
+    const client = createApiClient({ baseUrl: 'http://api.test', fetchImpl });
+
+    await expect(client.getCandles(MINT, { interval: '5m', limit: 300 })).resolves.toEqual(body);
+    expect(fetchImpl.mock.calls[0]?.[0]).toBe(`http://api.test/api/tokens/${MINT}/candles?interval=5m&limit=300`);
+  });
+
+  it('omits limit from the candles query when not given and forwards the AbortSignal', async () => {
+    const fetchImpl = vi.fn<FetchLike>(async () => jsonResponse({ candles: [] }));
+    const client = createApiClient({ baseUrl: 'http://api.test', fetchImpl });
+    const controller = new AbortController();
+
+    await client.getCandles(MINT, { interval: '1s', signal: controller.signal });
+
+    expect(fetchImpl.mock.calls[0]?.[0]).toBe(`http://api.test/api/tokens/${MINT}/candles?interval=1s`);
+    expect(fetchImpl.mock.calls[0]?.[1]?.signal).toBe(controller.signal);
+  });
+
+  it('maps a candles error body (INVALID_INTERVAL) to an ApiError', async () => {
+    const fetchImpl = vi.fn<FetchLike>(async () =>
+      jsonResponse({ error: { code: 'INVALID_INTERVAL', message: 'Bad interval.' } }, 400),
+    );
+    const client = createApiClient({ baseUrl: 'http://api.test', fetchImpl });
+
+    await expect(client.getCandles(MINT, { interval: '1m' })).rejects.toMatchObject({
+      status: 400,
+      code: 'INVALID_INTERVAL',
+    });
+  });
+
+  it('builds the per-token stream URL, relative when the base URL is empty', () => {
+    expect(createApiClient({ baseUrl: 'http://api.test' }).tokenStreamUrl(MINT)).toBe(
+      `http://api.test/api/tokens/${MINT}/stream`,
+    );
+    expect(createApiClient({ baseUrl: resolveApiUrl('/') }).tokenStreamUrl(MINT)).toBe(`/api/tokens/${MINT}/stream`);
   });
 });
