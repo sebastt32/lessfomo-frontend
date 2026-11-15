@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { Disclaimer } from '../components/organisms/Disclaimer';
 import { DashboardTemplate } from '../components/templates/DashboardTemplate';
 import { HeaderContainer } from '../containers/HeaderContainer';
@@ -8,14 +8,19 @@ import { ScreeningsContainer } from '../containers/ScreeningsContainer';
 import { TokenDetailContainer } from '../containers/TokenDetailContainer';
 import { useNow } from '../hooks/useNow';
 
-export function DashboardPage() {
+export interface DashboardPageProps {
+  /** View navigation and totals for the header. */
+  headerExtras?: ReactNode;
+}
+
+export function DashboardPage({ headerExtras }: DashboardPageProps = {}) {
   const [selectedMint, setSelectedMint] = useState<string | null>(null);
   const now = useNow();
   const close = useCallback(() => setSelectedMint(null), []);
 
   return (
     <DashboardTemplate
-      header={<HeaderContainer />}
+      header={<HeaderContainer extras={headerExtras} />}
       notice={<OfflineNoticeContainer />}
       movers={<MoversContainer selectedMint={selectedMint} onSelect={setSelectedMint} now={now} />}
       detail={

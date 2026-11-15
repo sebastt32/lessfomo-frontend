@@ -1,9 +1,12 @@
 import type { ReactNode } from 'react';
-import type { TokenDetailResponse } from '../../api/types';
+import type { Lifecycle, Liquidity, TokenDetailResponse } from '../../api/types';
 import type { ScorePoint } from '../../state/liveFeed';
+import { DateTime } from '../atoms/DateTime';
 import { ExternalLink } from '../atoms/ExternalLink';
 import { Sparkline } from '../atoms/Sparkline';
 import { StatusBadge } from '../atoms/StatusBadge';
+import { LifecycleBadge } from '../atoms/Tag';
+import { LiquidityMeter } from '../molecules/Liquidity';
 import { TokenLinks } from '../molecules/TokenLinks';
 import { describeFailureCode } from '../../lib/failureCodes';
 import {
@@ -23,6 +26,12 @@ export interface TokenDetailProps {
   now: number;
   /** Slot for the live price chart, rendered above the momentum score and safety history. */
   chart?: ReactNode;
+  /** Latest known liquidity (live ranking or newest snapshot); undefined when the backend does not report it. */
+  liquidity?: Liquidity | null;
+  /** From the snapshots endpoint, when available. */
+  lifecycle?: Lifecycle | null;
+  /** Slot for the snapshots over time, rendered after the momentum score. */
+  snapshots?: ReactNode;
 }
 
 function isHttpsUrl(value: string): boolean {
@@ -40,7 +49,7 @@ function describeSeries(scores: readonly ScorePoint[]): string {
   return `Momentum score over ${scores.length} readings, from ${formatScore(first.score)} to ${formatScore(last.score)} out of 100`;
 }
 
-export function TokenDetail({ detail, scores, now, chart }: TokenDetailProps) {
+export function TokenDetail({ detail, scores, now, chart, liquidity, lifecycle, snapshots }: TokenDetailProps) {
   const { token, status, screenings } = detail;
   const values = scores.map((point) => point.score);
   const latest = scores.at(-1);
@@ -49,6 +58,7 @@ export function TokenDetail({ detail, scores, now, chart }: TokenDetailProps) {
     <div className="token-detail">
       <div className="token-detail__summary">
         <StatusBadge status={status} />
+        {lifecycle ? <LifecycleBadge lifecycle={lifecycle} /> : null}
         <TokenLinks mint={token.mint} symbol={token.symbol} />
       </div>
 
@@ -62,11 +72,10 @@ export function TokenDetail({ detail, scores, now, chart }: TokenDetailProps) {
           <dd title={token.creator}>{shortenMint(token.creator)}</dd>
         </div>
         <div>
-          <dt>Detected</dt>
+          <dt>Created</dt>
           <dd>
-            <time dateTime={token.detectedAt} title={token.detectedAt}>
-              {formatRelativeTime(token.detectedAt, now)}
-            </time>
+            <DateTime iso={token.detectedAt} />
+            <span className="token-detail__ago">{formatRelativeTime(token.detectedAt, now)}</span>
           </dd>
         </div>
         <div>
@@ -87,6 +96,8 @@ export function TokenDetail({ detail, scores, now, chart }: TokenDetailProps) {
         ) : null}
       </dl>
 
+      <LiquidityMeter liquidity={liquidity} />
+
       {chart}
 
       <figure className="token-detail__chart">
@@ -104,6 +115,15 @@ export function TokenDetail({ detail, scores, now, chart }: TokenDetailProps) {
           </p>
         )}
       </figure>
+
+      {snapshots ? (
+        <section className="token-detail__section" aria-labelledby="token-detail-snapshots">
+          <h3 id="token-detail-snapshots" className="token-detail__subtitle">
+            Snapshots over time
+          </h3>
+          {snapshots}
+        </section>
+      ) : null}
 
       <h3 className="token-detail__subtitle">Safety check history</h3>
       {screenings.length === 0 ? (

@@ -1,6 +1,10 @@
 import type {
   Candle,
   CandlesResponse,
+  Liquidity,
+  StatsResponse,
+  TokenListItem,
+  TokenSnapshot,
   MomentumPoint,
   Mover,
   ScreeningView,
@@ -124,6 +128,57 @@ export function makeTrade(overrides: Partial<TradeView> = {}): TradeView {
     priceSol: 0.00000004,
     isDev: false,
     time: T0 + 65,
+    ...overrides,
+  };
+}
+
+export function makeLiquidity(overrides: Partial<Liquidity> = {}): Liquidity {
+  return { sol: 42.5, bondingCurvePct: 63.6, migrated: false, ...overrides };
+}
+
+export function makeListItem(overrides: Partial<TokenListItem> = {}): TokenListItem {
+  return {
+    token: makeToken({ detectedAt: '2026-11-13T20:00:00.000Z' }),
+    status: 'passed',
+    lifecycle: 'active',
+    liquidity: makeLiquidity(),
+    lastPriceSol: 0.0000321,
+    lastMarketCapSol: 32.1,
+    peakMarketCapSol: 1234.5,
+    maxScore: 81.6,
+    holders: 154,
+    lastTradeAt: '2026-11-13T20:09:00.000Z',
+    snapshotCount: 7,
+    ...overrides,
+  };
+}
+
+export function makeSnapshot(overrides: Partial<TokenSnapshot> = {}): TokenSnapshot {
+  return {
+    milestone: '0m',
+    at: '2026-11-13T20:00:00.000Z',
+    priceSol: 0.00000003,
+    marketCapSol: 30,
+    volumeSol: 1.5,
+    buys: 3,
+    sells: 1,
+    uniqueBuyers: 3,
+    holders: 4,
+    top10Pct: 92.5,
+    devHoldsPct: 6.2,
+    liquidity: makeLiquidity({ sol: 1.5, bondingCurvePct: 2 }),
+    source: 'trades',
+    ...overrides,
+  };
+}
+
+export function makeStats(overrides: Partial<StatsResponse> = {}): StatsResponse {
+  return {
+    since: '2026-11-01T03:15:03.912Z',
+    tokens: { total: 1234, active: 210, dead: 1024, migrated: 3 },
+    screenings: { passed: 80, failed: 900, unverified: 40, pending: 214 },
+    trades: 456789,
+    snapshots: 23456,
     ...overrides,
   };
 }

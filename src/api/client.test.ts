@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError, createApiClient, DEFAULT_API_URL, resolveApiUrl, type FetchLike } from './client';
+import { ApiError, createApiClient, DEFAULT_API_URL, resolveApiUrl, tokenListSearch, type FetchLike } from './client';
 import type { CandlesResponse, HealthResponse, MoversResponse, ScreeningsResponse, TokenDetailResponse } from './types';
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -200,5 +200,68 @@ describe('createApiClient', () => {
       `http://api.test/api/tokens/${MINT}/stream`,
     );
     expect(createApiClient({ baseUrl: resolveApiUrl('/') }).tokenStreamUrl(MINT)).toBe(`/api/tokens/${MINT}/stream`);
+  });
+});
+
+describe('history endpoints', () => {
+  const ok = (body: unknown) => vi.fn<FetchLike>(async () => jsonResponse(body));
+
+  it('builds GET /api/tokens with the contract param names and formats', () => {
+    expect(tokenListSearch({})).toBe('');
+    expect(
+      tokenListSearch({
+        from: '2026-11-01T05:00:00.000Z',
+        to: '2026-12-01T05:00:00.000Z',
+        status: ['passed', 'failed'],
+        lifecycle: 'active',
+        minScore: 50,
+        q: 'frog & co',
+        sort: { field: 'maxScore', direction: 'desc' },
+        page: 2,
+        pageSize: 50,
+      }),
+    ).toBe(
+      '?from=2026-11-01T05:00:00.000Z&to=2026-12-01T05:00:00.000Z&status=passed,failed&lifecycle=active&minScore=50&q=frog%20%26%20co&sort=maxScore:desc&page=2&pageSize=50',
+    );
+    expect(tokenListSearch({ status: [], q: '  ' })).toBe('');
+  });
+
+  it('GETs the token list, snapshots and stats', async () => {
+    const list = { tokens: [], page: 1, pageSize: 50, total: 0 };
+    const snapshots = { mint: MINT, lifecycle: 'active', snapshots: [] };
+    const stats = {
+      since: '2026-11-14T03:15:03.912Z',
+      tokens: { total: 1, active: 1, dead: 0, migrated: 0 },
+      screenings: { passed: 0, failed: 0, unverified: 0, pending: 1 },
+      trades: 3,
+      snapshots: 2,
+    };
+    const fetchImpl = vi
+      .fn<FetchLike>()
+      .mockResolvedValueOnce(jsonResponse(list))
+      .mockResolvedValueOnce(jsonResponse(snapshots))
+      .mockResolvedValueOnce(jsonResponse(stats));
+    const client = createApiClient({ baseUrl: '', fetchImpl });
+
+    await expect(client.listTokens({ status: ['pending'], page: 1 })).resolves.toEqual(list);
+    await expect(client.getTokenSnapshots(MINT)).resolves.toEqual(snapshots);
+    await expect(client.getStats()).resolves.toEqual(stats);
+    expect(fetchImpl.mock.calls.map((call) => call[0])).toEqual([
+      '/api/tokens?status=pending&page=1',
+      `/api/tokens/${MINT}/snapshots`,
+      '/api/stats',
+    ]);
+  });
+
+  it('raises INVALID_QUERY as an ApiError', async () => {
+    const fetchImpl = ok({ error: { code: 'INVALID_QUERY', message: 'minScore must be 0-100' } });
+    fetchImpl.mockResolvedValueOnce(
+      jsonResponse({ error: { code: 'INVALID_QUERY', message: 'minScore must be 0-100' } }, 400),
+    );
+    const error = await createApiClient({ baseUrl: 'http://api.test', fetchImpl })
+      .listTokens({ minScore: 500 })
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ status: 400, code: 'INVALID_QUERY', message: 'minScore must be 0-100' });
   });
 });

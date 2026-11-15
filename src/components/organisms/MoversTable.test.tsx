@@ -2,7 +2,8 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { MoversTable } from './MoversTable';
-import { makeMover, MINT_A, MINT_B } from '../../test/fixtures';
+import { formatDate, formatTime } from '../../lib/format';
+import { makeLiquidity, makeMover, MINT_A, MINT_B } from '../../test/fixtures';
 
 const movers = [
   makeMover(),
@@ -78,5 +79,34 @@ describe('MoversTable', () => {
     onSelect.mockClear();
     await user.click(screen.getByRole('link', { name: 'Open FROG on pump.fun (new tab)' }));
     expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('shows each token\'s creation date and time and its liquidity, with a dash when the backend omits it', () => {
+    render(
+      <MoversTable
+        movers={[
+          makeMover({ liquidity: makeLiquidity() }),
+          makeMover({ mint: MINT_B, symbol: 'CAT', liquidity: makeLiquidity({ sol: 90, migrated: true }) }),
+          makeMover({ mint: 'old-backend', symbol: 'OLD' }),
+        ]}
+        selectedMint={null}
+        onSelect={() => {}}
+      />,
+    );
+    expect(screen.getByRole('columnheader', { name: 'Created' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Liquidity' })).toBeInTheDocument();
+    const [frog, cat, old] = within(screen.getByRole('table')).getAllByRole('row').slice(1) as [
+      HTMLElement,
+      HTMLElement,
+      HTMLElement,
+    ];
+    const created = within(frog).getByText(formatDate('2026-11-13T20:00:00.000Z')).closest('time');
+    expect(created).toHaveAttribute('dateTime', '2026-11-13T20:00:00.000Z');
+    expect(created).toHaveTextContent(formatTime('2026-11-13T20:00:00.000Z'));
+    expect(frog).toHaveTextContent('42.50 SOL');
+    expect(frog).toHaveTextContent('64% curve');
+    expect(cat).toHaveTextContent('90.00 SOL');
+    expect(within(cat).getByText('Migrated')).toBeInTheDocument();
+    expect(old).toHaveTextContent('—');
   });
 });

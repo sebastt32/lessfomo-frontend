@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ScreeningsFeed } from './ScreeningsFeed';
+import { formatDate, formatTime } from '../../lib/format';
 import { makeScreening, MINT_B } from '../../test/fixtures';
 
 const NOW = Date.parse('2026-11-13T20:10:00.000Z');
@@ -59,5 +60,22 @@ describe('ScreeningsFeed', () => {
 
     await user.click(screen.getByRole('button', { name: 'Show details for RUG' }));
     expect(onSelect).toHaveBeenCalledWith(MINT_B);
+  });
+
+  it('shows the creation date and time when the live feed knows it', () => {
+    render(
+      <ScreeningsFeed
+        screenings={screenings}
+        selectedMint={null}
+        onSelect={() => {}}
+        now={NOW}
+        createdAt={{ [MINT_B]: '2026-11-13T19:58:00.000Z' }}
+      />,
+    );
+    const created = screen.getAllByText('Created');
+    expect(created).toHaveLength(1);
+    const time = screen.getByText(formatDate('2026-11-13T19:58:00.000Z')).closest('time');
+    expect(time).toHaveAttribute('title', '2026-11-13T19:58:00.000Z');
+    expect(time).toHaveTextContent(formatTime('2026-11-13T19:58:00.000Z'));
   });
 });

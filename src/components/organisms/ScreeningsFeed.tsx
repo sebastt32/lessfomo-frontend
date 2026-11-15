@@ -1,4 +1,5 @@
 import type { ScreeningView } from '../../api/types';
+import { DateTime } from '../atoms/DateTime';
 import { StatusBadge } from '../atoms/StatusBadge';
 import { TokenName } from '../molecules/TokenName';
 import { describeFailureCode } from '../../lib/failureCodes';
@@ -11,12 +12,16 @@ export interface ScreeningsFeedProps {
   onSelect: (mint: string) => void;
   /** Reference time for relative timestamps (ms since epoch). */
   now: number;
+  /** Creation time per mint, when known (safety checks do not carry it). */
+  createdAt?: Readonly<Record<string, string>>;
 }
 
-export function ScreeningsFeed({ screenings, selectedMint, onSelect, now }: ScreeningsFeedProps) {
+export function ScreeningsFeed({ screenings, selectedMint, onSelect, now, createdAt = {} }: ScreeningsFeedProps) {
   return (
     <ol className="screenings-feed" aria-label="Latest safety checks, newest first">
-      {screenings.map((screening) => (
+      {screenings.map((screening) => {
+        const created = createdAt[screening.mint];
+        return (
         <li
           key={`${screening.mint}|${screening.evaluatedAt}`}
           className={
@@ -65,9 +70,18 @@ export function ScreeningsFeed({ screenings, selectedMint, onSelect, now }: Scre
               <dt>Holders</dt>
               <dd>{formatCount(screening.totalHolders)}</dd>
             </div>
+            {created ? (
+              <div>
+                <dt>Created</dt>
+                <dd>
+                  <DateTime iso={created} />
+                </dd>
+              </div>
+            ) : null}
           </dl>
         </li>
-      ))}
+        );
+      })}
     </ol>
   );
 }

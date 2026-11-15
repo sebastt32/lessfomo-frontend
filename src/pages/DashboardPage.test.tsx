@@ -5,27 +5,10 @@ import { ApiError, type ApiClient } from '../api/client';
 import type { ConnectionState, StreamOptions } from '../api/stream';
 import { LiveFeedProvider } from '../containers/LiveFeedProvider';
 import { DashboardPage } from './DashboardPage';
-import { makeCandles, makeDetail, makeMover, makeScreening, MINT_A, MINT_B } from '../test/fixtures';
+import { fakeClient } from '../test/fakeClient';
+import { makeMover, MINT_A, MINT_B } from '../test/fixtures';
 
 const networkError = () => new ApiError(0, 'NETWORK_ERROR', 'Could not reach the lessfomo API at http://api.test.');
-
-function fakeClient(overrides: Partial<ApiClient> = {}): ApiClient {
-  return {
-    baseUrl: 'http://api.test',
-    streamUrl: 'http://api.test/api/stream',
-    getHealth: vi.fn(async () => ({
-      status: 'ok' as const,
-      startedAt: '2026-11-13T20:00:00.000Z',
-      sources: { pumpportal: 'connected' as const, solanaLogs: 'connecting' as const },
-    })),
-    getMovers: vi.fn(async () => ({ at: '2026-11-13T20:05:00.000Z', movers: [makeMover()] })),
-    getScreenings: vi.fn(async () => ({ screenings: [makeScreening({ mint: MINT_B, symbol: 'CAT' })] })),
-    getToken: vi.fn(async () => makeDetail()),
-    getCandles: vi.fn(async () => makeCandles()),
-    tokenStreamUrl: (mint: string) => `http://api.test/api/tokens/${mint}/stream`,
-    ...overrides,
-  };
-}
 
 function fakeConnect() {
   let options: StreamOptions | null = null;

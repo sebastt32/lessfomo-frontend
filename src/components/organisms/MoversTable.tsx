@@ -2,7 +2,9 @@ import type { MouseEvent } from 'react';
 import type { Mover } from '../../api/types';
 import { PriceDelta } from '../atoms/PriceDelta';
 import { ScoreBar } from '../atoms/ScoreBar';
+import { DateTime } from '../atoms/DateTime';
 import { StatusBadge } from '../atoms/StatusBadge';
+import { LiquidityCell } from '../molecules/Liquidity';
 import { TokenLinks } from '../molecules/TokenLinks';
 import { TokenName } from '../molecules/TokenName';
 import { formatComponent, formatCount } from '../../lib/format';
@@ -31,6 +33,7 @@ export function MoversTable({ movers, selectedMint, onSelect }: MoversTableProps
               #
             </th>
             <th scope="col">Token</th>
+            <th scope="col">Created</th>
             <th scope="col">Score</th>
             <th scope="col" className="movers-table__num">
               <abbr title="Unique buyers in the last minute / last 5 minutes">Buyers 1m / 5m</abbr>
@@ -43,6 +46,9 @@ export function MoversTable({ movers, selectedMint, onSelect }: MoversTableProps
             </th>
             <th scope="col" className="movers-table__num">
               Δ price 5m
+            </th>
+            <th scope="col" className="movers-table__num">
+              Liquidity
             </th>
             <th scope="col">Safety</th>
             <th scope="col">Links</th>
@@ -69,6 +75,9 @@ export function MoversTable({ movers, selectedMint, onSelect }: MoversTableProps
                   </button>
                 </th>
                 <td>
+                  <DateTime iso={mover.detectedAt} layout="stacked" />
+                </td>
+                <td>
                   <ScoreBar score={mover.score} />
                 </td>
                 <td className="movers-table__num">
@@ -78,6 +87,9 @@ export function MoversTable({ movers, selectedMint, onSelect }: MoversTableProps
                 <td className="movers-table__num">{formatComponent(mover.components.buyPressure)}</td>
                 <td className="movers-table__num">
                   <PriceDelta value={mover.metrics.priceChange5mPct} />
+                </td>
+                <td className="movers-table__num">
+                  <LiquidityCell liquidity={mover.liquidity} />
                 </td>
                 <td>
                   <StatusBadge status={mover.status} />

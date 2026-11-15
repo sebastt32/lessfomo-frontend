@@ -1,0 +1,79 @@
+.liquidity-cell {
+  display: inline-grid;
+  justify-items: end;
+  gap: 0.1rem;
+  line-height: 1.25;
+}
+
+.liquidity-cell__sol {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.liquidity-cell__curve {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.liquidity-meter {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-inner);
+  font-size: var(--text-sm);
+}
+
+.liquidity-meter__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.liquidity-meter__label {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.liquidity-meter__sol {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-variant-numeric: tabular-nums;
+}
+
+.liquidity-meter__note {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.liquidity-meter__curve {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.liquidity-meter__track {
+  position: relative;
+  block-size: 0.5rem;
+  border-radius: 2px;
+  background: var(--color-track);
+  overflow: hidden;
+}
+
+.liquidity-meter__fill {
+  display: block;
+  block-size: 100%;
+  background: var(--color-up);
+}
+
+.liquidity-meter__pct {
+  color: var(--color-ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   initialLiveFeedState,
+  MAX_CREATED_AT,
   liveFeedReducer,
   MAX_SCORE_POINTS,
   MAX_SCREENINGS,
@@ -27,6 +28,7 @@ describe('initial state', () => {
       movers: { status: 'loading', at: null, items: [], error: null },
       screenings: { status: 'loading', items: [], error: null },
       scoreHistory: {},
+      createdAt: {},
       tokensDetected: 0,
     });
   });
@@ -253,6 +255,24 @@ describe('connection and tokens', () => {
       { type: 'stream/event', event: { type: 'token', data: makeToken({ mint: MINT_B }) } },
     );
     expect(state.tokensDetected).toBe(2);
+  });
+
+  it('remembers creation times from token events and rankings, so other sections can show them', () => {
+    const state = run(
+      { type: 'stream/event', event: { type: 'token', data: makeToken({ detectedAt: T1 }) } },
+      { type: 'movers/loaded', payload: { at: T2, movers: [makeMover({ mint: MINT_B, detectedAt: T2 })] } },
+    );
+    expect(state.createdAt).toEqual({ [MINT_A]: T1, [MINT_B]: T2 });
+  });
+
+  it('caps the creation time lookup, dropping the oldest entries', () => {
+    const tokens = Array.from({ length: MAX_CREATED_AT + 5 }, (_, i) =>
+      makeToken({ mint: `mint-${i}`, detectedAt: T1 }),
+    );
+    const state = run(...tokens.map((data) => ({ type: 'stream/event' as const, event: { type: 'token' as const, data } })));
+    expect(Object.keys(state.createdAt)).toHaveLength(MAX_CREATED_AT);
+    expect(state.createdAt['mint-0']).toBeUndefined();
+    expect(state.createdAt[`mint-${MAX_CREATED_AT + 4}`]).toBe(T1);
   });
 
   it('puts failed sections back into loading when a reload starts, keeping their data', () => {

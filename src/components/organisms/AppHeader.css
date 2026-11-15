@@ -38,6 +38,17 @@
   font-size: var(--text-xs);
 }
 
+.app-header__extras {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+  flex-basis: 100%;
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--color-line);
+}
+
 @media (max-width: 40rem) {
   .app-header {
     align-items: flex-start;

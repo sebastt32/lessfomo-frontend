@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   formatComponent,
   formatCount,
+  formatCurvePct,
+  formatDate,
+  formatLiquiditySol,
+  formatSolAmount,
+  formatTime,
   formatPercent,
   formatPriceSol,
   formatRelativeTime,
@@ -63,5 +68,32 @@ describe('external links', () => {
   it('builds DexScreener and pump.fun URLs for a mint', () => {
     expect(dexscreenerUrl('abc')).toBe('https://dexscreener.com/solana/abc');
     expect(pumpFunUrl('abc')).toBe('https://pump.fun/coin/abc');
+  });
+});
+
+describe('liquidity, SOL amounts and dates', () => {
+  it('formats SOL amounts with nulls and grouping', () => {
+    expect(formatSolAmount(null)).toBe('—');
+    expect(formatSolAmount(12.345)).toBe('12.35 SOL');
+    expect(formatSolAmount(0.004)).toBe('0.004 SOL');
+    expect(formatSolAmount(1234.5)).toBe('1,235 SOL');
+  });
+
+  it('formats liquidity, tolerating a backend that does not send it yet', () => {
+    expect(formatLiquiditySol(undefined)).toBe('—');
+    expect(formatLiquiditySol({ sol: null, bondingCurvePct: null, migrated: false })).toBe('—');
+    expect(formatLiquiditySol({ sol: 42.1, bondingCurvePct: 50, migrated: false })).toBe('42.10 SOL');
+    expect(formatCurvePct(64.4)).toBe('64%');
+    expect(formatCurvePct(null)).toBe('—');
+    expect(formatCurvePct(140)).toBe('100%');
+  });
+
+  it('formats a creation date and time in the given timezone', () => {
+    expect(formatDate('2026-11-14T03:15:03.912Z', 'UTC')).toBe('Nov 14, 2026');
+    expect(formatTime('2026-11-14T03:15:03.912Z', 'UTC')).toBe('03:15');
+    expect(formatDate('2026-11-14T03:15:03.912Z', 'America/Bogota')).toBe('Nov 13, 2026');
+    expect(formatTime('2026-11-14T03:15:03.912Z', 'America/Bogota')).toBe('22:15');
+    expect(formatDate('nope')).toBe('—');
+    expect(formatTime('nope')).toBe('—');
   });
 });

@@ -3,9 +3,15 @@ import type {
   CandleInterval,
   CandlesResponse,
   HealthResponse,
+  Lifecycle,
   MoversResponse,
+  SafetyStatus,
   ScreeningsResponse,
+  StatsResponse,
   TokenDetailResponse,
+  TokenListResponse,
+  TokenSnapshotsResponse,
+  TokenSort,
 } from './types';
 
 export const DEFAULT_API_URL = 'http://localhost:3001';
@@ -46,6 +52,45 @@ export interface CandlesOptions extends RequestOptions {
   limit?: number;
 }
 
+/** Filters for GET /api/tokens. Omitted fields use the API defaults. */
+export interface TokenListQuery {
+  /** ISO date, inclusive, on detectedAt. */
+  from?: string;
+  /** ISO date, exclusive, on detectedAt. */
+  to?: string;
+  status?: readonly SafetyStatus[];
+  lifecycle?: Lifecycle;
+  /** Only tokens whose maxScore is at least this (0-100). */
+  minScore?: number;
+  /** Matches symbol, name or mint prefix. */
+  q?: string;
+  sort?: TokenSort;
+  page?: number;
+  pageSize?: number;
+}
+
+// Commas and colons are legal in a query value; keeping them literal makes `status=a,b` and `sort=f:dir` readable.
+function encodeQueryValue(value: string): string {
+  return encodeURIComponent(value).replace(/%2C/gi, ',').replace(/%3A/gi, ':');
+}
+
+/** Query string for GET /api/tokens ('' when every field is the default), in the contract's param order. */
+export function tokenListSearch(query: TokenListQuery): string {
+  const params: [string, string][] = [];
+  if (query.from) params.push(['from', query.from]);
+  if (query.to) params.push(['to', query.to]);
+  if (query.status && query.status.length > 0) params.push(['status', query.status.join(',')]);
+  if (query.lifecycle) params.push(['lifecycle', query.lifecycle]);
+  if (query.minScore !== undefined) params.push(['minScore', String(query.minScore)]);
+  const q = query.q?.trim();
+  if (q) params.push(['q', q]);
+  if (query.sort) params.push(['sort', `${query.sort.field}:${query.sort.direction}`]);
+  if (query.page !== undefined) params.push(['page', String(query.page)]);
+  if (query.pageSize !== undefined) params.push(['pageSize', String(query.pageSize)]);
+  if (params.length === 0) return '';
+  return `?${params.map(([key, value]) => `${key}=${encodeQueryValue(value)}`).join('&')}`;
+}
+
 export interface ApiClient {
   readonly baseUrl: string;
   readonly streamUrl: string;
@@ -54,6 +99,12 @@ export interface ApiClient {
   getScreenings(options?: ListOptions): Promise<ScreeningsResponse>;
   getToken(mint: string, options?: RequestOptions): Promise<TokenDetailResponse>;
   getCandles(mint: string, options: CandlesOptions): Promise<CandlesResponse>;
+  /** GET /api/tokens: every token ever detected, paginated. */
+  listTokens(query: TokenListQuery, options?: RequestOptions): Promise<TokenListResponse>;
+  /** GET /api/tokens/:mint/snapshots, oldest first. */
+  getTokenSnapshots(mint: string, options?: RequestOptions): Promise<TokenSnapshotsResponse>;
+  /** GET /api/stats: database totals. */
+  getStats(options?: RequestOptions): Promise<StatsResponse>;
   /** URL of GET /api/tokens/:mint/stream (relative when the base URL is empty). */
   tokenStreamUrl(mint: string): string;
 }
@@ -131,6 +182,9 @@ export function createApiClient({ baseUrl, fetchImpl }: ApiClientConfig): ApiCli
       if (options.limit !== undefined) query.set('limit', String(options.limit));
       return request<CandlesResponse>(`${tokenPath(mint)}/candles?${query.toString()}`, options);
     },
+    listTokens: (query, options) => request<TokenListResponse>(`/api/tokens${tokenListSearch(query)}`, options),
+    getTokenSnapshots: (mint, options) => request<TokenSnapshotsResponse>(`${tokenPath(mint)}/snapshots`, options),
+    getStats: (options) => request<StatsResponse>('/api/stats', options),
     tokenStreamUrl: (mint) => `${baseUrl}${tokenPath(mint)}/stream`,
   };
 }

@@ -11,6 +11,7 @@ import type { ConnectionState } from '../api/stream';
 
 export const MAX_SCREENINGS = 100;
 export const MAX_SCORE_POINTS = 60;
+export const MAX_CREATED_AT = 1000;
 
 export type SectionStatus = 'loading' | 'ready' | 'error';
 
@@ -35,6 +36,8 @@ export interface LiveFeedState {
   screenings: { status: SectionStatus; items: ScreeningView[]; error: FeedError | null };
   /** Scores seen live per mint, oldest first. */
   scoreHistory: Record<string, ScorePoint[]>;
+  /** Creation time (TokenView.detectedAt) per mint seen in token events or rankings, oldest entries dropped first. */
+  createdAt: Record<string, string>;
   tokensDetected: number;
 }
 
@@ -57,6 +60,7 @@ export const initialLiveFeedState: LiveFeedState = {
   movers: { status: 'loading', at: null, items: [], error: null },
   screenings: { status: 'loading', items: [], error: null },
   scoreHistory: {},
+  createdAt: {},
   tokensDetected: 0,
 };
 
@@ -107,11 +111,28 @@ function recordScores(
   return next;
 }
 
+function recordCreatedAt(
+  createdAt: Record<string, string>,
+  entries: readonly { mint: string; detectedAt: string }[],
+): Record<string, string> {
+  const fresh = entries.filter((entry) => createdAt[entry.mint] !== entry.detectedAt);
+  if (fresh.length === 0) return createdAt;
+  const next = { ...createdAt };
+  for (const entry of fresh) {
+    delete next[entry.mint];
+    next[entry.mint] = entry.detectedAt;
+  }
+  const keys = Object.keys(next);
+  if (keys.length <= MAX_CREATED_AT) return next;
+  return Object.fromEntries(keys.slice(-MAX_CREATED_AT).map((mint) => [mint, next[mint]!]));
+}
+
 function applyRanking(state: LiveFeedState, at: string | null, movers: Mover[]): LiveFeedState {
   return {
     ...state,
     movers: { status: 'ready', at, items: movers, error: null },
     scoreHistory: recordScores(state.scoreHistory, at, movers),
+    createdAt: recordCreatedAt(state.createdAt, movers),
   };
 }
 
@@ -138,7 +159,11 @@ function applyStreamEvent(state: LiveFeedState, event: StreamEvent): LiveFeedSta
     case 'status':
       return { ...state, sources: event.data.sources, sourcesFromStream: true };
     case 'token':
-      return { ...state, tokensDetected: state.tokensDetected + 1 };
+      return {
+        ...state,
+        tokensDetected: state.tokensDetected + 1,
+        createdAt: recordCreatedAt(state.createdAt, [event.data]),
+      };
   }
 }
 

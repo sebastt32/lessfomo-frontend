@@ -1,4 +1,5 @@
 import type { ConnectionState } from '../../api/stream';
+import type { ReactNode } from 'react';
 import type { Sources } from '../../api/types';
 import { ConnectionIndicator } from '../molecules/ConnectionIndicator';
 import { SourceStatusList } from '../molecules/SourceStatusList';
@@ -8,9 +9,11 @@ export interface AppHeaderProps {
   connection: ConnectionState;
   sources: Sources | null;
   tokensDetected: number;
+  /** Full-width row under the brand, e.g. view navigation and totals. */
+  extras?: ReactNode;
 }
 
-export function AppHeader({ connection, sources, tokensDetected }: AppHeaderProps) {
+export function AppHeader({ connection, sources, tokensDetected, extras }: AppHeaderProps) {
   return (
     <header className="app-header">
       <div className="app-header__brand">
@@ -26,6 +29,7 @@ export function AppHeader({ connection, sources, tokensDetected }: AppHeaderProp
           </p>
         ) : null}
       </div>
+      {extras ? <div className="app-header__extras">{extras}</div> : null}
     </header>
   );
 }

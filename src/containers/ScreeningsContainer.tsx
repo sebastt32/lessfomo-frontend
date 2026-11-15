@@ -16,7 +16,15 @@ export function ScreeningsContainer({ selectedMint, onSelect, now }: ScreeningsC
 
   let body;
   if (items.length > 0) {
-    body = <ScreeningsFeed screenings={items} selectedMint={selectedMint} onSelect={onSelect} now={now} />;
+    body = (
+      <ScreeningsFeed
+        screenings={items}
+        selectedMint={selectedMint}
+        onSelect={onSelect}
+        now={now}
+        createdAt={state.createdAt}
+      />
+    );
   } else if (status === 'loading') {
     body = <LoadingState>Loading recent safety checks…</LoadingState>;
   } else if (status === 'error') {

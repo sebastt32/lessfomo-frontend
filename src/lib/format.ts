@@ -1,3 +1,5 @@
+import type { Liquidity } from '../api/types';
+
 const DASH = '—';
 const MINUS = '−';
 
@@ -49,4 +51,56 @@ export function formatPriceSol(value: number | null): string {
 
 export function shortenMint(mint: string): string {
   return mint.length <= 12 ? mint : `${mint.slice(0, 4)}…${mint.slice(-4)}`;
+}
+
+const solGrouped = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+const solTwoDecimals = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** SOL amount that may be unknown: grouped above 1,000, two decimals above 1, three significant digits below. */
+export function formatSolAmount(value: number | null): string {
+  if (value === null || !Number.isFinite(value)) return DASH;
+  const abs = Math.abs(value);
+  if (abs >= 1000) return `${solGrouped.format(value)} SOL`;
+  if (abs >= 1) return `${solTwoDecimals.format(value)} SOL`;
+  return `${Number(value.toPrecision(3)).toString()} SOL`;
+}
+
+/** SOL in the token's market; a dash when unknown or when the backend does not send liquidity yet. */
+export function formatLiquiditySol(liquidity: Liquidity | null | undefined): string {
+  return formatSolAmount(liquidity?.sol ?? null);
+}
+
+/** Bonding curve progress, 0-100 with no decimals. */
+export function formatCurvePct(value: number | null): string {
+  if (value === null) return DASH;
+  return `${Math.round(Math.min(100, Math.max(0, value)))}%`;
+}
+
+const dateFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function dateFormatter(kind: 'date' | 'time', timeZone: string | undefined): Intl.DateTimeFormat {
+  const key = `${kind}|${timeZone ?? ''}`;
+  let formatter = dateFormatters.get(key);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(
+      'en-US',
+      kind === 'date'
+        ? { month: 'short', day: 'numeric', year: 'numeric', timeZone }
+        : { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone },
+    );
+    dateFormatters.set(key, formatter);
+  }
+  return formatter;
+}
+
+/** Calendar date such as "Nov 14, 2026", in the viewer's timezone unless one is given. */
+export function formatDate(iso: string, timeZone?: string): string {
+  const time = Date.parse(iso);
+  return Number.isNaN(time) ? DASH : dateFormatter('date', timeZone).format(time);
+}
+
+/** 24-hour clock time such as "03:15", in the viewer's timezone unless one is given. */
+export function formatTime(iso: string, timeZone?: string): string {
+  const time = Date.parse(iso);
+  return Number.isNaN(time) ? DASH : dateFormatter('time', timeZone).format(time);
 }
