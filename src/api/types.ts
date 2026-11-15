@@ -29,6 +29,8 @@ export interface ScreeningView {
   creatorPct: number | null;
   totalHolders: number | null;
   evaluatedAt: string;
+  /** Token creation time; older backends omit it. */
+  detectedAt?: string | null;
 }
 
 export interface MomentumComponents {

@@ -20,7 +20,7 @@ export function ScreeningsFeed({ screenings, selectedMint, onSelect, now, create
   return (
     <ol className="screenings-feed" aria-label="Latest safety checks, newest first">
       {screenings.map((screening) => {
-        const created = createdAt[screening.mint];
+        const created = screening.detectedAt ?? createdAt[screening.mint];
         return (
         <li
           key={`${screening.mint}|${screening.evaluatedAt}`}

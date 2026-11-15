@@ -78,4 +78,20 @@ describe('ScreeningsFeed', () => {
     expect(time).toHaveAttribute('title', '2026-11-13T19:58:00.000Z');
     expect(time).toHaveTextContent(formatTime('2026-11-13T19:58:00.000Z'));
   });
+
+  it('prefers the creation time sent by the API over the live-feed lookup', () => {
+    const withDetectedAt = [{ ...screenings[0]!, detectedAt: '2026-11-13T19:40:00.000Z' }];
+    render(
+      <ScreeningsFeed
+        screenings={withDetectedAt}
+        selectedMint={null}
+        onSelect={() => {}}
+        now={NOW}
+        createdAt={{ [withDetectedAt[0]!.mint]: '2026-11-13T19:58:00.000Z' }}
+      />,
+    );
+
+    const time = screen.getByText(formatDate('2026-11-13T19:40:00.000Z')).closest('time');
+    expect(time).toHaveAttribute('title', '2026-11-13T19:40:00.000Z');
+  });
 });
