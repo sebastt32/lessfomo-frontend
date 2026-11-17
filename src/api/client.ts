@@ -48,7 +48,7 @@ export interface RequestOptions {
 
 export interface ListOptions extends RequestOptions {
   limit?: number;
-  /** Only tokens bought by at least this many good-or-elite wallets (API default 0). */
+  /** Only tokens bought by at least this many good-or-elite wallets (API default 1; tokens without good-history wallets are never public). */
   minSmartWallets?: number;
 }
 
