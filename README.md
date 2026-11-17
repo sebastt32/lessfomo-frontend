@@ -9,6 +9,7 @@ only uses free data sources. It has three views, **Live**, **History** and **Ins
   them usually means becoming their exit liquidity. The minimum is 3 by default (the public minimum) and can be
   raised to 5 or 10+; a banner above the lists says which filter is active.
 
+- **Color theme**: Auto (follows the device), Light or Dark, chosen in the header and remembered in the browser.
 - **Top movers**: the momentum ranking, refreshed every minute, with each token's creation date and time and its
   liquidity (SOL in the market, bonding curve progress, or a "Migrated" badge once it moved to PumpSwap).
 - **Latest safety checks**: holder concentration, creator share and authority checks as they finish, with the
