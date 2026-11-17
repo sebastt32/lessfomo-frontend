@@ -13,6 +13,8 @@ server {
   # Per-token trade streams (/api/tokens/:mint/stream) need the same treatment as /api/stream.
   location ~ ^/api/tokens/[^/]+/stream$ {
     proxy_pass $backend;
+    # The backend's same-origin (CSRF) check compares the Origin header with the public Host.
+    proxy_set_header Host $host;
     proxy_http_version 1.1;
     proxy_set_header Connection "";
     proxy_buffering off;
@@ -23,6 +25,8 @@ server {
 
   location = /api/stream {
     proxy_pass $backend;
+    # The backend's same-origin (CSRF) check compares the Origin header with the public Host.
+    proxy_set_header Host $host;
     proxy_http_version 1.1;
     proxy_set_header Connection "";
     proxy_buffering off;
@@ -33,6 +37,8 @@ server {
 
   location /api/ {
     proxy_pass $backend;
+    # The backend's same-origin (CSRF) check compares the Origin header with the public Host.
+    proxy_set_header Host $host;
     proxy_http_version 1.1;
     proxy_set_header Connection "";
   }
