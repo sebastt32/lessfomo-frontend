@@ -17,12 +17,26 @@ export interface EventSourceLike {
   close(): void;
 }
 
-export type EventSourceConstructor = new (url: string) => EventSourceLike;
+/** The EventSource options this module uses. */
+export interface EventSourceInitLike {
+  withCredentials?: boolean;
+}
+
+export type EventSourceConstructor = new (url: string, init?: EventSourceInitLike) => EventSourceLike;
+
+// The session is a cookie: streams must send it on cross-origin connections too (local development).
+const SOURCE_INIT: EventSourceInitLike = { withCredentials: true };
 
 interface BaseStreamOptions<E> {
   url: string;
   onEvent: (event: E) => void;
   onConnectionChange: (state: ConnectionState) => void;
+  /**
+   * The connection was closed for good instead of retried by the browser. EventSource hides the HTTP
+   * status, and this is what a rejected request (e.g. 401 without a session) looks like, so callers
+   * use it to check whether the session is still valid.
+   */
+  onRejected?: () => void;
   /** Defaults to the global EventSource; `undefined` means SSE is unavailable. */
   EventSourceImpl?: EventSourceConstructor | undefined;
   /** Delays used when the browser gives up and the source must be recreated. */
@@ -86,7 +100,7 @@ function connectEventSource<E extends { type: string; data: unknown }>(
   }
 
   function open(): void {
-    const es = new EventSourceCtor(url);
+    const es = new EventSourceCtor(url, SOURCE_INIT);
     source = es;
 
     es.onopen = () => {
@@ -101,6 +115,7 @@ function connectEventSource<E extends { type: string; data: unknown }>(
       setState(everConnected ? 'reconnecting' : 'offline');
       if (es.readyState === CLOSED) {
         es.close();
+        options.onRejected?.();
         const delay = delays[Math.min(attempt, delays.length - 1)] ?? 5_000;
         attempt += 1;
         retryTimer = setTimeout(() => {

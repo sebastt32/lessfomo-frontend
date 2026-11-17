@@ -84,6 +84,12 @@ code {
   filter: brightness(1.08);
 }
 
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: none;
+}
+
 .button--quiet {
   background: transparent;
   color: var(--color-accent);

@@ -7,19 +7,6 @@
   padding-block: var(--space-5) var(--space-4);
 }
 
-.app-header__wordmark {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: var(--text-display);
-  font-weight: 800;
-  line-height: 0.9;
-  letter-spacing: -0.04em;
-  /* The rule under the wordmark reads as a flat baseline: momentum without the hype. */
-  padding-block-end: var(--space-2);
-  border-block-end: 3px solid var(--color-accent);
-  inline-size: fit-content;
-}
-
 .app-header__tagline {
   margin: var(--space-2) 0 0;
   color: var(--color-muted);

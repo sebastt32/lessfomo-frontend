@@ -9,6 +9,7 @@ only uses free data sources. It has three views, **Live**, **History** and **Ins
   them usually means becoming their exit liquidity. The minimum is 3 by default (the public minimum) and can be
   raised to 5 or 10+; a banner above the lists says which filter is active.
 
+- **Login**: the whole platform sits behind a sign-in page; see [Authentication](#authentication).
 - **Color theme**: Auto (follows the device), Light or Dark, chosen in the header and remembered in the browser.
 - **Top movers**: the momentum ranking, refreshed every minute, with each token's creation date and time and its
   liquidity (SOL in the market, bonding curve progress, or a "Migrated" badge once it moved to PumpSwap).
@@ -47,8 +48,8 @@ This app has no backend of its own. It reads everything from the lessfomo HTTP +
   on `http://localhost:3001` and allows browser requests from `http://localhost:5173` (this app's dev server).
   The API contract lives in the backend repository at `docs/API.md`.
 
-Without the backend the dashboard still loads and shows an offline notice. It reconnects on its own once the API
-is back. On a backend that predates the history API (`/api/tokens`, `/api/tokens/:mint/snapshots`, `/api/stats`,
+Without the backend the app says it cannot reach the server and offers to try again; if the API goes away after
+signing in, the dashboard shows an offline notice and reconnects on its own once the API is back. On a backend that predates the history API (`/api/tokens`, `/api/tokens/:mint/snapshots`, `/api/stats`,
 `Mover.liquidity`), the live view keeps working: the history list says it is not available yet, the totals are
 hidden and liquidity shows a dash. On a backend that predates smart wallets (`smartWallets` fields,
 `/api/tokens/:mint/smart-wallets`, `/api/wallets/:address`, `/api/analysis/smart-wallets`), the lists are shown
@@ -57,6 +58,37 @@ good-history wallets but not trading styles (`smartWallets.conviction`, `styleAt
 `medianHoldSeconds`, `by=conviction`), the lists show what the backend makes public with a "conviction data not
 available yet" notice, the token detail says the trading style is not available yet, and Insights explains that
 the conviction grouping is not available yet.
+
+## Authentication
+
+Nothing of the platform is rendered or requested until somebody is signed in: no data requests, no live stream,
+no totals. The contract is the "Authentication" section of the backend's `docs/API.md`.
+
+- **Session check**: on load the app asks `GET /api/auth/me`. A user opens the platform, `401` opens the sign-in
+  page, and no answer shows "Cannot reach the server" with a retry button.
+- **Sign in**: username and password are sent once to `POST /api/auth/login`. The server answers with an
+  `HttpOnly` session cookie that scripts cannot read. The password is never kept in application state, the URL,
+  `localStorage` or logs; the field is emptied as soon as it is sent. Messages: "Wrong username or password",
+  "Too many attempts. Try again in N minutes" (from the `Retry-After` header) and "Cannot reach the server".
+- **Shared links**: the sign-in page does not touch the URL, so a link with a view and filters opens that view
+  after signing in.
+- **Signed in**: the header shows the username, **Change password** (current password, a new one of at least 12
+  characters, and its confirmation; the other sessions of the user are signed out) and **Sign out**. Signing out
+  unmounts the whole platform, so no data from the session stays in memory.
+- **Expired session**: a `401 UNAUTHENTICATED` from any request sends the app back to the sign-in page and closes
+  the streams. `EventSource` hides HTTP statuses, so when a stream is closed by the server the app asks
+  `/api/auth/me` to find out whether the session ended.
+- **Accounts**: there is no sign-up. The administrator creates the super admin on the server (see the backend
+  README).
+- **Older backend**: if `/api/auth/me` does not exist (`404`), authentication is treated as not available and the
+  platform is shown without a login, as before. This lets the frontend be deployed before the backend. The
+  backend is what protects the data: once it requires a session, this app asks for one.
+
+Every request is sent with `credentials: 'include'` and both streams with `withCredentials`, and state-changing
+requests carry `Content-Type: application/json`. Behind the nginx proxy of the Docker image everything is
+same-origin. When the app and the API are on different origins (local development), the backend must list the
+app's origin in `CORS_ORIGIN`, and for the wait time of "Too many attempts" to be shown it must expose the
+`Retry-After` header to browsers; otherwise the message says "a few minutes".
 
 ### URL parameters
 
@@ -111,31 +143,39 @@ props; containers own data fetching and the live stream.
 src/
 ├── api/                 HTTP + SSE layer
 │   ├── types.ts         Types mirroring the backend API contract
-│   ├── client.ts        fetch client (VITE_API_URL), typed ApiError, candles, token list, snapshots, stats
+│   ├── client.ts        fetch client (VITE_API_URL), typed ApiError, candles, token list, snapshots, stats,
+│   │                    session endpoints (login, logout, getSession, changePassword), 401 subscription
 │   └── stream.ts        EventSource wrappers: the global feed and the per-token trade stream
 ├── state/
+│   ├── auth.ts          Pure reducer for the session: checking, signed out, signed in, unavailable, unreachable
 │   ├── liveFeed.ts      Pure reducer for live data (unit-tested)
 │   └── tokenChart.ts    Pure reducer for one token's candles and live trades
 ├── hooks/               useLiveFeed (REST snapshot + SSE), useTokenDetail, useTokenChart, useNow,
 │                        useResource + useHistoryData (token list, snapshots, stats), useLocationSearch (URL state)
 ├── lib/                 Formatting, external links, failure code labels, score series, candle math,
-│                        dateRange (date filters), historyQuery (URL state), milestones (snapshot labels)
+│                        dateRange (date filters), historyQuery (URL state), milestones (snapshot labels),
+│                        authErrors (API error codes to typed failures and their messages)
 ├── components/
-│   ├── atoms/           StatusBadge, ScoreBar, PriceDelta, Sparkline, StatusDot, ExternalLink, DateTime,
+│   ├── atoms/           Wordmark, StatusBadge, ScoreBar, PriceDelta, Sparkline, StatusDot, ExternalLink, DateTime,
 │   │                    LifecycleBadge / MigratedBadge
 │   ├── molecules/       Panel, TokenName, TokenLinks, ConnectionIndicator, SourceStatusList, section states,
-│   │                    SegmentedControl, CandlestickChart, LiquidityCell / LiquidityMeter, Pagination, ViewNav
+│   │                    SegmentedControl, CandlestickChart, LiquidityCell / LiquidityMeter, Pagination, ViewNav,
+│   │                    TextField, PasswordField (uncontrolled, with show/hide)
 │   ├── organisms/       AppHeader, MoversTable, ScreeningsFeed, TokenDetail, TokenChart, OfflineNotice, Disclaimer,
-│   │                    TokenHistoryTable, HistoryFilters, TokenSnapshots, StatsBar
-│   └── templates/       DashboardTemplate, HistoryTemplate (layout slots only)
-├── containers/          LiveFeedProvider and one container per section; they read state and pass props down
-├── pages/               AppShell (view + filters from the URL), DashboardPage and HistoryPage: wire containers
-│                        into their template and own token selection
+│   │                    TokenHistoryTable, HistoryFilters, TokenSnapshots, StatsBar, LoginForm, AccountMenu,
+│   │                    ChangePasswordDialog
+│   └── templates/       DashboardTemplate, HistoryTemplate, LoginTemplate (layout slots only)
+├── containers/          AuthProvider (session), LiveFeedProvider and one container per section; they read state
+│                        and pass props down
+├── pages/               AuthenticatedApp (session gate), LoginPage, AppShell (view + filters from the URL),
+│                        DashboardPage and HistoryPage: wire containers into their template and own token selection
 └── styles/              Design tokens (light and dark) and base styles
 ```
 
 Data flow:
 
+0. `AuthProvider` checks the session; the steps below only run while somebody is signed in (or on a backend
+   without authentication).
 1. `LiveFeedProvider` loads `/api/health`, `/api/movers` and `/api/screenings`, then subscribes to `/api/stream`.
 2. Every response and stream event becomes an action for the `liveFeed` reducer. A `momentum` event replaces the
    ranking, a `screening` event is prepended to the feed (at most 100 kept), a `status` event updates the sources.

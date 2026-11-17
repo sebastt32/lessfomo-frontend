@@ -95,6 +95,8 @@ export function useLiveFeed({
         if (next === 'connected' && (previous === 'reconnecting' || previous === 'offline')) load();
         previous = next;
       },
+      // EventSource hides the HTTP status: ask the API, so an expired session (401) is noticed.
+      onRejected: () => void client.getSession().catch(() => {}),
     });
     return () => {
       handle.close();

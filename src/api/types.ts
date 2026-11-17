@@ -435,3 +435,14 @@ export interface SmartWalletAnalysisResponse {
   by?: 'smartWallets' | 'conviction';
   buckets: SmartWalletBucket[];
 }
+
+/** The signed-in user (see "Authentication" in the API contract). */
+export interface SessionUser {
+  username: string;
+  role: 'superadmin';
+}
+
+/** Body of POST /api/auth/login and GET /api/auth/me. */
+export interface SessionResponse {
+  user: SessionUser;
+}

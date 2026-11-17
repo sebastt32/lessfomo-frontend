@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { ViewNav, type ViewNavItem } from '../components/molecules/ViewNav';
 import { ThemeToggleContainer } from '../containers/ThemeToggleContainer';
 import { StatsContainer } from '../containers/StatsContainer';
@@ -11,8 +11,13 @@ import { InsightsPage } from './InsightsPage';
 
 const HISTORY_DEFAULT_SEARCH = '?view=history';
 
+export interface AppShellProps {
+  /** Who is signed in and the account actions, shown in the header; absent when the backend has no authentication. */
+  account?: ReactNode;
+}
+
 /** Picks the view from the URL and keeps the history filters, sort and page in the query string. */
-export function AppShell() {
+export function AppShell({ account }: AppShellProps = {}) {
   const search = useLocationSearch();
   const location = useMemo(() => parseAppLocation(search), [search]);
   // Coming back to History restores the filters it had, within this visit.
@@ -49,6 +54,7 @@ export function AppShell() {
       />
       <StatsContainer />
       <ThemeToggleContainer />
+      {account}
     </>
   );
 

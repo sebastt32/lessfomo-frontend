@@ -86,6 +86,8 @@ export function useTokenChart(
         if (next === 'connected' && (previous === 'reconnecting' || previous === 'offline')) loadRef.current(true);
         previous = next;
       },
+      // EventSource hides the HTTP status: ask the API, so an expired session (401) is noticed.
+      onRejected: () => void client.getSession().catch(() => {}),
     });
     return () => handle.close();
   }, [client, connect, mint]);

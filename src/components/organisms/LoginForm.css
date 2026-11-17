@@ -1,0 +1,11 @@
+.login-form__form {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+.login-form__submit {
+  justify-content: center;
+  min-block-size: 2.75rem;
+  font-size: var(--text-base);
+}

@@ -1,0 +1,35 @@
+.login-page {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-block-size: 100vh;
+  min-block-size: 100dvh;
+  padding: var(--space-4) var(--gutter) var(--space-6);
+}
+
+.login-page__tools {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.login-page__main {
+  display: grid;
+  align-content: start;
+  gap: var(--space-5);
+  inline-size: 100%;
+  max-inline-size: 26rem;
+  margin-inline: auto;
+  /* Sits in the upper third, like the header it turns into after signing in. */
+  padding-block-start: clamp(var(--space-5), 12vh, 8rem);
+}
+
+.login-page__tagline {
+  margin: var(--space-2) 0 0;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
+.login-page__footnote {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}

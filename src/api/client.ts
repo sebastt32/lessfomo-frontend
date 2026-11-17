@@ -7,6 +7,8 @@ import type {
   MoversResponse,
   SafetyStatus,
   ScreeningsResponse,
+  SessionResponse,
+  SessionUser,
   SmartWalletAnalysisResponse,
   StatsResponse,
   TokenDetailResponse,
@@ -29,12 +31,15 @@ export function resolveApiUrl(configured: string | undefined): string {
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
+  /** Seconds to wait before trying again, from the Retry-After header (429); null when absent or unreadable. */
+  readonly retryAfterSeconds: number | null;
 
-  constructor(status: number, code: string, message: string) {
+  constructor(status: number, code: string, message: string, retryAfterSeconds: number | null = null) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -140,6 +145,19 @@ export interface ApiClient {
   getSmartWalletAnalysis(options?: AnalysisOptions): Promise<SmartWalletAnalysisResponse>;
   /** URL of GET /api/tokens/:mint/stream (relative when the base URL is empty). */
   tokenStreamUrl(mint: string): string;
+  /** POST /api/auth/login: starts a session (the cookie is set by the server) and returns its user. */
+  login(username: string, password: string, options?: RequestOptions): Promise<SessionUser>;
+  /** POST /api/auth/logout: ends the session. */
+  logout(options?: RequestOptions): Promise<void>;
+  /** GET /api/auth/me: the signed-in user; rejects with 401 UNAUTHENTICATED without a session. */
+  getSession(options?: RequestOptions): Promise<SessionUser>;
+  /** POST /api/auth/password: changes the signed-in user's password. */
+  changePassword(currentPassword: string, newPassword: string, options?: RequestOptions): Promise<void>;
+  /**
+   * Subscribes to `401 UNAUTHENTICATED` answers from any request (no session, or it expired).
+   * Returns the unsubscribe function.
+   */
+  onUnauthenticated(listener: () => void): () => void;
 }
 
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -160,6 +178,21 @@ function isApiErrorBody(value: unknown): value is ApiErrorBody {
   );
 }
 
+/** Retry-After as whole seconds; the header may also be an HTTP date. */
+function parseRetryAfter(value: string | null, now: number = Date.now()): number | null {
+  const trimmed = value?.trim() ?? '';
+  if (trimmed === '') return null;
+  if (/^\d+$/.test(trimmed)) return Number(trimmed);
+  const date = Date.parse(trimmed);
+  return Number.isNaN(date) ? null : Math.max(0, Math.ceil((date - now) / 1000));
+}
+
+interface SendOptions extends RequestOptions {
+  method?: 'GET' | 'POST';
+  /** JSON body of a POST. */
+  json?: unknown;
+}
+
 function tokenPath(mint: string): string {
   return `/api/tokens/${encodeURIComponent(mint)}`;
 }
@@ -175,9 +208,23 @@ function listPath(path: string, { limit, minSmartWallets, minConvictionWallets }
 export function createApiClient({ baseUrl, fetchImpl }: ApiClientConfig): ApiClient {
   const doFetch: FetchLike = fetchImpl ?? ((input, init) => globalThis.fetch(input, init));
 
-  async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const init: RequestInit = { headers: { Accept: 'application/json' } };
-    if (options.signal) init.signal = options.signal;
+  const unauthenticatedListeners = new Set<() => void>();
+
+  /** Sends one request with the session cookie; resolves to the status and the parsed JSON body (undefined when there is none). */
+  async function send(
+    path: string,
+    { signal, method = 'GET', json }: SendOptions = {},
+  ): Promise<{ status: number; body: unknown }> {
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    // The session is a cookie: it must travel on cross-origin requests too (local development).
+    const init: RequestInit = { headers, credentials: 'include' };
+    if (method === 'POST') {
+      init.method = 'POST';
+      // Required by the API on every state-changing request, with or without a body.
+      headers['Content-Type'] = 'application/json';
+      if (json !== undefined) init.body = JSON.stringify(json);
+    }
+    if (signal) init.signal = signal;
 
     let response: Response;
     try {
@@ -195,15 +242,29 @@ export function createApiClient({ baseUrl, fetchImpl }: ApiClientConfig): ApiCli
     }
 
     if (!response.ok) {
-      if (isApiErrorBody(body)) {
-        throw new ApiError(response.status, body.error.code, body.error.message);
+      const retryAfter = parseRetryAfter(response.headers.get('Retry-After'));
+      const error = isApiErrorBody(body)
+        ? new ApiError(response.status, body.error.code, body.error.message, retryAfter)
+        : new ApiError(response.status, 'HTTP_ERROR', `The API answered with HTTP ${response.status}.`, retryAfter);
+      if (error.status === 401 && error.code === 'UNAUTHENTICATED') {
+        for (const listener of [...unauthenticatedListeners]) listener();
       }
-      throw new ApiError(response.status, 'HTTP_ERROR', `The API answered with HTTP ${response.status}.`);
+      throw error;
     }
+    return { status: response.status, body };
+  }
+
+  async function request<T>(path: string, options: SendOptions = {}): Promise<T> {
+    const { status, body } = await send(path, options);
     if (body === undefined) {
-      throw new ApiError(response.status, 'INVALID_RESPONSE', 'The API answered with something that is not JSON.');
+      throw new ApiError(status, 'INVALID_RESPONSE', 'The API answered with something that is not JSON.');
     }
     return body as T;
+  }
+
+  /** For endpoints that answer 204 No Content. */
+  async function post(path: string, json: unknown, options: RequestOptions = {}): Promise<void> {
+    await send(path, { ...options, method: 'POST', json });
   }
 
   return {
@@ -232,5 +293,23 @@ export function createApiClient({ baseUrl, fetchImpl }: ApiClientConfig): ApiCli
       return request<SmartWalletAnalysisResponse>(`/api/analysis/smart-wallets${toSearch(params)}`, options);
     },
     tokenStreamUrl: (mint) => `${baseUrl}${tokenPath(mint)}/stream`,
+    login: async (username, password, options = {}) => {
+      const { user } = await request<SessionResponse>('/api/auth/login', {
+        ...options,
+        method: 'POST',
+        json: { username, password },
+      });
+      return user;
+    },
+    logout: (options) => post('/api/auth/logout', undefined, options),
+    getSession: async (options) => (await request<SessionResponse>('/api/auth/me', options)).user,
+    changePassword: (currentPassword, newPassword, options) =>
+      post('/api/auth/password', { currentPassword, newPassword }, options),
+    onUnauthenticated: (listener) => {
+      unauthenticatedListeners.add(listener);
+      return () => {
+        unauthenticatedListeners.delete(listener);
+      };
+    },
   };
 }

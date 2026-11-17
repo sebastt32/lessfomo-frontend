@@ -1,6 +1,7 @@
 import type { ConnectionState } from '../../api/stream';
 import type { ReactNode } from 'react';
 import type { Sources } from '../../api/types';
+import { Wordmark } from '../atoms/Wordmark';
 import { ConnectionIndicator } from '../molecules/ConnectionIndicator';
 import { SourceStatusList } from '../molecules/SourceStatusList';
 import './AppHeader.css';
@@ -17,7 +18,7 @@ export function AppHeader({ connection, sources, tokensDetected, extras }: AppHe
   return (
     <header className="app-header">
       <div className="app-header__brand">
-        <h1 className="app-header__wordmark">lessfomo</h1>
+        <Wordmark />
         <p className="app-header__tagline">Live pump.fun screener for Solana, built on free data.</p>
       </div>
       <div className="app-header__status">
