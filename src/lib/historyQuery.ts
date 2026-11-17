@@ -7,7 +7,7 @@ import { ALL_TIME, dateFilterBounds, parseDateFilter, serializeDateFilter, type 
  * Everything lives in the query string so a filtered list can be shared and reloaded.
  */
 
-export type AppView = 'live' | 'history';
+export type AppView = 'live' | 'history' | 'insights';
 
 export interface HistoryFilters {
   date: DateFilter;
@@ -29,7 +29,16 @@ export const HISTORY_PAGE_SIZE = 50;
 
 export const STATUS_ORDER: readonly SafetyStatus[] = ['passed', 'failed', 'unverified', 'pending'];
 
-export const SORT_FIELDS: readonly TokenSortField[] = ['detectedAt', 'maxScore', 'peakMarketCapSol', 'liquidity'];
+export const SORT_FIELDS: readonly TokenSortField[] = [
+  'detectedAt',
+  'maxScore',
+  'peakMarketCapSol',
+  'liquidity',
+  'smartWallets',
+];
+
+/** Fields the API only sorts in one direction. */
+const DESC_ONLY: readonly TokenSortField[] = ['smartWallets'];
 
 export const DEFAULT_SORT: TokenSort = { field: 'detectedAt', direction: 'desc' };
 
@@ -56,7 +65,9 @@ function parseInteger(value: string | null, min: number, max: number): number | 
 function parseSort(value: string | null): TokenSort {
   const [field, direction] = (value ?? '').split(':');
   if ((SORT_FIELDS as readonly string[]).includes(field ?? '') && (direction === 'asc' || direction === 'desc')) {
-    return { field: field as TokenSortField, direction };
+    const sortField = field as TokenSortField;
+    if (direction === 'asc' && DESC_ONLY.includes(sortField)) return DEFAULT_SORT;
+    return { field: sortField, direction };
   }
   return DEFAULT_SORT;
 }
@@ -68,7 +79,8 @@ function parseLifecycle(value: string | null): Lifecycle | null {
 /** Reads the view and history filters from `location.search`; invalid values fall back to defaults. */
 export function parseAppLocation(search: string): AppLocation {
   const params = new URLSearchParams(search);
-  const view: AppView = params.get('view') === 'history' ? 'history' : 'live';
+  const requested = params.get('view');
+  const view: AppView = requested === 'history' || requested === 'insights' ? requested : 'live';
   return {
     view,
     history: {
@@ -87,6 +99,7 @@ export function parseAppLocation(search: string): AppLocation {
 export function serializeAppLocation({ view, history }: AppLocation): string {
   if (view === 'live') return '';
   const params = new URLSearchParams({ view });
+  if (view === 'insights') return `?${params.toString()}`;
   const range = serializeDateFilter(history.date);
   if (range !== null) params.set('range', range);
   if (history.status.length > 0) params.set('status', normalizeStatuses(history.status).join(','));

@@ -1,7 +1,12 @@
 import { Panel } from '../components/molecules/Panel';
 import { EmptyState, ErrorState, LoadingState } from '../components/molecules/SectionState';
 import { ScreeningsFeed } from '../components/organisms/ScreeningsFeed';
+import { useMemo } from 'react';
+import type { SmartWalletCounts } from '../api/types';
 import { isNetworkError } from '../state/errors';
+import { selectSmartWalletCounts, selectVisibleScreenings } from '../state/smartWalletFeed';
+import { describeSmartWalletFilter } from '../lib/smartWalletFilter';
+import { useMinSmartWallets } from '../hooks/useMinSmartWallets';
 import { useLiveFeedContext } from './LiveFeedProvider';
 
 export interface ScreeningsContainerProps {
@@ -11,8 +16,19 @@ export interface ScreeningsContainerProps {
 }
 
 export function ScreeningsContainer({ selectedMint, onSelect, now }: ScreeningsContainerProps) {
-  const { state, actions } = useLiveFeedContext();
-  const { status, items, error } = state.screenings;
+  const { state, smartWallets, actions } = useLiveFeedContext();
+  const [min] = useMinSmartWallets();
+  const { status, error } = state.screenings;
+  const visible = selectVisibleScreenings(state, smartWallets, min);
+  const { items } = visible;
+  const counts = useMemo(() => {
+    const byMint: Record<string, SmartWalletCounts> = {};
+    for (const screening of items) {
+      const known = selectSmartWalletCounts(smartWallets, screening.mint);
+      if (known) byMint[screening.mint] = known;
+    }
+    return byMint;
+  }, [items, smartWallets]);
 
   let body;
   if (items.length > 0) {
@@ -23,6 +39,7 @@ export function ScreeningsContainer({ selectedMint, onSelect, now }: ScreeningsC
         onSelect={onSelect}
         now={now}
         createdAt={state.createdAt}
+        smartWallets={counts}
       />
     );
   } else if (status === 'loading') {
@@ -35,6 +52,16 @@ export function ScreeningsContainer({ selectedMint, onSelect, now }: ScreeningsC
       >
         {error?.message}
       </ErrorState>
+    );
+  } else if (visible.filtered && status === 'ready') {
+    body = (
+      <EmptyState title="No safety check passes the smart-wallet filter yet">
+        {describeSmartWalletFilter(min)}.{' '}
+        {visible.hidden > 0
+          ? `${visible.hidden} recent ${visible.hidden === 1 ? 'check is' : 'checks are'} hidden because no or too few good-history wallets bought those tokens. `
+          : ''}
+        Tokens appear here as soon as enough good-history wallets buy them. Lower the minimum above to see more.
+      </EmptyState>
     );
   } else {
     body = (

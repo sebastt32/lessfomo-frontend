@@ -7,8 +7,11 @@ import type {
   MoversResponse,
   SafetyStatus,
   ScreeningsResponse,
+  SmartWalletAnalysisResponse,
   StatsResponse,
   TokenDetailResponse,
+  TokenSmartWalletsResponse,
+  WalletResponse,
   TokenListResponse,
   TokenSnapshotsResponse,
   TokenSort,
@@ -45,6 +48,14 @@ export interface RequestOptions {
 
 export interface ListOptions extends RequestOptions {
   limit?: number;
+  /** Only tokens bought by at least this many good-or-elite wallets (API default 0). */
+  minSmartWallets?: number;
+}
+
+/** Date bounds for GET /api/analysis/smart-wallets; omitted fields use the API defaults. */
+export interface AnalysisOptions extends RequestOptions {
+  from?: string;
+  to?: string;
 }
 
 export interface CandlesOptions extends RequestOptions {
@@ -62,6 +73,8 @@ export interface TokenListQuery {
   lifecycle?: Lifecycle;
   /** Only tokens whose maxScore is at least this (0-100). */
   minScore?: number;
+  /** Only tokens bought by at least this many good-or-elite wallets. */
+  minSmartWallets?: number;
   /** Matches symbol, name or mint prefix. */
   q?: string;
   sort?: TokenSort;
@@ -82,11 +95,16 @@ export function tokenListSearch(query: TokenListQuery): string {
   if (query.status && query.status.length > 0) params.push(['status', query.status.join(',')]);
   if (query.lifecycle) params.push(['lifecycle', query.lifecycle]);
   if (query.minScore !== undefined) params.push(['minScore', String(query.minScore)]);
+  if (query.minSmartWallets !== undefined) params.push(['minSmartWallets', String(query.minSmartWallets)]);
   const q = query.q?.trim();
   if (q) params.push(['q', q]);
   if (query.sort) params.push(['sort', `${query.sort.field}:${query.sort.direction}`]);
   if (query.page !== undefined) params.push(['page', String(query.page)]);
   if (query.pageSize !== undefined) params.push(['pageSize', String(query.pageSize)]);
+  return toSearch(params);
+}
+
+function toSearch(params: readonly [string, string][]): string {
   if (params.length === 0) return '';
   return `?${params.map(([key, value]) => `${key}=${encodeQueryValue(value)}`).join('&')}`;
 }
@@ -105,6 +123,12 @@ export interface ApiClient {
   getTokenSnapshots(mint: string, options?: RequestOptions): Promise<TokenSnapshotsResponse>;
   /** GET /api/stats: database totals. */
   getStats(options?: RequestOptions): Promise<StatsResponse>;
+  /** GET /api/tokens/:mint/smart-wallets: good-history wallets that bought the token. */
+  getTokenSmartWallets(mint: string, options?: RequestOptions): Promise<TokenSmartWalletsResponse>;
+  /** GET /api/wallets/:address: a wallet's record and its recent token results. */
+  getWallet(address: string, options?: RequestOptions): Promise<WalletResponse>;
+  /** GET /api/analysis/smart-wallets: success by number of good-history wallets. */
+  getSmartWalletAnalysis(options?: AnalysisOptions): Promise<SmartWalletAnalysisResponse>;
   /** URL of GET /api/tokens/:mint/stream (relative when the base URL is empty). */
   tokenStreamUrl(mint: string): string;
 }
@@ -131,8 +155,11 @@ function tokenPath(mint: string): string {
   return `/api/tokens/${encodeURIComponent(mint)}`;
 }
 
-function withLimit(path: string, limit: number | undefined): string {
-  return limit === undefined ? path : `${path}?limit=${encodeURIComponent(String(limit))}`;
+function listPath(path: string, { limit, minSmartWallets }: ListOptions): string {
+  const params: [string, string][] = [];
+  if (limit !== undefined) params.push(['limit', String(limit)]);
+  if (minSmartWallets !== undefined) params.push(['minSmartWallets', String(minSmartWallets)]);
+  return `${path}${toSearch(params)}`;
 }
 
 export function createApiClient({ baseUrl, fetchImpl }: ApiClientConfig): ApiClient {
@@ -173,9 +200,8 @@ export function createApiClient({ baseUrl, fetchImpl }: ApiClientConfig): ApiCli
     baseUrl,
     streamUrl: `${baseUrl}/api/stream`,
     getHealth: (options) => request<HealthResponse>('/api/health', options),
-    getMovers: (options = {}) => request<MoversResponse>(withLimit('/api/movers', options.limit), options),
-    getScreenings: (options = {}) =>
-      request<ScreeningsResponse>(withLimit('/api/screenings', options.limit), options),
+    getMovers: (options = {}) => request<MoversResponse>(listPath('/api/movers', options), options),
+    getScreenings: (options = {}) => request<ScreeningsResponse>(listPath('/api/screenings', options), options),
     getToken: (mint, options) => request<TokenDetailResponse>(tokenPath(mint), options),
     getCandles: (mint, options) => {
       const query = new URLSearchParams({ interval: options.interval });
@@ -185,6 +211,15 @@ export function createApiClient({ baseUrl, fetchImpl }: ApiClientConfig): ApiCli
     listTokens: (query, options) => request<TokenListResponse>(`/api/tokens${tokenListSearch(query)}`, options),
     getTokenSnapshots: (mint, options) => request<TokenSnapshotsResponse>(`${tokenPath(mint)}/snapshots`, options),
     getStats: (options) => request<StatsResponse>('/api/stats', options),
+    getTokenSmartWallets: (mint, options) =>
+      request<TokenSmartWalletsResponse>(`${tokenPath(mint)}/smart-wallets`, options),
+    getWallet: (address, options) => request<WalletResponse>(`/api/wallets/${encodeURIComponent(address)}`, options),
+    getSmartWalletAnalysis: (options = {}) => {
+      const params: [string, string][] = [];
+      if (options.from) params.push(['from', options.from]);
+      if (options.to) params.push(['to', options.to]);
+      return request<SmartWalletAnalysisResponse>(`/api/analysis/smart-wallets${toSearch(params)}`, options);
+    },
     tokenStreamUrl: (mint) => `${baseUrl}${tokenPath(mint)}/stream`,
   };
 }

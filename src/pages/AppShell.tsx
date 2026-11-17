@@ -3,8 +3,10 @@ import { ViewNav, type ViewNavItem } from '../components/molecules/ViewNav';
 import { StatsContainer } from '../containers/StatsContainer';
 import { navigate, useLocationSearch } from '../hooks/useLocationSearch';
 import { parseAppLocation, serializeAppLocation, type AppView, type HistoryFilters } from '../lib/historyQuery';
+import { parseMinSmartWallets, withMinSmartWallets } from '../lib/smartWalletFilter';
 import { DashboardPage } from './DashboardPage';
 import { HistoryPage } from './HistoryPage';
+import { InsightsPage } from './InsightsPage';
 
 const HISTORY_DEFAULT_SEARCH = '?view=history';
 
@@ -16,17 +18,25 @@ export function AppShell() {
   const [lastHistorySearch, setLastHistorySearch] = useState(HISTORY_DEFAULT_SEARCH);
   if (location.view === 'history' && search !== lastHistorySearch) setLastHistorySearch(search);
 
-  const onFiltersChange = useCallback((history: HistoryFilters) => {
-    navigate(serializeAppLocation({ view: 'history', history }));
-  }, []);
+  // The smart-wallet threshold applies to every view, so it travels with every link and filter change.
+  const minSmartWallets = parseMinSmartWallets(search);
 
+  const onFiltersChange = useCallback(
+    (history: HistoryFilters) => {
+      navigate(withMinSmartWallets(serializeAppLocation({ view: 'history', history }), minSmartWallets));
+    },
+    [minSmartWallets],
+  );
+
+  const liveSearch = withMinSmartWallets('', minSmartWallets);
   const items: ViewNavItem<AppView>[] = [
-    { value: 'live', label: 'Live', href: window.location.pathname },
+    { value: 'live', label: 'Live', href: liveSearch === '' ? window.location.pathname : liveSearch },
     {
       value: 'history',
       label: 'History',
-      href: lastHistorySearch,
+      href: withMinSmartWallets(lastHistorySearch, minSmartWallets),
     },
+    { value: 'insights', label: 'Insights', href: withMinSmartWallets('?view=insights', minSmartWallets) },
   ];
 
   const headerExtras = (
@@ -40,9 +50,12 @@ export function AppShell() {
     </>
   );
 
-  return location.view === 'history' ? (
-    <HistoryPage filters={location.history} onFiltersChange={onFiltersChange} headerExtras={headerExtras} />
-  ) : (
-    <DashboardPage headerExtras={headerExtras} />
-  );
+  switch (location.view) {
+    case 'history':
+      return <HistoryPage filters={location.history} onFiltersChange={onFiltersChange} headerExtras={headerExtras} />;
+    case 'insights':
+      return <InsightsPage headerExtras={headerExtras} />;
+    default:
+      return <DashboardPage headerExtras={headerExtras} />;
+  }
 }

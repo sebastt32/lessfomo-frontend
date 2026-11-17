@@ -24,8 +24,18 @@ export function isMissingEndpoint(error: unknown): boolean {
  * mint (400 INVALID_MINT; the mint itself is known to be valid because its detail loaded).
  */
 export function isSnapshotsUnavailable(error: unknown): boolean {
+  return isTokenSubresourceUnavailable(error);
+}
+
+/** Same rule for any GET /api/tokens/:mint/<resource> added after the detail endpoint (snapshots, smart wallets). */
+export function isTokenSubresourceUnavailable(error: unknown): boolean {
   return (
     isMissingEndpoint(error) ||
     (error instanceof ApiError && (error.code === 'TOKEN_NOT_FOUND' || error.code === 'INVALID_MINT'))
   );
+}
+
+/** GET /api/wallets/:address is missing (older backend) or does not know the wallet. */
+export function isWalletUnavailable(error: unknown): boolean {
+  return isMissingEndpoint(error) || (error instanceof ApiError && error.code === 'WALLET_NOT_FOUND');
 }

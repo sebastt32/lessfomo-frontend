@@ -32,6 +32,8 @@ export interface TokenDetailProps {
   lifecycle?: Lifecycle | null;
   /** Slot for the snapshots over time, rendered after the momentum score. */
   snapshots?: ReactNode;
+  /** Slot for the good-history wallets that bought the token, rendered right after the key facts. */
+  smartWallets?: ReactNode;
 }
 
 function isHttpsUrl(value: string): boolean {
@@ -49,7 +51,16 @@ function describeSeries(scores: readonly ScorePoint[]): string {
   return `Momentum score over ${scores.length} readings, from ${formatScore(first.score)} to ${formatScore(last.score)} out of 100`;
 }
 
-export function TokenDetail({ detail, scores, now, chart, liquidity, lifecycle, snapshots }: TokenDetailProps) {
+export function TokenDetail({
+  detail,
+  scores,
+  now,
+  chart,
+  liquidity,
+  lifecycle,
+  snapshots,
+  smartWallets,
+}: TokenDetailProps) {
   const { token, status, screenings } = detail;
   const values = scores.map((point) => point.score);
   const latest = scores.at(-1);
@@ -97,6 +108,15 @@ export function TokenDetail({ detail, scores, now, chart, liquidity, lifecycle, 
       </dl>
 
       <LiquidityMeter liquidity={liquidity} />
+
+      {smartWallets ? (
+        <section className="token-detail__section" aria-labelledby="token-detail-smart-wallets">
+          <h3 id="token-detail-smart-wallets" className="token-detail__subtitle">
+            Smart wallets
+          </h3>
+          {smartWallets}
+        </section>
+      ) : null}
 
       {chart}
 

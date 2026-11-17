@@ -26,3 +26,23 @@
   color: var(--color-accent);
   background: var(--color-accent-soft);
 }
+
+.tag--tier-elite {
+  color: var(--color-surface);
+  background: var(--color-accent);
+}
+
+.tag--tier-good {
+  color: var(--color-up);
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.tag--tier-none {
+  color: var(--color-muted);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+
+.tag--bot {
+  color: var(--color-caution);
+  background: var(--color-caution-soft);
+}

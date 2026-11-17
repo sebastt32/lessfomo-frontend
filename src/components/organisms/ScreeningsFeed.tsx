@@ -1,4 +1,5 @@
-import type { ScreeningView } from '../../api/types';
+import type { ScreeningView, SmartWalletCounts } from '../../api/types';
+import { SmartWalletCount } from '../molecules/SmartWalletCount';
 import { DateTime } from '../atoms/DateTime';
 import { StatusBadge } from '../atoms/StatusBadge';
 import { TokenName } from '../molecules/TokenName';
@@ -14,9 +15,18 @@ export interface ScreeningsFeedProps {
   now: number;
   /** Creation time per mint, when known (safety checks do not carry it). */
   createdAt?: Readonly<Record<string, string>>;
+  /** Good-history wallet counts per mint, when known. */
+  smartWallets?: Readonly<Record<string, SmartWalletCounts>>;
 }
 
-export function ScreeningsFeed({ screenings, selectedMint, onSelect, now, createdAt = {} }: ScreeningsFeedProps) {
+export function ScreeningsFeed({
+  screenings,
+  selectedMint,
+  onSelect,
+  now,
+  createdAt = {},
+  smartWallets = {},
+}: ScreeningsFeedProps) {
   return (
     <ol className="screenings-feed" aria-label="Latest safety checks, newest first">
       {screenings.map((screening) => {
@@ -70,6 +80,14 @@ export function ScreeningsFeed({ screenings, selectedMint, onSelect, now, create
               <dt>Holders</dt>
               <dd>{formatCount(screening.totalHolders)}</dd>
             </div>
+            {smartWallets[screening.mint] ? (
+              <div>
+                <dt>Smart wallets</dt>
+                <dd>
+                  <SmartWalletCount counts={smartWallets[screening.mint]} />
+                </dd>
+              </div>
+            ) : null}
             {created ? (
               <div>
                 <dt>Created</dt>

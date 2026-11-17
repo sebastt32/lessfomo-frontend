@@ -44,9 +44,10 @@ export interface LiveFeedState {
 export type LiveFeedAction =
   | { type: 'health/loaded'; payload: HealthResponse }
   | { type: 'health/failed'; error: FeedError }
-  | { type: 'movers/loaded'; payload: MoversResponse }
+  /** `minSmartWallets` is the threshold the request was filtered with, if any. */
+  | { type: 'movers/loaded'; payload: MoversResponse; minSmartWallets?: number }
   | { type: 'movers/failed'; error: FeedError }
-  | { type: 'screenings/loaded'; payload: ScreeningsResponse }
+  | { type: 'screenings/loaded'; payload: ScreeningsResponse; minSmartWallets?: number }
   | { type: 'screenings/failed'; error: FeedError }
   | { type: 'stream/event'; event: StreamEvent }
   | { type: 'connection/changed'; state: ConnectionState }
@@ -158,6 +159,17 @@ function applyStreamEvent(state: LiveFeedState, event: StreamEvent): LiveFeedSta
     }
     case 'status':
       return { ...state, sources: event.data.sources, sourcesFromStream: true };
+    case 'smart-wallet': {
+      const { mint, smartWallets } = event.data;
+      if (!state.movers.items.some((m) => m.mint === mint)) return state;
+      return {
+        ...state,
+        movers: {
+          ...state.movers,
+          items: state.movers.items.map((m) => (m.mint === mint ? { ...m, smartWallets } : m)),
+        },
+      };
+    }
     case 'token':
       return {
         ...state,

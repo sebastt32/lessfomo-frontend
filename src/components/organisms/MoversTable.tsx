@@ -5,6 +5,7 @@ import { ScoreBar } from '../atoms/ScoreBar';
 import { DateTime } from '../atoms/DateTime';
 import { StatusBadge } from '../atoms/StatusBadge';
 import { LiquidityCell } from '../molecules/Liquidity';
+import { SmartWalletCount } from '../molecules/SmartWalletCount';
 import { TokenLinks } from '../molecules/TokenLinks';
 import { TokenName } from '../molecules/TokenName';
 import { formatComponent, formatCount } from '../../lib/format';
@@ -35,6 +36,9 @@ export function MoversTable({ movers, selectedMint, onSelect }: MoversTableProps
             <th scope="col">Token</th>
             <th scope="col">Created</th>
             <th scope="col">Score</th>
+            <th scope="col" className="movers-table__num">
+              <abbr title="Good-history wallets that bought the token: total, elite and still holding">Smart wallets</abbr>
+            </th>
             <th scope="col" className="movers-table__num">
               <abbr title="Unique buyers in the last minute / last 5 minutes">Buyers 1m / 5m</abbr>
             </th>
@@ -79,6 +83,9 @@ export function MoversTable({ movers, selectedMint, onSelect }: MoversTableProps
                 </td>
                 <td>
                   <ScoreBar score={mover.score} />
+                </td>
+                <td className="movers-table__num">
+                  <SmartWalletCount counts={mover.smartWallets} />
                 </td>
                 <td className="movers-table__num">
                   {formatCount(mover.metrics.uniqueBuyers1m)} / {formatCount(mover.metrics.uniqueBuyers5m)}

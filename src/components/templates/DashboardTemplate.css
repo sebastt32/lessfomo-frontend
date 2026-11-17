@@ -17,6 +17,8 @@
 
 .dashboard__notice {
   grid-area: notice;
+  display: grid;
+  gap: var(--space-3);
 }
 
 .dashboard__primary {

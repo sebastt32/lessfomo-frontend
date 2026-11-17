@@ -89,6 +89,13 @@ code {
   color: var(--color-accent);
 }
 
+/* Compact buttons inside lists; 2rem keeps a comfortable touch target. */
+.button--small {
+  min-block-size: 2rem;
+  padding: 0 var(--space-3);
+  font-size: var(--text-xs);
+}
+
 /* Token name buttons look like text but stay focusable for keyboard selection. */
 .token-button {
   display: inline-flex;

@@ -1,4 +1,10 @@
 import type {
+  SmartWalletAnalysisResponse,
+  SmartWalletCounts,
+  SmartWalletInToken,
+  WalletRecord,
+  WalletResponse,
+  WalletTokenResult,
   Candle,
   CandlesResponse,
   Liquidity,
@@ -179,6 +185,88 @@ export function makeStats(overrides: Partial<StatsResponse> = {}): StatsResponse
     screenings: { passed: 80, failed: 900, unverified: 40, pending: 214 },
     trades: 456789,
     snapshots: 23456,
+    ...overrides,
+  };
+}
+
+export const WALLET_A = '5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1';
+export const WALLET_B = 'HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH';
+
+export function makeCounts(overrides: Partial<SmartWalletCounts> = {}): SmartWalletCounts {
+  return { count: 2, elite: 1, holding: 1, ...overrides };
+}
+
+export function makeWalletRecord(overrides: Partial<WalletRecord> = {}): WalletRecord {
+  return {
+    address: WALLET_A,
+    tier: 'elite',
+    isBot: false,
+    tokens: 12,
+    wins: 9,
+    winRate: 75,
+    netPnlSol: 14.236,
+    avgPnlSol: 1.19,
+    medianEntrySeconds: 4,
+    lastActiveAt: '2026-11-13T19:58:00.000Z',
+    updatedAt: '2026-11-13T20:00:00.000Z',
+    ...overrides,
+  };
+}
+
+export function makeSmartWallet(overrides: Partial<SmartWalletInToken> = {}): SmartWalletInToken {
+  return {
+    address: WALLET_A,
+    tierAtEntry: 'good',
+    record: makeWalletRecord(),
+    firstBuyAt: '2026-11-13T20:00:03.000Z',
+    entrySeconds: 3,
+    boughtSol: 1.5,
+    soldSol: 0,
+    stillHolding: true,
+    ...overrides,
+  };
+}
+
+export function makeWalletResult(overrides: Partial<WalletTokenResult> = {}): WalletTokenResult {
+  return {
+    mint: MINT_B,
+    symbol: 'CAT',
+    name: 'Cat Coin',
+    firstBuyAt: '2026-11-12T10:00:05.000Z',
+    entrySeconds: 5,
+    boughtSol: 1,
+    soldSol: 2.5,
+    pnlSol: 1.5,
+    closedAt: '2026-11-12T11:00:00.000Z',
+    ...overrides,
+  };
+}
+
+export function makeWalletResponse(overrides: Partial<WalletResponse> = {}): WalletResponse {
+  return { record: makeWalletRecord(), results: [makeWalletResult()], ...overrides };
+}
+
+export function makeAnalysis(overrides: Partial<SmartWalletAnalysisResponse> = {}): SmartWalletAnalysisResponse {
+  const bucket = (smartWallets: string, tokens: number, reached2xPct: number, avg: number, median: number) => ({
+    smartWallets,
+    tokens,
+    reached2xPct,
+    migratedPct: 0.4,
+    avgReturnPct: avg,
+    medianReturnPct: median,
+    winnersPct: 12.5,
+    medianPeakX: 1.1,
+  });
+  return {
+    from: '2026-11-09T00:00:00.000Z',
+    to: '2026-11-16T00:00:00.000Z',
+    costRoundTrip: 0.03,
+    buckets: [
+      bucket('2', 120, 9.3, 4.1, -1.5),
+      bucket('0', 1234, 3.1, -4.2, -6),
+      bucket('5+', 8, 25, 12.5, 3.2),
+      bucket('1', 400, 6.2, -1, -3.5),
+    ],
     ...overrides,
   };
 }

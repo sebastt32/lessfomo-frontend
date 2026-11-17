@@ -3,6 +3,9 @@ import { EmptyState, ErrorState, LoadingState } from '../components/molecules/Se
 import { MoversTable } from '../components/organisms/MoversTable';
 import { formatRelativeTime } from '../lib/format';
 import { isNetworkError } from '../state/errors';
+import { selectVisibleMovers } from '../state/smartWalletFeed';
+import { describeSmartWalletFilter } from '../lib/smartWalletFilter';
+import { useMinSmartWallets } from '../hooks/useMinSmartWallets';
 import { useLiveFeedContext } from './LiveFeedProvider';
 
 export interface MoversContainerProps {
@@ -12,8 +15,11 @@ export interface MoversContainerProps {
 }
 
 export function MoversContainer({ selectedMint, onSelect, now }: MoversContainerProps) {
-  const { state, actions } = useLiveFeedContext();
-  const { status, at, items, error } = state.movers;
+  const { state, smartWallets, actions } = useLiveFeedContext();
+  const [min] = useMinSmartWallets();
+  const { status, at, error } = state.movers;
+  const visible = selectVisibleMovers(state, smartWallets, min);
+  const { items } = visible;
 
   const description = at
     ? `Ranked by momentum score. Updated ${formatRelativeTime(at, now)}, refreshes every minute.`
@@ -32,6 +38,16 @@ export function MoversContainer({ selectedMint, onSelect, now }: MoversContainer
       >
         {error?.message}
       </ErrorState>
+    );
+  } else if (visible.filtered && (visible.hidden > 0 || (status === 'ready' && at !== null))) {
+    body = (
+      <EmptyState title="No mover passes the smart-wallet filter right now">
+        {describeSmartWalletFilter(min)}.{' '}
+        {visible.hidden > 0
+          ? `${visible.hidden} ranked ${visible.hidden === 1 ? 'token was' : 'tokens were'} not bought by enough good-history wallets. `
+          : 'No ranked token was bought by enough good-history wallets. '}
+        Lower the minimum above, or wait for the next ranking in a minute.
+      </EmptyState>
     );
   } else {
     body = (

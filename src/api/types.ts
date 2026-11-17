@@ -66,6 +66,8 @@ export interface Mover {
    * the UI shows a dash until it arrives.
    */
   liquidity?: Liquidity;
+  /** Good-or-elite wallets that bought it. Optional: a backend that predates smart wallets does not send it. */
+  smartWallets?: SmartWalletCounts;
 }
 
 export interface MomentumPoint {
@@ -123,11 +125,19 @@ export interface StatusEvent {
   sources: Sources;
 }
 
+/** A good-or-elite wallet bought or fully sold a token. */
+export interface SmartWalletEvent {
+  mint: string;
+  smartWallets: SmartWalletCounts;
+  wallet: SmartWalletInToken;
+}
+
 export type StreamEvent =
   | { type: 'token'; data: TokenView }
   | { type: 'screening'; data: ScreeningView }
   | { type: 'momentum'; data: MomentumEvent }
-  | { type: 'status'; data: StatusEvent };
+  | { type: 'status'; data: StatusEvent }
+  | { type: 'smart-wallet'; data: SmartWalletEvent };
 
 // Candles and per-token stream (GET /api/tokens/:mint/candles, GET /api/tokens/:mint/stream)
 
@@ -268,9 +278,12 @@ export interface TokenListItem {
   holders: number | null;
   lastTradeAt: string | null;
   snapshotCount: number;
+  /** Optional: a backend that predates smart wallets does not send it. */
+  smartWallets?: SmartWalletCounts;
 }
 
-export type TokenSortField = 'detectedAt' | 'maxScore' | 'peakMarketCapSol' | 'liquidity';
+/** `smartWallets` only sorts descending. */
+export type TokenSortField = 'detectedAt' | 'maxScore' | 'peakMarketCapSol' | 'liquidity' | 'smartWallets';
 
 export type SortDirection = 'asc' | 'desc';
 
@@ -300,4 +313,95 @@ export interface StatsResponse {
   screenings: { passed: number; failed: number; unverified: number; pending: number };
   trades: number;
   snapshots: number;
+}
+
+// Smart wallets: wallets with a good point-in-time trading history
+
+export type WalletTier = 'elite' | 'good' | 'none';
+
+/** Good-or-elite wallets (by tier at entry) that bought a token; `holding` = still holding. */
+export interface SmartWalletCounts {
+  count: number;
+  elite: number;
+  holding: number;
+}
+
+export interface WalletRecord {
+  address: string;
+  /** Current tier, from closed results in the last 7 days. */
+  tier: WalletTier;
+  /** Trades at least 20 distinct tokens per hour on average. */
+  isBot: boolean;
+  /** Closed tokens in the last 7 days. */
+  tokens: number;
+  /** Closed tokens with a positive result. */
+  wins: number;
+  /** 0-100 */
+  winRate: number;
+  /** Sum of closed results, last 7 days. */
+  netPnlSol: number;
+  avgPnlSol: number;
+  /** Seconds from token creation to its first buy. */
+  medianEntrySeconds: number | null;
+  lastActiveAt: string | null;
+  updatedAt: string;
+}
+
+export interface WalletTokenResult {
+  mint: string;
+  symbol: string;
+  name: string;
+  firstBuyAt: string;
+  /** Seconds after the token's creation. */
+  entrySeconds: number;
+  boughtSol: number;
+  soldSol: number;
+  pnlSol: number;
+  closedAt: string;
+}
+
+export interface SmartWalletInToken {
+  address: string;
+  /** Point-in-time tier when it first bought this token. */
+  tierAtEntry: WalletTier;
+  /** Current record, to explain why it is good. */
+  record: WalletRecord;
+  firstBuyAt: string;
+  entrySeconds: number;
+  boughtSol: number;
+  soldSol: number;
+  /** Positive balance per observed trades. */
+  stillHolding: boolean;
+}
+
+export interface TokenSmartWalletsResponse {
+  mint: string;
+  /** Elite first, then by entrySeconds. */
+  smartWallets: SmartWalletInToken[];
+}
+
+export interface WalletResponse {
+  record: WalletRecord;
+  /** Newest first, last 7 days, max 200. */
+  results: WalletTokenResult[];
+}
+
+export interface SmartWalletBucket {
+  /** "0", "1", "2", "3", "4" or "5+". */
+  smartWallets: string;
+  tokens: number;
+  reached2xPct: number;
+  migratedPct: number;
+  avgReturnPct: number;
+  medianReturnPct: number;
+  winnersPct: number;
+  medianPeakX: number;
+}
+
+export interface SmartWalletAnalysisResponse {
+  from: string;
+  to: string;
+  /** Fraction, e.g. 0.03 for 3%. */
+  costRoundTrip: number;
+  buckets: SmartWalletBucket[];
 }

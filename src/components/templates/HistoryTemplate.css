@@ -38,3 +38,16 @@
     overflow-y: auto;
   }
 }
+
+.history__note {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  color: var(--color-caution);
+  background: var(--color-caution-soft);
+  font-size: var(--text-sm);
+}
+
+.history-page__notice {
+  display: grid;
+  gap: var(--space-3);
+}

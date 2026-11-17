@@ -79,7 +79,7 @@ describe('connectStream', () => {
   it('opens an EventSource on the stream URL and subscribes to the four contract events', () => {
     const { states, source } = setup();
     expect(source().url).toBe(URL);
-    expect(source().listenerTypes()).toEqual(['momentum', 'screening', 'status', 'token']);
+    expect(source().listenerTypes()).toEqual(['momentum', 'screening', 'smart-wallet', 'status', 'token']);
     expect(states).toEqual(['connecting']);
   });
 

@@ -4,6 +4,7 @@ import { HistoryTemplate } from '../components/templates/HistoryTemplate';
 import { HeaderContainer } from '../containers/HeaderContainer';
 import { HistoryContainer } from '../containers/HistoryContainer';
 import { OfflineNoticeContainer } from '../containers/OfflineNoticeContainer';
+import { SmartWalletFilterContainer } from '../containers/SmartWalletFilterContainer';
 import { TokenDetailContainer } from '../containers/TokenDetailContainer';
 import { useNow } from '../hooks/useNow';
 import type { HistoryFilters } from '../lib/historyQuery';
@@ -22,7 +23,12 @@ export function HistoryPage({ filters, onFiltersChange, headerExtras }: HistoryP
   return (
     <HistoryTemplate
       header={<HeaderContainer extras={headerExtras} />}
-      notice={<OfflineNoticeContainer />}
+      notice={
+        <>
+          <OfflineNoticeContainer />
+          <SmartWalletFilterContainer />
+        </>
+      }
       list={
         <HistoryContainer
           filters={filters}

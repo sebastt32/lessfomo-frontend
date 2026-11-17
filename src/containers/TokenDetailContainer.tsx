@@ -11,6 +11,8 @@ import { mergeScoreSeries } from '../lib/series';
 import { selectScoreHistory } from '../state/liveFeed';
 import { shortenMint } from '../lib/format';
 import { useLiveFeedContext } from './LiveFeedProvider';
+import { TokenSmartWalletsBody } from './TokenSmartWalletsContainer';
+import { useTokenSmartWallets } from '../hooks/useSmartWallets';
 
 export interface TokenDetailContainerProps {
   mint: string;
@@ -57,6 +59,7 @@ export function TokenDetailContainer({ mint, onClose, now }: TokenDetailContaine
   const { state, retry } = useTokenDetail(meta.client, mint);
   // Fetched alongside the detail, not after it.
   const snapshots = useTokenSnapshots(meta.client, mint);
+  const smartWallets = useTokenSmartWallets(meta.client, mint);
   const snapshotData = snapshots.state.status === 'ready' ? snapshots.state.data : null;
   // The live ranking is fresher than the newest snapshot; fall back to the snapshot for tokens off the ranking.
   const liquidity =
@@ -84,6 +87,7 @@ export function TokenDetailContainer({ mint, onClose, now }: TokenDetailContaine
           now={now}
           liquidity={liquidity}
           lifecycle={snapshotData?.lifecycle ?? null}
+          smartWallets={<TokenSmartWalletsBody result={smartWallets} now={now} />}
           snapshots={<SnapshotsBody result={snapshots} symbol={state.data.token.symbol || shortenMint(mint)} />}
           chart={
             <Suspense fallback={<LoadingState>Loading chart…</LoadingState>}>

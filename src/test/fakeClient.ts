@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import type { ApiClient } from '../api/client';
-import { makeCandles, makeDetail, makeListItem, makeMover, makeScreening, makeSnapshot, makeStats, MINT_A, MINT_B } from './fixtures';
+import { makeAnalysis, makeSmartWallet, makeWalletResponse, makeCandles, makeDetail, makeListItem, makeMover, makeScreening, makeSnapshot, makeStats, MINT_A, MINT_B } from './fixtures';
 
 /** An ApiClient whose every method is a vi.fn with a happy-path answer; override what a test needs. */
 export function fakeClient(overrides: Partial<ApiClient> = {}): ApiClient {
@@ -23,6 +23,9 @@ export function fakeClient(overrides: Partial<ApiClient> = {}): ApiClient {
       snapshots: [makeSnapshot(), makeSnapshot({ milestone: '5m', at: '2026-11-13T20:05:00.000Z' })],
     })),
     getStats: vi.fn(async () => makeStats()),
+    getTokenSmartWallets: vi.fn(async (mint: string) => ({ mint, smartWallets: [makeSmartWallet()] })),
+    getWallet: vi.fn(async () => makeWalletResponse()),
+    getSmartWalletAnalysis: vi.fn(async () => makeAnalysis()),
     tokenStreamUrl: (mint: string) => `http://api.test/api/tokens/${mint}/stream`,
     ...overrides,
   };

@@ -4,6 +4,7 @@ import { DateTime } from '../atoms/DateTime';
 import { StatusBadge } from '../atoms/StatusBadge';
 import { LifecycleBadge } from '../atoms/Tag';
 import { LiquidityCell } from '../molecules/Liquidity';
+import { SmartWalletCount } from '../molecules/SmartWalletCount';
 import { TokenName } from '../molecules/TokenName';
 import { formatCount, formatRelativeTime, formatScore, formatSolAmount } from '../../lib/format';
 import './TokenHistoryTable.css';
@@ -23,7 +24,11 @@ const SORT_LABELS: Record<TokenSortField, string> = {
   liquidity: 'Liquidity',
   peakMarketCapSol: 'Peak market cap',
   maxScore: 'Max score',
+  smartWallets: 'Smart wallets',
 };
+
+/** The API sorts these only from highest to lowest. */
+const DESC_ONLY: ReadonlySet<TokenSortField> = new Set(['smartWallets']);
 
 interface SortableHeaderProps {
   field: TokenSortField;
@@ -36,7 +41,8 @@ function SortableHeader({ field, sort, onSortChange, numeric }: SortableHeaderPr
   const active = sort.field === field;
   const label = SORT_LABELS[field];
   // A new column starts descending (newest, highest first); the active one flips.
-  const next: TokenSort = { field, direction: active && sort.direction === 'desc' ? 'asc' : 'desc' };
+  const flip = active && sort.direction === 'desc' && !DESC_ONLY.has(field);
+  const next: TokenSort = { field, direction: flip ? 'asc' : 'desc' };
   return (
     <th
       scope="col"
@@ -87,6 +93,7 @@ export function TokenHistoryTable({ items, selectedMint, onSelect, sort, onSortC
             </th>
             <SortableHeader field="peakMarketCapSol" sort={sort} onSortChange={onSortChange} numeric />
             <SortableHeader field="maxScore" sort={sort} onSortChange={onSortChange} numeric />
+            <SortableHeader field="smartWallets" sort={sort} onSortChange={onSortChange} numeric />
             <th scope="col" className="history-table__num">
               Holders
             </th>
@@ -129,6 +136,9 @@ export function TokenHistoryTable({ items, selectedMint, onSelect, sort, onSortC
                 <Num>{formatSolAmount(item.lastMarketCapSol)}</Num>
                 <Num>{formatSolAmount(item.peakMarketCapSol)}</Num>
                 <Num>{item.maxScore === null ? '—' : formatScore(item.maxScore)}</Num>
+                <Num>
+                  <SmartWalletCount counts={item.smartWallets} />
+                </Num>
                 <Num>{formatCount(item.holders)}</Num>
                 <td className="history-table__muted">
                   {item.lastTradeAt === null ? (

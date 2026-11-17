@@ -4,6 +4,7 @@ import { DashboardTemplate } from '../components/templates/DashboardTemplate';
 import { HeaderContainer } from '../containers/HeaderContainer';
 import { MoversContainer } from '../containers/MoversContainer';
 import { OfflineNoticeContainer } from '../containers/OfflineNoticeContainer';
+import { SmartWalletFilterContainer } from '../containers/SmartWalletFilterContainer';
 import { ScreeningsContainer } from '../containers/ScreeningsContainer';
 import { TokenDetailContainer } from '../containers/TokenDetailContainer';
 import { useNow } from '../hooks/useNow';
@@ -21,7 +22,12 @@ export function DashboardPage({ headerExtras }: DashboardPageProps = {}) {
   return (
     <DashboardTemplate
       header={<HeaderContainer extras={headerExtras} />}
-      notice={<OfflineNoticeContainer />}
+      notice={
+        <>
+          <OfflineNoticeContainer />
+          <SmartWalletFilterContainer />
+        </>
+      }
       movers={<MoversContainer selectedMint={selectedMint} onSelect={setSelectedMint} now={now} />}
       detail={
         selectedMint === null ? null : (
