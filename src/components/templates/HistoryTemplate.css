@@ -11,32 +11,16 @@
   gap: var(--space-4);
 }
 
-.history-page__list,
-.history-page__detail {
+/* Several panels (Insights) stack with the page's rhythm. */
+.history-page__list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
   min-inline-size: 0;
 }
 
 .history-page__footer {
   margin-block-start: var(--space-5);
-}
-
-@media (min-width: 80rem) {
-  .history-page__main--with-detail {
-    grid-template-columns: minmax(0, 2.2fr) minmax(22rem, 1fr);
-    align-items: start;
-  }
-
-  .history-page__main--with-detail .history-page__notice {
-    grid-column: 1 / -1;
-  }
-
-  /* The detail follows the reader down a long list. */
-  .history-page__detail {
-    position: sticky;
-    inset-block-start: var(--space-4);
-    max-block-size: calc(100vh - 2 * var(--space-4));
-    overflow-y: auto;
-  }
 }
 
 .history__note {

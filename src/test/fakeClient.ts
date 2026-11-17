@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import type { ApiClient } from '../api/client';
-import { makeAnalysis, makeSmartWallet, makeWalletResponse, makeCandles, makeDetail, makeListItem, makeMover, makeScreening, makeSnapshot, makeStats, MINT_A, MINT_B } from './fixtures';
+import { makeAnalysis, makeCyclesAnalysis, makeSmartWallet, makeWalletResponse, makeCandles, makeDetail, makeListItem, makeMover, makeScreening, makeSnapshot, makeStats, MINT_A, MINT_B } from './fixtures';
 
 /** The signed-in user every fake session answers with. */
 export const SESSION_USER = { username: 'superadmin', role: 'superadmin' as const };
@@ -29,6 +29,7 @@ export function fakeClient(overrides: Partial<ApiClient> = {}): ApiClient {
     getTokenSmartWallets: vi.fn(async (mint: string) => ({ mint, smartWallets: [makeSmartWallet()] })),
     getWallet: vi.fn(async () => makeWalletResponse()),
     getSmartWalletAnalysis: vi.fn(async () => makeAnalysis()),
+    getCyclesAnalysis: vi.fn(async () => makeCyclesAnalysis()),
     tokenStreamUrl: (mint: string) => `http://api.test/api/tokens/${mint}/stream`,
     login: vi.fn(async () => SESSION_USER),
     logout: vi.fn(async () => {}),

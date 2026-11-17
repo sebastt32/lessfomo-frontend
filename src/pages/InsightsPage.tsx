@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Disclaimer } from '../components/organisms/Disclaimer';
 import { HistoryTemplate } from '../components/templates/HistoryTemplate';
 import { HeaderContainer } from '../containers/HeaderContainer';
+import { CyclesContainer } from '../containers/CyclesContainer';
 import { InsightsContainer } from '../containers/InsightsContainer';
 import { OfflineNoticeContainer } from '../containers/OfflineNoticeContainer';
 
@@ -14,7 +15,12 @@ export function InsightsPage({ headerExtras }: InsightsPageProps) {
     <HistoryTemplate
       header={<HeaderContainer extras={headerExtras} />}
       notice={<OfflineNoticeContainer />}
-      list={<InsightsContainer />}
+      list={
+        <>
+          <InsightsContainer />
+          <CyclesContainer />
+        </>
+      }
       footer={<Disclaimer />}
       skipLink={{ href: '#insights', label: 'Skip to the analysis' }}
     />

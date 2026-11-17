@@ -1,4 +1,5 @@
-import type { Lifecycle, WalletStyle, WalletTier } from '../../api/types';
+import type { CyclePhase, Lifecycle, WalletStyle, WalletTier } from '../../api/types';
+import { LATE_HINT, PHASE_HINTS, PHASE_LABELS } from '../../lib/cycle';
 import { STYLE_HINTS, STYLE_LABELS, TIER_HINTS, TIER_LABELS } from '../../lib/smartWallets';
 import './Tag.css';
 
@@ -65,6 +66,28 @@ export function BotBadge() {
   return (
     <span className="tag tag--bot" title="Trades 20 or more different tokens per hour on average: most likely automated">
       Bot
+    </span>
+  );
+}
+
+export interface PhaseBadgeProps {
+  phase: CyclePhase;
+}
+
+/** Where a token is in its cycle: stable after appearing, exploding (reached 2× its base price) or crashed. */
+export function PhaseBadge({ phase }: PhaseBadgeProps) {
+  return (
+    <span className={`tag tag--phase-${phase}`} title={PHASE_HINTS[phase]}>
+      {PHASE_LABELS[phase]}
+    </span>
+  );
+}
+
+/** The token appeared in lessfomo after its price had already doubled from launch. */
+export function LateBadge() {
+  return (
+    <span className="tag tag--late" title={LATE_HINT}>
+      Appeared late
     </span>
   );
 }

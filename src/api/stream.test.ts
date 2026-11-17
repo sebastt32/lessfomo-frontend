@@ -76,10 +76,11 @@ afterEach(() => {
 });
 
 describe('connectStream', () => {
-  it('opens an EventSource on the stream URL and subscribes to the four contract events', () => {
+  // Updated for the token-cycle contract: both streams now also carry the `cycle` event.
+  it('opens an EventSource on the stream URL and subscribes to the contract events', () => {
     const { states, source } = setup();
     expect(source().url).toBe(URL);
-    expect(source().listenerTypes()).toEqual(['momentum', 'screening', 'smart-wallet', 'status', 'token']);
+    expect(source().listenerTypes()).toEqual(['cycle', 'momentum', 'screening', 'smart-wallet', 'status', 'token']);
     expect(states).toEqual(['connecting']);
   });
 
@@ -199,10 +200,10 @@ describe('connectTokenStream', () => {
     return { events, states, handle, source: () => FakeEventSource.instances.at(-1)! };
   }
 
-  it('subscribes to the trade and sol-price events of the token stream URL', () => {
+  it('subscribes to the trade, sol-price and cycle events of the token stream URL', () => {
     const { source, states } = setupToken();
     expect(source().url).toBe(TOKEN_URL);
-    expect(source().listenerTypes()).toEqual(['sol-price', 'trade']);
+    expect(source().listenerTypes()).toEqual(['cycle', 'sol-price', 'trade']);
     expect(states).toEqual(['connecting']);
   });
 

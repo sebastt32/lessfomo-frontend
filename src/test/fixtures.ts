@@ -1,5 +1,7 @@
 import type {
+  CyclesAnalysisResponse,
   SmartWalletAnalysisResponse,
+  TokenCycle,
   SmartWalletCounts,
   SmartWalletInToken,
   WalletRecord,
@@ -269,4 +271,96 @@ export function makeAnalysis(overrides: Partial<SmartWalletAnalysisResponse> = {
     ],
     ...overrides,
   };
+}
+
+/**
+ * A cycle that appeared in time: public at 20:02:00 (two minutes after the fixture token's creation),
+ * run-up from 20:08:20, 2× at 20:09:00, peak at 20:12:00 and crash at 20:15:00.
+ */
+export function makeCycle(overrides: Partial<TokenCycle> = {}): TokenCycle {
+  return {
+    appearedAt: '2026-11-13T20:02:00.000Z',
+    launchPriceSol: 0.00000002,
+    appearedPriceSol: 0.00000003,
+    riseBeforeAppearanceX: 1.5,
+    appearedLate: false,
+    phase: 'crashed',
+    runStartAt: '2026-11-13T20:08:20.000Z',
+    explosionAt: '2026-11-13T20:09:00.000Z',
+    investWindowSeconds: 380,
+    peakAt: '2026-11-13T20:12:00.000Z',
+    peakX: 3.2,
+    crashAt: '2026-11-13T20:15:00.000Z',
+    maxDrawdownPct: 62,
+    lastPriceX: 1.4,
+    updatedAt: '2026-11-13T20:15:00.000Z',
+    ...overrides,
+  };
+}
+
+/** A token that appeared and has not reached 2× its base price yet. */
+export function makeStableCycle(overrides: Partial<TokenCycle> = {}): TokenCycle {
+  return makeCycle({
+    phase: 'stable',
+    runStartAt: null,
+    explosionAt: null,
+    investWindowSeconds: null,
+    peakAt: null,
+    peakX: null,
+    crashAt: null,
+    maxDrawdownPct: null,
+    lastPriceX: 1.1,
+    updatedAt: '2026-11-13T20:02:00.000Z',
+    ...overrides,
+  });
+}
+
+export function makeCyclesAnalysis(overrides: Partial<CyclesAnalysisResponse> = {}): CyclesAnalysisResponse {
+  return {
+    from: '2026-11-09T00:00:00.000Z',
+    to: '2026-11-16T00:00:00.000Z',
+    tokens: 491,
+    appearedInTimePct: 61.5,
+    appearedLatePct: 38.5,
+    explodedPct: 44.2,
+    neverExplodedPct: 55.8,
+    crashedPct: 31,
+    medianInvestWindowSeconds: 380,
+    medianPeakX: 2.9,
+    medianSecondsToPeak: 720,
+    medianSecondsPeakToCrash: 95,
+    windowBuckets: [
+      { label: '1-5m', tokens: 80, medianPeakX: 3.1 },
+      { label: 'late', tokens: 189, medianPeakX: 2.2 },
+      { label: '<1m', tokens: 40, medianPeakX: 2.6 },
+      { label: '>1h', tokens: 0, medianPeakX: null },
+      { label: '5-15m', tokens: 60, medianPeakX: 3.4 },
+      { label: '15-60m', tokens: 12, medianPeakX: 4.05 },
+    ],
+    ...overrides,
+  };
+}
+
+/** ISO time of a Unix time in seconds. */
+export const isoAt = (seconds: number) => new Date(seconds * 1000).toISOString();
+
+/**
+ * makeCycle on the candle fixtures' clock: created at T0, appeared 2 minutes later, run-up from T0 + 500 s,
+ * 2× at 9 minutes, peak at 12 and crash at 15.
+ */
+export function makeCandleCycle(overrides: Partial<TokenCycle> = {}): TokenCycle {
+  return makeCycle({
+    appearedAt: isoAt(T0 + 120),
+    runStartAt: isoAt(T0 + 500),
+    explosionAt: isoAt(T0 + 540),
+    peakAt: isoAt(T0 + 720),
+    crashAt: isoAt(T0 + 900),
+    updatedAt: isoAt(T0 + 900),
+    ...overrides,
+  });
+}
+
+/** One candle per minute, `minutes` after T0. */
+export function makeMinuteCandles(...minutes: number[]): Candle[] {
+  return minutes.map((minute) => makeCandle({ time: T0 + minute * 60 }));
 }

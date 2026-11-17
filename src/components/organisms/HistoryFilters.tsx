@@ -1,5 +1,6 @@
 import { useId, useState, type FormEvent } from 'react';
-import type { Lifecycle, SafetyStatus } from '../../api/types';
+import type { CyclePhase, Lifecycle, SafetyStatus } from '../../api/types';
+import { PHASE_LABELS } from '../../lib/cycle';
 import {
   ALL_TIME,
   DATE_PRESET_LABELS,
@@ -10,7 +11,7 @@ import {
   type DateFilter,
   type DatePreset,
 } from '../../lib/dateRange';
-import { hasActiveFilters, STATUS_ORDER, type HistoryFilters as Filters } from '../../lib/historyQuery';
+import { hasActiveFilters, PHASE_ORDER, STATUS_ORDER, type HistoryFilters as Filters } from '../../lib/historyQuery';
 import { SegmentedControl } from '../molecules/SegmentedControl';
 import './HistoryFilters.css';
 
@@ -34,6 +35,19 @@ const MIN_SCORES = [25, 50, 75, 90] as const;
 
 type PresetValue = 'all' | DatePreset | 'other';
 type LifecycleValue = 'all' | Lifecycle;
+type AppearedValue = 'any' | 'in-time' | 'late';
+
+/** `filters` with the phase filter set; an empty list removes it (every phase). */
+function withPhase(filters: Filters, phase: CyclePhase[]): Filters {
+  const { phase: _dropped, ...rest } = filters;
+  return phase.length > 0 ? { ...rest, phase } : rest;
+}
+
+/** `filters` with the appeared-late filter set; null removes it (both). */
+function withAppearedLate(filters: Filters, appearedLate: boolean | null): Filters {
+  const { appearedLate: _dropped, ...rest } = filters;
+  return appearedLate === null ? rest : { ...rest, appearedLate };
+}
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 
@@ -130,6 +144,15 @@ export function HistoryFilters({ filters, years, onChange, onReset }: HistoryFil
     const next = checked ? [...filters.status, status] : filters.status.filter((s) => s !== status);
     set({ status: STATUS_ORDER.filter((s) => next.includes(s)) });
   }
+
+  function togglePhase(phase: CyclePhase, checked: boolean) {
+    const current = filters.phase ?? [];
+    const next = checked ? [...current, phase] : current.filter((p) => p !== phase);
+    onChange(withPhase(filters, PHASE_ORDER.filter((p) => next.includes(p))));
+  }
+
+  const appearedValue: AppearedValue =
+    filters.appearedLate === undefined ? 'any' : filters.appearedLate ? 'late' : 'in-time';
 
   return (
     <div className="history-filters">
@@ -234,7 +257,38 @@ export function HistoryFilters({ filters, years, onChange, onReset }: HistoryFil
         </div>
       </fieldset>
 
+      <fieldset className="history-filters__group">
+        <legend>Cycle phase</legend>
+        <div className="history-filters__checks">
+          {PHASE_ORDER.map((phase) => (
+            <label key={phase} className="history-filters__check">
+              <input
+                type="checkbox"
+                checked={filters.phase?.includes(phase) ?? false}
+                onChange={(event) => togglePhase(phase, event.target.checked)}
+              />
+              {PHASE_LABELS[phase]}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
       <div className="history-filters__group history-filters__group--inline">
+        <div className="history-filters__field">
+          <span className="history-filters__label" aria-hidden="true">
+            Appeared
+          </span>
+          <SegmentedControl<AppearedValue>
+            label="Appeared in lessfomo"
+            value={appearedValue}
+            options={[
+              { value: 'any', label: 'Any time' },
+              { value: 'in-time', label: 'In time' },
+              { value: 'late', label: 'Late' },
+            ]}
+            onChange={(value) => onChange(withAppearedLate(filters, value === 'any' ? null : value === 'late'))}
+          />
+        </div>
         <div className="history-filters__field">
           <span className="history-filters__label" aria-hidden="true">
             Lifecycle

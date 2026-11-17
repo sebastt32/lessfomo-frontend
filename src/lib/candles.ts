@@ -1,8 +1,8 @@
 import type { Candle, CandleInterval, DevTrade, TradeView } from '../api/types';
 
-export const CANDLE_INTERVALS: readonly CandleInterval[] = ['1s', '1m', '5m'];
+export const CANDLE_INTERVALS: readonly CandleInterval[] = ['1s', '1m', '5m', '15m', '1h'];
 
-const INTERVAL_SECONDS: Record<CandleInterval, number> = { '1s': 1, '1m': 60, '5m': 300 };
+const INTERVAL_SECONDS: Record<CandleInterval, number> = { '1s': 1, '1m': 60, '5m': 300, '15m': 900, '1h': 3600 };
 
 export type ChartMetric = 'price' | 'marketCap';
 export type ChartCurrency = 'SOL' | 'USD';

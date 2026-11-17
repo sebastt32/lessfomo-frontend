@@ -3,6 +3,7 @@ import type { TokenListItem, TokenSort, TokenSortField } from '../../api/types';
 import { DateTime } from '../atoms/DateTime';
 import { StatusBadge } from '../atoms/StatusBadge';
 import { LifecycleBadge } from '../atoms/Tag';
+import { CycleCell } from '../molecules/CycleCell';
 import { LiquidityCell } from '../molecules/Liquidity';
 import { SmartWalletCount } from '../molecules/SmartWalletCount';
 import { TokenName } from '../molecules/TokenName';
@@ -11,7 +12,8 @@ import './TokenHistoryTable.css';
 
 export interface TokenHistoryTableProps {
   items: readonly TokenListItem[];
-  selectedMint: string | null;
+  /** The token shown as selected; omit it when selecting opens the token's own view. */
+  selectedMint?: string | null;
   onSelect: (mint: string) => void;
   sort: TokenSort;
   onSortChange: (sort: TokenSort) => void;
@@ -21,6 +23,8 @@ export interface TokenHistoryTableProps {
 
 const SORT_LABELS: Record<TokenSortField, string> = {
   detectedAt: 'Created',
+  appearedAt: 'Appeared',
+  investWindow: 'Invest window',
   liquidity: 'Liquidity',
   peakMarketCapSol: 'Peak market cap',
   maxScore: 'Max score',
@@ -88,6 +92,8 @@ export function TokenHistoryTable({ items, selectedMint, onSelect, sort, onSortC
             <th scope="col">Token</th>
             <th scope="col">Safety</th>
             <th scope="col">Lifecycle</th>
+            <SortableHeader field="appearedAt" sort={sort} onSortChange={onSortChange} />
+            <SortableHeader field="investWindow" sort={sort} onSortChange={onSortChange} />
             <SortableHeader field="liquidity" sort={sort} onSortChange={onSortChange} numeric />
             <th scope="col" className="history-table__num">
               Last market cap
@@ -118,7 +124,7 @@ export function TokenHistoryTable({ items, selectedMint, onSelect, sort, onSortC
                   <button
                     type="button"
                     className="token-button"
-                    aria-pressed={selected}
+                    aria-pressed={selectedMint === undefined ? undefined : selected}
                     aria-label={`Show details for ${token.symbol || token.mint}`}
                     onClick={() => onSelect(token.mint)}
                   >
@@ -130,6 +136,18 @@ export function TokenHistoryTable({ items, selectedMint, onSelect, sort, onSortC
                 </td>
                 <td>
                   <LifecycleBadge lifecycle={item.lifecycle} />
+                </td>
+                <td>
+                  {item.cycle ? (
+                    <DateTime iso={item.cycle.appearedAt} layout="stacked" />
+                  ) : (
+                    <span className="history-table__muted" title="Cycle data not available yet">
+                      —
+                    </span>
+                  )}
+                </td>
+                <td>
+                  <CycleCell cycle={item.cycle} now={now} />
                 </td>
                 <Num>
                   <LiquidityCell liquidity={item.liquidity} />

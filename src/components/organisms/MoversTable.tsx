@@ -4,6 +4,7 @@ import { PriceDelta } from '../atoms/PriceDelta';
 import { ScoreBar } from '../atoms/ScoreBar';
 import { DateTime } from '../atoms/DateTime';
 import { StatusBadge } from '../atoms/StatusBadge';
+import { CycleCell } from '../molecules/CycleCell';
 import { LiquidityCell } from '../molecules/Liquidity';
 import { SmartWalletCount } from '../molecules/SmartWalletCount';
 import { TokenLinks } from '../molecules/TokenLinks';
@@ -13,11 +14,14 @@ import './MoversTable.css';
 
 export interface MoversTableProps {
   movers: readonly Mover[];
-  selectedMint: string | null;
+  /** The token shown as selected; omit it when selecting opens the token's own view. */
+  selectedMint?: string | null;
   onSelect: (mint: string) => void;
+  /** Reference time (ms since epoch) for the cycle of tokens that are still stable. */
+  now?: number;
 }
 
-export function MoversTable({ movers, selectedMint, onSelect }: MoversTableProps) {
+export function MoversTable({ movers, selectedMint, onSelect, now = Date.now() }: MoversTableProps) {
   function handleRowClick(event: MouseEvent<HTMLTableRowElement>, mint: string) {
     // Links open their own page; the token button already bubbles a click here.
     if ((event.target as Element).closest('a')) return;
@@ -36,6 +40,11 @@ export function MoversTable({ movers, selectedMint, onSelect }: MoversTableProps
             <th scope="col">Token</th>
             <th scope="col">Created</th>
             <th scope="col">Score</th>
+            <th scope="col">
+              <abbr title="Phase of the token's cycle, and how long it could be bought after appearing in lessfomo before its run-up">
+                Cycle
+              </abbr>
+            </th>
             <th scope="col" className="movers-table__num">
               <abbr title="Wallets that bought the token: conviction wallets (good record, usually hold), all good-history wallets and how many still hold">Smart wallets</abbr>
             </th>
@@ -72,7 +81,7 @@ export function MoversTable({ movers, selectedMint, onSelect }: MoversTableProps
                   <button
                     type="button"
                     className="token-button"
-                    aria-pressed={selected}
+                    aria-pressed={selectedMint === undefined ? undefined : selected}
                     aria-label={`Show details for ${mover.symbol}`}
                   >
                     <TokenName symbol={mover.symbol} name={mover.name} />
@@ -83,6 +92,9 @@ export function MoversTable({ movers, selectedMint, onSelect }: MoversTableProps
                 </td>
                 <td>
                   <ScoreBar score={mover.score} />
+                </td>
+                <td>
+                  <CycleCell cycle={mover.cycle} now={now} />
                 </td>
                 <td className="movers-table__num">
                   <SmartWalletCount counts={mover.smartWallets} />

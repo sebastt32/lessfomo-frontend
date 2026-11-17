@@ -2,6 +2,7 @@ import { createContext, use, useMemo, type ReactNode } from 'react';
 import type { ApiClient } from '../api/client';
 import { useLiveFeed, type ConnectFn } from '../hooks/useLiveFeed';
 import type { LiveFeedState } from '../state/liveFeed';
+import type { CycleFeedState } from '../state/cycleFeed';
 import type { SmartWalletFeedState } from '../state/smartWalletFeed';
 import { DEFAULT_MIN_CONVICTION_WALLETS } from '../lib/smartWalletFilter';
 
@@ -9,6 +10,8 @@ export interface LiveFeedContextValue {
   state: LiveFeedState;
   /** Smart-wallet counts and whether the backend reports them. */
   smartWallets: SmartWalletFeedState;
+  /** Token cycles seen live and whether the backend reports them. */
+  cycles: CycleFeedState;
   actions: { reload: () => void };
   meta: { client: ApiClient; minConvictionWallets: number };
 }
@@ -30,12 +33,12 @@ export function LiveFeedProvider({
   minConvictionWallets = DEFAULT_MIN_CONVICTION_WALLETS,
   children,
 }: LiveFeedProviderProps) {
-  const { state, smartWallets, reload } = useLiveFeed(
+  const { state, smartWallets, cycles, reload } = useLiveFeed(
     connect ? { client, connect, minConvictionWallets } : { client, minConvictionWallets },
   );
   const value = useMemo<LiveFeedContextValue>(
-    () => ({ state, smartWallets, actions: { reload }, meta: { client, minConvictionWallets } }),
-    [state, smartWallets, reload, client, minConvictionWallets],
+    () => ({ state, smartWallets, cycles, actions: { reload }, meta: { client, minConvictionWallets } }),
+    [state, smartWallets, cycles, reload, client, minConvictionWallets],
   );
   return <LiveFeedContext value={value}>{children}</LiveFeedContext>;
 }

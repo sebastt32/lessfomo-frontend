@@ -2,7 +2,8 @@ import { Panel } from '../components/molecules/Panel';
 import { EmptyState, ErrorState, LoadingState } from '../components/molecules/SectionState';
 import { ScreeningsFeed } from '../components/organisms/ScreeningsFeed';
 import { useMemo } from 'react';
-import type { SmartWalletCounts } from '../api/types';
+import type { SmartWalletCounts, TokenCycle } from '../api/types';
+import { selectCycle } from '../state/cycleFeed';
 import { isNetworkError } from '../state/errors';
 import { selectSmartWalletCounts, selectVisibleScreenings } from '../state/smartWalletFeed';
 import { describeConvictionFilter } from '../lib/smartWalletFilter';
@@ -10,13 +11,13 @@ import { useMinConvictionWallets } from '../hooks/useMinConvictionWallets';
 import { useLiveFeedContext } from './LiveFeedProvider';
 
 export interface ScreeningsContainerProps {
-  selectedMint: string | null;
+  /** Opens the token's own view. */
   onSelect: (mint: string) => void;
   now: number;
 }
 
-export function ScreeningsContainer({ selectedMint, onSelect, now }: ScreeningsContainerProps) {
-  const { state, smartWallets, actions } = useLiveFeedContext();
+export function ScreeningsContainer({ onSelect, now }: ScreeningsContainerProps) {
+  const { state, smartWallets, cycles, actions } = useLiveFeedContext();
   const [min] = useMinConvictionWallets();
   const { status, error } = state.screenings;
   const visible = selectVisibleScreenings(state, smartWallets, min);
@@ -29,17 +30,26 @@ export function ScreeningsContainer({ selectedMint, onSelect, now }: ScreeningsC
     }
     return byMint;
   }, [items, smartWallets]);
+  // Safety checks do not carry the cycle: it comes from the rankings and `cycle` events seen live.
+  const cyclesByMint = useMemo(() => {
+    const byMint: Record<string, TokenCycle> = {};
+    for (const screening of items) {
+      const known = selectCycle(cycles, screening.mint);
+      if (known) byMint[screening.mint] = known;
+    }
+    return byMint;
+  }, [items, cycles]);
 
   let body;
   if (items.length > 0) {
     body = (
       <ScreeningsFeed
         screenings={items}
-        selectedMint={selectedMint}
         onSelect={onSelect}
         now={now}
         createdAt={state.createdAt}
         smartWallets={counts}
+        cycles={cyclesByMint}
       />
     );
   } else if (status === 'loading') {

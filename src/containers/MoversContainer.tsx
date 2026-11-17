@@ -1,25 +1,35 @@
+import { useMemo } from 'react';
 import { Panel } from '../components/molecules/Panel';
 import { EmptyState, ErrorState, LoadingState } from '../components/molecules/SectionState';
 import { MoversTable } from '../components/organisms/MoversTable';
 import { formatRelativeTime } from '../lib/format';
 import { isNetworkError } from '../state/errors';
+import { selectCycle } from '../state/cycleFeed';
 import { selectVisibleMovers } from '../state/smartWalletFeed';
 import { describeConvictionFilter } from '../lib/smartWalletFilter';
 import { useMinConvictionWallets } from '../hooks/useMinConvictionWallets';
 import { useLiveFeedContext } from './LiveFeedProvider';
 
 export interface MoversContainerProps {
-  selectedMint: string | null;
+  /** Opens the token's own view. */
   onSelect: (mint: string) => void;
   now: number;
 }
 
-export function MoversContainer({ selectedMint, onSelect, now }: MoversContainerProps) {
-  const { state, smartWallets, actions } = useLiveFeedContext();
+export function MoversContainer({ onSelect, now }: MoversContainerProps) {
+  const { state, smartWallets, cycles, actions } = useLiveFeedContext();
   const [min] = useMinConvictionWallets();
   const { status, at, error } = state.movers;
   const visible = selectVisibleMovers(state, smartWallets, min);
-  const { items } = visible;
+  // A `cycle` event can be newer than the minute's ranking: show whichever reading was updated last.
+  const items = useMemo(
+    () =>
+      visible.items.map((mover) => {
+        const cycle = selectCycle(cycles, mover.mint, mover.cycle);
+        return cycle === null || cycle === mover.cycle ? mover : { ...mover, cycle };
+      }),
+    [visible.items, cycles],
+  );
 
   const description = at
     ? `Ranked by momentum score. Updated ${formatRelativeTime(at, now)}, refreshes every minute.`
@@ -27,7 +37,7 @@ export function MoversContainer({ selectedMint, onSelect, now }: MoversContainer
 
   let body;
   if (items.length > 0) {
-    body = <MoversTable movers={items} selectedMint={selectedMint} onSelect={onSelect} />;
+    body = <MoversTable movers={items} onSelect={onSelect} now={now} />;
   } else if (status === 'loading') {
     body = <LoadingState>Loading the latest ranking…</LoadingState>;
   } else if (status === 'error') {

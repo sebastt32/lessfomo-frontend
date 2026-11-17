@@ -170,6 +170,9 @@ function applyStreamEvent(state: LiveFeedState, event: StreamEvent): LiveFeedSta
         },
       };
     }
+    case 'cycle':
+      // Cycles live in their own reducer (state/cycleFeed.ts).
+      return state;
     case 'token':
       return {
         ...state,

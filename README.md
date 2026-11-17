@@ -1,7 +1,8 @@
 # lessfomo-frontend
 
 A live dashboard for [lessfomo](https://github.com/sebastt32/lessfomo), a Solana pump.fun memecoin screener that
-only uses free data sources. It has three views, **Live**, **History** and **Insights**, and shows:
+only uses free data sources. It has three list views, **Live**, **History** and **Insights**, plus a separate view
+for each token, and shows:
 
 - **Conviction-wallet filter**: every list shows only tokens bought by conviction wallets: good-history wallets
   (they won most of the tokens they traded in the last 7 days with a net profit) that usually hold what they buy
@@ -20,20 +21,35 @@ only uses free data sources. It has three views, **Live**, **History** and **Ins
   range), safety status, lifecycle (active or dead), minimum max score and text; sort by creation, liquidity, peak
   market cap or max score; paginate. Filters, sort and page live in the URL, so a filtered list can be shared.
 - **Totals**: tokens tracked (active, dead, migrated), safety results, trades and snapshots, in the header.
-- **Token detail**: a token's info with its creation date and time, liquidity and lifecycle, a live candlestick
-  chart, its momentum score over time, its snapshots over time (at creation, 5 min, 1 h, day 3, migration, new
+- **Token view**: selecting a token in any list opens it in its own full-width view with its own shareable URL
+  (`?view=token&mint=<mint>`), instead of a side panel. "Back" returns to the list and filters you came from (the
+  browser's Back button too). It shows a large live candlestick chart with the token's cycle marked on it, the
+  cycle in plain language beside it, and below: its creation date and time, liquidity and lifecycle, its momentum
+  score over time, its snapshots over time (at creation, 5 min, 1 h, day 3, migration, new
   peak, holder milestones...) and its safety check history. Its **Smart wallets** section lists every
   good-history wallet that bought the token (address with copy and Solscan link, tier and style at entry and now
   (conviction, flipper or mixed), bot flag, when and how much it bought, whether it still holds), explains why its
   record is good and how long it usually holds, says what conviction vs flipper means, and loads its recent
   results on demand.
+- **Token cycle** (stable → explosion → crash): for every token, when it appeared in lessfomo (became public), how
+  long it could be bought before its run-up (the invest window), its peak and its crash. On the chart: marks for
+  Created, Appeared in lessfomo, Run-up starts, Explosion, Peak and Crash, a dashed line at the base price (the
+  price when it appeared) and the invest window shaded; a legend under the chart lists every mark with its time
+  and says which ones fall outside the loaded candles. Beside the chart: the phase (Stable, Exploding, Crashed,
+  plus "Appeared late"), a sentence such as "Could be bought for 6 min 20 s before the run-up", "Still stable:
+  12 min since it appeared" (counting) or "Appeared 3 min after it had already exploded", the rise before
+  appearing, peak multiple, time to peak, deepest fall and last price vs base. The cycle is only known as it
+  happens; nothing predicts the future. Movers, safety checks and history show the phase and window compactly;
+  the history filters by phase and by "appeared late" and sorts by appearance time or invest window.
+- **Insights ("Cycles")**: the share of tokens that appeared in time, late or never exploded, the share that
+  crashed, the median invest window, peak and timings, and the tokens and median peak per window length.
 - **Insights ("Does it work?")**: how often tokens reached 2×, their average and median return and the share of
   winners, grouped by how many good-history wallets bought them (none, 1, 2, 3, 4, 5+), or, with the toggle, by
   how many conviction wallets bought them, with the simulated cost and date range.
 - **Smart-wallet counts**: conviction wallets first, then every good-history wallet and how many still hold
   (e.g. "3 conviction · 7 good · 2 holding"), in the movers, safety checks and history; the history can be sorted
   by conviction wallets.
-- **Live chart**: candles with volume for 1s, 1m or 5m intervals, as price or market cap, in SOL or USD, with the
+- **Live chart**: candles with volume for 1s, 1m, 5m, 15m or 1h intervals, as price or market cap, in SOL or USD, with the
   creator's (dev) buys and sells marked. New trades update it as they happen.
 - **Connection status**: whether the live feed is connected and the state of each data source.
 
@@ -57,7 +73,9 @@ unfiltered with a "smart-wallet data not available yet" notice instead of being 
 good-history wallets but not trading styles (`smartWallets.conviction`, `styleAtEntry`, `style`, `flipRate`,
 `medianHoldSeconds`, `by=conviction`), the lists show what the backend makes public with a "conviction data not
 available yet" notice, the token detail says the trading style is not available yet, and Insights explains that
-the conviction grouping is not available yet.
+the conviction grouping is not available yet. On a backend that predates token cycles (`cycle` fields and events,
+`/api/analysis/cycles`, the `phase` / `appearedLate` filters, `15m` / `1h` candles), the token view still works
+with its chart and sections: the cycle parts say "Cycle data not available yet" and the lists show a dash.
 
 ## Authentication
 
@@ -94,15 +112,18 @@ app's origin in `CORS_ORIGIN`, and for the wait time of "Too many attempts" to b
 
 | Parameter | Example | Meaning |
 | --- | --- | --- |
-| `view` | `history`, `insights` | Opens the history list or the insights; anything else is the live view |
+| `view` | `history`, `insights`, `token` | Opens the history list, the insights or a token's own view (with `mint`); anything else is the live view |
+| `mint` | `7GCi…W2hr` | Token view only: the token's mint address. An unknown or non-public token shows "Token not found" with a way back |
 | `minConvictionWallets` | `5` | Minimum conviction wallets that bought a token: `3` (default, the public minimum), `5` or `10` (10 or more); applies to every view. The old `minSmartWallets` is ignored |
 | `by` | `conviction` | Insights only: group the analysis by conviction wallets instead of good-history wallets |
 | `range` | `today`, `7d`, `this-month`, `this-year`, `2025`, `2025-02`, `2025-02-14`, `2026-11-01..2026-11-10` | Creation date filter; ranges include both days and either end may be left open (`2026-11-01..`) |
 | `status` | `passed,failed` | Safety statuses |
 | `lifecycle` | `active` or `dead` | Lifecycle |
 | `minScore` | `50` | Minimum max score (0-100) |
+| `phase` | `stable,exploding` | Cycle phases: `stable`, `exploding`, `crashed` |
+| `appearedLate` | `true` or `false` | Only tokens that appeared after they had already exploded, or only those that appeared in time |
 | `q` | `frog` | Symbol, name or mint prefix |
-| `sort` | `maxScore:desc` | `detectedAt`, `maxScore`, `peakMarketCapSol` or `liquidity`, with `:asc` or `:desc`; or `convictionWallets:desc` or `smartWallets:desc` |
+| `sort` | `maxScore:desc` | `detectedAt`, `appearedAt`, `investWindow`, `maxScore`, `peakMarketCapSol` or `liquidity`, with `:asc` or `:desc`; or `convictionWallets:desc` or `smartWallets:desc` |
 | `page` | `2` | Page of 50 tokens |
 
 Dates are the viewer's local days: they are sent to the API as ISO instants at local midnight.
@@ -145,30 +166,34 @@ src/
 │   ├── types.ts         Types mirroring the backend API contract
 │   ├── client.ts        fetch client (VITE_API_URL), typed ApiError, candles, token list, snapshots, stats,
 │   │                    session endpoints (login, logout, getSession, changePassword), 401 subscription
-│   └── stream.ts        EventSource wrappers: the global feed and the per-token trade stream
+│   └── stream.ts        EventSource wrappers: the global feed and the per-token trade stream (both carry `cycle`)
 ├── state/
 │   ├── auth.ts          Pure reducer for the session: checking, signed out, signed in, unavailable, unreachable
 │   ├── liveFeed.ts      Pure reducer for live data (unit-tested)
+│   ├── cycleFeed.ts     Pure reducer for token cycles seen in rankings and `cycle` events
 │   └── tokenChart.ts    Pure reducer for one token's candles and live trades
 ├── hooks/               useLiveFeed (REST snapshot + SSE), useTokenDetail, useTokenChart, useNow,
-│                        useResource + useHistoryData (token list, snapshots, stats), useLocationSearch (URL state)
+│                        useResource + useHistoryData (token list, snapshots, stats), useLocationSearch (URL state),
+│                        tokenNavigation (open a token's view, back target), useCycles (cycles analysis)
 ├── lib/                 Formatting, external links, failure code labels, score series, candle math,
 │                        dateRange (date filters), historyQuery (URL state), milestones (snapshot labels),
-│                        authErrors (API error codes to typed failures and their messages)
+│                        authErrors (API error codes to typed failures and their messages),
+│                        cycle (cycle sentences, chart marks, shaded window), cyclesAnalysis (Insights rows),
+│                        tokenLocation (token view URL and where "Back" goes)
 ├── components/
 │   ├── atoms/           Wordmark, StatusBadge, ScoreBar, PriceDelta, Sparkline, StatusDot, ExternalLink, DateTime,
-│   │                    LifecycleBadge / MigratedBadge
+│   │                    LifecycleBadge / MigratedBadge / PhaseBadge / LateBadge
 │   ├── molecules/       Panel, TokenName, TokenLinks, ConnectionIndicator, SourceStatusList, section states,
 │   │                    SegmentedControl, CandlestickChart, LiquidityCell / LiquidityMeter, Pagination, ViewNav,
-│   │                    TextField, PasswordField (uncontrolled, with show/hide)
+│   │                    TextField, PasswordField (uncontrolled, with show/hide), CycleCell, BackLink
 │   ├── organisms/       AppHeader, MoversTable, ScreeningsFeed, TokenDetail, TokenChart, OfflineNotice, Disclaimer,
 │   │                    TokenHistoryTable, HistoryFilters, TokenSnapshots, StatsBar, LoginForm, AccountMenu,
-│   │                    ChangePasswordDialog
+│   │                    ChangePasswordDialog, TokenView, CycleSummary, CycleLegend, CyclesAnalysis
 │   └── templates/       DashboardTemplate, HistoryTemplate, LoginTemplate (layout slots only)
 ├── containers/          AuthProvider (session), LiveFeedProvider and one container per section; they read state
 │                        and pass props down
 ├── pages/               AuthenticatedApp (session gate), LoginPage, AppShell (view + filters from the URL),
-│                        DashboardPage and HistoryPage: wire containers into their template and own token selection
+│                        DashboardPage, HistoryPage, InsightsPage and TokenPage: wire containers into their template
 └── styles/              Design tokens (light and dark) and base styles
 ```
 
@@ -180,7 +205,9 @@ Data flow:
 2. Every response and stream event becomes an action for the `liveFeed` reducer. A `momentum` event replaces the
    ranking, a `screening` event is prepended to the feed (at most 100 kept), a `status` event updates the sources.
 3. If the stream drops and recovers, the snapshot is fetched again to fill the gap.
-4. Selecting a token loads `/api/tokens/:mint` and `/api/tokens/:mint/snapshots` in parallel; its score line
+4. Selecting a token navigates to `?view=token&mint=<mint>`; the list it came from is remembered in the browser's
+   history entry, so "Back" restores it with its filters (a link opened directly goes back to the live view). The
+   token view loads `/api/tokens/:mint` and `/api/tokens/:mint/snapshots` in parallel; its score line
    combines the stored history with live readings. Its liquidity comes from the live ranking when the token is on
    it, otherwise from the newest snapshot.
 5. The History view loads `/api/tokens` for the filters in the URL; the header loads `/api/stats` once a minute.
@@ -188,14 +215,19 @@ Data flow:
    `/api/tokens/:mint/stream`. Each `trade` event updates the forming candle or starts a new one (older trades are
    ignored); `sol-price` events keep the USD conversion current. Market cap is `price × totalSupply`, and USD
    values multiply by the SOL/USD price. USD is disabled while that price is unknown. The stream closes when the
-   token detail closes or another token is selected, and the candles are fetched again after a reconnect.
+   token view is left or another token is opened, and the candles are fetched again after a reconnect.
+7. The token's cycle comes from `/api/tokens/:mint`, from `cycle` events on its own stream and from `cycle` events
+   and rankings on `/api/stream`; the reading updated last wins. Cycle marks sit on the candle of their time
+   bucket; a moment older or newer than the loaded candles is left off the chart and only listed in the legend.
 
 ### Charts
 
 The momentum score line is inline SVG. The candlestick chart uses
 [TradingView Lightweight Charts](https://www.tradingview.com/lightweight-charts/) (Apache 2.0), loaded as a separate
 chunk the first time a token is opened. Its license requires attribution, so the TradingView logo on the chart is
-kept enabled and the NOTICE text is shown under the chart. Tests replace the library with a recording fake (`src/test/lightweightChartsFake.ts`) because jsdom
+kept enabled and the NOTICE text is shown under the chart. Cycle marks are series markers, the base price is a
+price line, and the shaded invest window is an element laid over the chart and positioned from
+`timeScale().timeToCoordinate`, updated on scroll, zoom, resize and new candles. Tests replace the library with a recording fake (`src/test/lightweightChartsFake.ts`) because jsdom
 has no canvas.
 
 ## Docker

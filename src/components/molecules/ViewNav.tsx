@@ -9,7 +9,8 @@ export interface ViewNavItem<T extends string> {
 
 export interface ViewNavProps<T extends string> {
   items: readonly ViewNavItem<T>[];
-  current: T;
+  /** The view being shown; null when the page is not one of the items (a token's own view). */
+  current: T | null;
   /** Called for plain left clicks; modified clicks (new tab, etc.) keep the browser's behavior. */
   onNavigate: (href: string) => void;
 }

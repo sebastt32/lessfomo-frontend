@@ -23,13 +23,20 @@ export function useLocationSearch(): string {
 export interface NavigateOptions {
   /** Replace the current history entry instead of adding one. */
   replace?: boolean;
+  /** Stored with the new history entry (e.g. where the reader came from); read it with navigationState(). */
+  state?: unknown;
 }
 
 /** Changes the query string without reloading. `search` is '' or starts with '?'. */
-export function navigate(search: string, { replace = false }: NavigateOptions = {}): void {
+export function navigate(search: string, { replace = false, state }: NavigateOptions = {}): void {
   if (search === window.location.search) return;
   const url = `${window.location.pathname}${search}${window.location.hash}`;
-  if (replace) window.history.replaceState(window.history.state, '', url);
-  else window.history.pushState(null, '', url);
+  if (replace) window.history.replaceState(state === undefined ? window.history.state : state, '', url);
+  else window.history.pushState(state ?? null, '', url);
   window.dispatchEvent(new Event(NAVIGATE_EVENT));
+}
+
+/** The state stored with the current history entry by navigate(); null when there is none. */
+export function navigationState(): unknown {
+  return window.history.state;
 }

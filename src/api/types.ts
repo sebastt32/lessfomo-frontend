@@ -68,6 +68,8 @@ export interface Mover {
   liquidity?: Liquidity;
   /** Good-or-elite wallets that bought it. Optional: a backend that predates smart wallets does not send it. */
   smartWallets?: SmartWalletCounts;
+  /** Stable → explosion → crash cycle. Optional: a backend that predates cycles does not send it. */
+  cycle?: TokenCycle | null;
 }
 
 export interface MomentumPoint {
@@ -108,6 +110,8 @@ export interface TokenDetailResponse {
   screenings: ScreeningView[];
   /** Oldest first. */
   momentum: MomentumPoint[];
+  /** Optional: a backend that predates cycles does not send it. */
+  cycle?: TokenCycle | null;
 }
 
 export interface ApiErrorBody {
@@ -137,11 +141,12 @@ export type StreamEvent =
   | { type: 'screening'; data: ScreeningView }
   | { type: 'momentum'; data: MomentumEvent }
   | { type: 'status'; data: StatusEvent }
-  | { type: 'smart-wallet'; data: SmartWalletEvent };
+  | { type: 'smart-wallet'; data: SmartWalletEvent }
+  | { type: 'cycle'; data: CycleEvent };
 
 // Candles and per-token stream (GET /api/tokens/:mint/candles, GET /api/tokens/:mint/stream)
 
-export type CandleInterval = '1s' | '1m' | '5m';
+export type CandleInterval = '1s' | '1m' | '5m' | '15m' | '1h';
 
 export interface Candle {
   /** Bucket start, Unix seconds (UTC). */
@@ -192,7 +197,10 @@ export interface SolPriceEvent {
   solUsd: number;
 }
 
-export type TokenStreamEvent = { type: 'trade'; data: TradeView } | { type: 'sol-price'; data: SolPriceEvent };
+export type TokenStreamEvent =
+  | { type: 'trade'; data: TradeView }
+  | { type: 'sol-price'; data: SolPriceEvent }
+  | { type: 'cycle'; data: CycleEvent };
 
 // History: liquidity, lifecycle, snapshots, token list and stats
 
@@ -280,11 +288,15 @@ export interface TokenListItem {
   snapshotCount: number;
   /** Optional: a backend that predates smart wallets does not send it. */
   smartWallets?: SmartWalletCounts;
+  /** Stable → explosion → crash cycle. Optional: a backend that predates cycles does not send it. */
+  cycle?: TokenCycle | null;
 }
 
 /** `smartWallets` and `convictionWallets` only sort descending. */
 export type TokenSortField =
   | 'detectedAt'
+  | 'appearedAt'
+  | 'investWindow'
   | 'maxScore'
   | 'peakMarketCapSol'
   | 'liquidity'
@@ -445,4 +457,75 @@ export interface SessionUser {
 /** Body of POST /api/auth/login and GET /api/auth/me. */
 export interface SessionResponse {
   user: SessionUser;
+}
+
+// Token cycle: stable after appearing, explosion, peak, crash (see "Token cycle" in the API contract)
+
+/** stable: not yet 2× base; exploding: reached 2× base; crashed: fell to ≤ 50% of its peak. */
+export type CyclePhase = 'stable' | 'exploding' | 'crashed';
+
+/** Everything is derived from trades seen so far, never from later data. */
+export interface TokenCycle {
+  /** When the token became public in lessfomo (not its creation). */
+  appearedAt: string;
+  /** First trade seen. */
+  launchPriceSol: number | null;
+  /** Base price: last trade at or before appearedAt. */
+  appearedPriceSol: number | null;
+  /** appearedPriceSol / launchPriceSol. */
+  riseBeforeAppearanceX: number | null;
+  /** Before appearing, the price had already reached 2× its launch price. */
+  appearedLate: boolean;
+  phase: CyclePhase;
+  /** Last trade before the explosion with price ≤ 1.2× base (appearedAt if none). */
+  runStartAt: string | null;
+  /** First trade with price ≥ 2× base. */
+  explosionAt: string | null;
+  /**
+   * runStartAt − appearedAt (≥ 0) once exploded; negative when appearedLate (seconds between the earlier 2×
+   * and appearing); null while stable and not late.
+   */
+  investWindowSeconds: number | null;
+  /** Maximum after the explosion. */
+  peakAt: string | null;
+  /** Peak price / base price. */
+  peakX: number | null;
+  /** First trade with price ≤ 50% of the peak, after the peak. */
+  crashAt: string | null;
+  /** 0-100, deepest fall from the peak so far. */
+  maxDrawdownPct: number | null;
+  /** Last price / base price. */
+  lastPriceX: number | null;
+  updatedAt: string;
+}
+
+/** `cycle` event on GET /api/stream and GET /api/tokens/:mint/stream. */
+export interface CycleEvent {
+  mint: string;
+  cycle: TokenCycle;
+}
+
+export interface CycleWindowBucket {
+  /** "late", "<1m", "1-5m", "5-15m", "15-60m" or ">1h". */
+  label: string;
+  tokens: number;
+  medianPeakX: number | null;
+}
+
+/** GET /api/analysis/cycles: aggregates over tokens that appeared in the range. Statistics are null without tokens. */
+export interface CyclesAnalysisResponse {
+  from: string;
+  to: string;
+  tokens: number;
+  /** Shares are 0-100. */
+  appearedInTimePct: number | null;
+  appearedLatePct: number | null;
+  explodedPct: number | null;
+  neverExplodedPct: number | null;
+  crashedPct: number | null;
+  medianInvestWindowSeconds: number | null;
+  medianPeakX: number | null;
+  medianSecondsToPeak: number | null;
+  medianSecondsPeakToCrash: number | null;
+  windowBuckets: CycleWindowBucket[];
 }

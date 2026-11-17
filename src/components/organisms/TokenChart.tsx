@@ -8,16 +8,19 @@ import {
   effectiveCurrency,
   formatChartNumber,
   formatChartValue,
+  toChartValue,
   type ChartBar,
   type ChartCurrency,
   type ChartMetric,
 } from '../../lib/candles';
+import { placeCycle, type CycleMark, type InvestRange } from '../../lib/cycle';
 import { formatSignedPercent } from '../../lib/format';
 import { ExternalLink } from '../atoms/ExternalLink';
 import { StatusDot, type StatusDotTone } from '../atoms/StatusDot';
-import { CandlestickChart } from '../molecules/CandlestickChart';
+import { CandlestickChart, type ChartMark } from '../molecules/CandlestickChart';
 import { SegmentedControl, type SegmentedOption } from '../molecules/SegmentedControl';
 import { EmptyState, ErrorState, LoadingState } from '../molecules/SectionState';
+import { CycleLegend } from './CycleLegend';
 import './TokenChart.css';
 
 export interface TokenChartProps {
@@ -33,7 +36,25 @@ export interface TokenChartProps {
   connection: ConnectionState;
   errorMessage?: string | null;
   onRetry: () => void;
+  /** Moments of the token's cycle to mark on the chart and list under it, oldest first. */
+  marks?: readonly CycleMark[];
+  /** The time the token could be bought, shaded on the chart. */
+  investRange?: InvestRange | null;
+  /** Price when the token appeared in lessfomo (SOL per token), drawn as a dashed line. */
+  basePriceSol?: number | null;
 }
+
+const NO_MARKS: readonly CycleMark[] = [];
+
+/** Short texts for the canvas, where space is tight; the legend under the chart has the full labels. */
+const MARK_TEXT: Record<CycleMark['kind'], string> = {
+  created: 'Created',
+  appeared: 'Appeared',
+  runStart: 'Run-up',
+  explosion: 'Explosion',
+  peak: 'Peak',
+  crash: 'Crash',
+};
 
 const INTERVAL_OPTIONS: SegmentedOption<CandleInterval>[] = CANDLE_INTERVALS.map((value) => ({ value, label: value }));
 
@@ -66,6 +87,9 @@ export function TokenChart({
   connection,
   errorMessage,
   onRetry,
+  marks = NO_MARKS,
+  investRange = null,
+  basePriceSol = null,
 }: TokenChartProps) {
   const [metric, setMetric] = useState<ChartMetric>('price');
   const [currencyChoice, setCurrency] = useState<ChartCurrency>('SOL');
@@ -79,6 +103,31 @@ export function TokenChart({
   // Keyed on the first candle time, not the array, so live ticks do not reset the markers.
   const firstTime = candles[0]?.time ?? null;
   const markers = useMemo(() => devTradeMarkers(devTrades, interval, firstTime), [devTrades, interval, firstTime]);
+
+  // Where the cycle falls on the loaded candles. Moments outside them stay off the chart and are only listed.
+  const placement = useMemo(
+    () =>
+      placeCycle(
+        marks,
+        investRange,
+        candles.map((candle) => candle.time),
+        interval,
+      ),
+    [marks, investRange, candles, interval],
+  );
+  // Keyed on what is drawn, not on the arrays, so live ticks do not redraw unchanged marks.
+  const marksKey = placement.marks.map((mark) => `${mark.kind}@${mark.candleTime ?? ''}`).join('|');
+  const chartMarks = useMemo(
+    () =>
+      placement.marks.flatMap((mark): ChartMark[] =>
+        mark.candleTime === null ? [] : [{ time: mark.candleTime, kind: mark.kind, text: MARK_TEXT[mark.kind] }],
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- marksKey stands for placement.marks
+    [marksKey],
+  );
+  const basePrice =
+    basePriceSol === null ? null : toChartValue(basePriceSol, { metric, currency, totalSupply, solUsd });
+  const priceLine = useMemo(() => (basePrice === null ? null : { price: basePrice, title: 'Base price' }), [basePrice]);
 
   const currencyOptions: SegmentedOption<ChartCurrency>[] = [
     { value: 'SOL', label: 'SOL' },
@@ -117,6 +166,9 @@ export function TokenChart({
         secondsVisible={interval === '1s'}
         label={`${metricName} of ${symbol} in ${currency}, ${interval} candles, ${bars.length} candles`}
         onHover={setHoverTime}
+        marks={chartMarks}
+        priceLine={priceLine}
+        shade={placement.shade}
       />
     );
   }
@@ -171,6 +223,21 @@ export function TokenChart({
       ) : null}
 
       {body}
+
+      <CycleLegend
+        marks={placement.marks}
+        chartShown={status === 'ready' && bars.length > 0}
+        window={
+          investRange
+            ? {
+                from: new Date(investRange.from * 1000).toISOString(),
+                to: investRange.open ? null : new Date(investRange.to * 1000).toISOString(),
+                onChart: placement.shade !== null,
+              }
+            : null
+        }
+        basePrice={basePrice === null ? null : `${formatChartValue(basePrice, currency)} (${metricName.toLowerCase()})`}
+      />
 
       {/* Attribution notice required by the Lightweight Charts license (its NOTICE file). */}
       <p className="token-chart__notice">

@@ -24,8 +24,6 @@ export interface TokenDetailProps {
   /** Score over time, oldest first (stored history plus live readings). */
   scores: readonly ScorePoint[];
   now: number;
-  /** Slot for the live price chart, rendered above the momentum score and safety history. */
-  chart?: ReactNode;
   /** Latest known liquidity (live ranking or newest snapshot); undefined when the backend does not report it. */
   liquidity?: Liquidity | null;
   /** From the snapshots endpoint, when available. */
@@ -55,7 +53,6 @@ export function TokenDetail({
   detail,
   scores,
   now,
-  chart,
   liquidity,
   lifecycle,
   snapshots,
@@ -118,8 +115,6 @@ export function TokenDetail({
         </section>
       ) : null}
 
-      {chart}
-
       <figure className="token-detail__chart">
         <figcaption>
           <span>Momentum score</span>
@@ -145,7 +140,10 @@ export function TokenDetail({
         </section>
       ) : null}
 
-      <h3 className="token-detail__subtitle">Safety check history</h3>
+      <section className="token-detail__section" aria-labelledby="token-detail-safety">
+      <h3 id="token-detail-safety" className="token-detail__subtitle">
+        Safety check history
+      </h3>
       {screenings.length === 0 ? (
         <p className="token-detail__note">Not checked yet. Safety checks run shortly after a token is detected.</p>
       ) : (
@@ -170,6 +168,7 @@ export function TokenDetail({
           ))}
         </ol>
       )}
+      </section>
     </div>
   );
 }

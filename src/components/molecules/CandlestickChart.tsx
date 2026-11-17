@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { THEME_CHANGE_EVENT } from '../../lib/theme';
 import {
   CandlestickSeries,
@@ -7,7 +7,9 @@ import {
   createSeriesMarkers,
   CrosshairMode,
   HistogramSeries,
+  LineStyle,
   type IChartApi,
+  type IPriceLine,
   type ISeriesApi,
   type ISeriesMarkersPluginApi,
   type MouseEventParams,
@@ -16,6 +18,7 @@ import {
   type UTCTimestamp,
 } from 'lightweight-charts';
 import { formatChartNumber, type ChartBar, type DevMarker } from '../../lib/candles';
+import type { CycleMarkKind } from '../../lib/cycle';
 import './CandlestickChart.css';
 
 export interface CandlestickChartProps {
@@ -28,6 +31,29 @@ export interface CandlestickChartProps {
   label: string;
   /** Called with the hovered bar time, or null when the pointer leaves the bars. */
   onHover: (time: number | null) => void;
+  /** Moments of the token's cycle, each on the time of a loaded bar, oldest first. */
+  marks?: readonly ChartMark[];
+  /** A horizontal reference line, e.g. the base price, in the chart's units. */
+  priceLine?: ChartPriceLine | null;
+  /** A time range to shade (bar times of its first and last bar), e.g. the invest window. */
+  shade?: ChartShade | null;
+}
+
+export interface ChartMark {
+  /** Time of the bar the mark sits on. */
+  time: number;
+  kind: CycleMarkKind;
+  text: string;
+}
+
+export interface ChartPriceLine {
+  price: number;
+  title: string;
+}
+
+export interface ChartShade {
+  from: number;
+  to: number;
 }
 
 interface ChartColors {
@@ -36,6 +62,8 @@ interface ChartColors {
   ink: string;
   muted: string;
   line: string;
+  accent: string;
+  caution: string;
   font: string;
 }
 
@@ -45,6 +73,8 @@ const FALLBACK_COLORS: ChartColors = {
   ink: '#17222b',
   muted: '#56636d',
   line: '#d3dad5',
+  accent: '#2440c8',
+  caution: '#7f5200',
   font: 'system-ui, sans-serif',
 };
 
@@ -61,6 +91,8 @@ function readColors(element: HTMLElement): ChartColors {
     ink: token('--color-ink', FALLBACK_COLORS.ink),
     muted: token('--color-muted', FALLBACK_COLORS.muted),
     line: token('--color-line', FALLBACK_COLORS.line),
+    accent: token('--color-accent', FALLBACK_COLORS.accent),
+    caution: token('--color-caution', FALLBACK_COLORS.caution),
     font: token('--font-body', FALLBACK_COLORS.font),
   };
 }
@@ -112,6 +144,24 @@ function formatLocalTime(time: Time, withSeconds: boolean): string {
   });
 }
 
+interface MarkStyle {
+  position: 'belowBar' | 'aboveBar';
+  shape: 'circle' | 'square' | 'arrowUp' | 'arrowDown';
+  color: 'up' | 'down' | 'muted' | 'accent' | 'caution';
+}
+
+/** Cycle marks: what led up to the move sits below the bars, what came of it above. */
+const MARK_STYLES: Record<CycleMarkKind, MarkStyle> = {
+  created: { position: 'belowBar', shape: 'circle', color: 'muted' },
+  appeared: { position: 'belowBar', shape: 'arrowUp', color: 'accent' },
+  runStart: { position: 'belowBar', shape: 'circle', color: 'caution' },
+  explosion: { position: 'aboveBar', shape: 'square', color: 'up' },
+  peak: { position: 'aboveBar', shape: 'arrowDown', color: 'up' },
+  crash: { position: 'aboveBar', shape: 'arrowDown', color: 'down' },
+};
+
+const NO_MARKS: readonly ChartMark[] = [];
+
 interface ChartRefs {
   chart: IChartApi;
   candles: ISeriesApi<'Candlestick'>;
@@ -123,8 +173,20 @@ interface ChartRefs {
  * Candles with a volume histogram, drawn by TradingView Lightweight Charts.
  * Live changes to the last bar go through `update`; anything else replaces the data.
  */
-export function CandlestickChart({ bars, markers, secondsVisible, label, onHover }: CandlestickChartProps) {
+export function CandlestickChart({
+  bars,
+  markers,
+  secondsVisible,
+  label,
+  onHover,
+  marks = NO_MARKS,
+  priceLine = null,
+  shade = null,
+}: CandlestickChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const shadeRef = useRef<HTMLDivElement>(null);
+  const shadeBounds = useRef<ChartShade | null>(null);
+  const priceLineRef = useRef<IPriceLine | null>(null);
   const refs = useRef<ChartRefs | null>(null);
   const previous = useRef<{ bars: readonly ChartBar[]; colors: ChartColors | null }>({ bars: [], colors: null });
   const onHoverRef = useRef(onHover);
@@ -133,6 +195,36 @@ export function CandlestickChart({ bars, markers, secondsVisible, label, onHover
   useEffect(() => {
     onHoverRef.current = onHover;
   }, [onHover]);
+
+  /**
+   * Moves the shaded range over its bars. The library draws on a canvas, so the range is an element laid
+   * over the pane and positioned from the time scale; it follows scroll, zoom, resize and new bars.
+   */
+  const positionShade = useCallback(() => {
+    const element = shadeRef.current;
+    if (!element) return;
+    const chart = refs.current;
+    const bounds = shadeBounds.current;
+    const scale = chart?.chart.timeScale();
+    const start = scale && bounds ? scale.timeToCoordinate(asTime(bounds.from)) : null;
+    const end = scale && bounds ? scale.timeToCoordinate(asTime(bounds.to)) : null;
+    if (!scale || start === null || end === null) {
+      element.hidden = true;
+      return;
+    }
+    // Coordinates are bar centers: widen by half a bar so the first and last bars are covered.
+    const half = scale.options().barSpacing / 2;
+    const left = Math.max(0, Math.min(start, end) - half);
+    const right = Math.min(scale.width(), Math.max(start, end) + half);
+    if (right <= left) {
+      element.hidden = true;
+      return;
+    }
+    element.hidden = false;
+    element.style.left = `${left}px`;
+    element.style.width = `${right - left}px`;
+    element.style.bottom = `${scale.height()}px`;
+  }, []);
 
   // Create the chart once; it sizes itself to the container (autoSize uses a ResizeObserver).
   useEffect(() => {
@@ -166,6 +258,9 @@ export function CandlestickChart({ bars, markers, secondsVisible, label, onHover
       onHoverRef.current(typeof param.time === 'number' ? param.time : null);
     };
     chart.subscribeCrosshairMove(handleCrosshair);
+    const timeScale = chart.timeScale();
+    timeScale.subscribeVisibleLogicalRangeChange(positionShade);
+    timeScale.subscribeSizeChange(positionShade);
 
     // Follow the light/dark design tokens.
     const media = typeof window.matchMedia === 'function' ? window.matchMedia(DARK_QUERY) : null;
@@ -181,11 +276,14 @@ export function CandlestickChart({ bars, markers, secondsVisible, label, onHover
       media?.removeEventListener('change', syncColors);
       window.removeEventListener(THEME_CHANGE_EVENT, syncColors);
       chart.unsubscribeCrosshairMove(handleCrosshair);
+      timeScale.unsubscribeVisibleLogicalRangeChange(positionShade);
+      timeScale.unsubscribeSizeChange(positionShade);
+      priceLineRef.current = null;
       chart.remove();
       refs.current = null;
       previous.current = { bars: [], colors: null };
     };
-  }, []);
+  }, [positionShade]);
 
   useEffect(() => {
     const chart = refs.current;
@@ -236,23 +334,70 @@ export function CandlestickChart({ bars, markers, secondsVisible, label, onHover
       if (prev.bars.length === 0 && bars.length > 0) chart.chart.timeScale().fitContent();
     }
     previous.current = { bars, colors };
-  }, [bars, colors]);
+    // New bars can move the shaded range even when the visible range does not change.
+    positionShade();
+  }, [bars, colors, positionShade]);
 
   useEffect(() => {
     const chart = refs.current;
     if (!chart) return;
-    chart.markers.setMarkers(
-      markers.map(
-        (marker): SeriesMarker<Time> => ({
-          time: asTime(marker.time),
-          position: marker.side === 'buy' ? 'belowBar' : 'aboveBar',
-          shape: marker.side === 'buy' ? 'arrowUp' : 'arrowDown',
-          color: marker.side === 'buy' ? colors.up : colors.down,
-          text: marker.text,
-        }),
-      ),
+    const devMarkers = markers.map(
+      (marker): SeriesMarker<Time> => ({
+        time: asTime(marker.time),
+        position: marker.side === 'buy' ? 'belowBar' : 'aboveBar',
+        shape: marker.side === 'buy' ? 'arrowUp' : 'arrowDown',
+        color: marker.side === 'buy' ? colors.up : colors.down,
+        text: marker.text,
+      }),
     );
-  }, [markers, colors]);
+    const cycleMarkers = marks.map((mark): SeriesMarker<Time> => {
+      const style = MARK_STYLES[mark.kind];
+      return {
+        time: asTime(mark.time),
+        position: style.position,
+        shape: style.shape,
+        color: colors[style.color],
+        text: mark.text,
+      };
+    });
+    // The library needs markers in time order; the sort is stable, so cycle marks stay in cycle order.
+    chart.markers.setMarkers(
+      [...cycleMarkers, ...devMarkers].sort((a, b) => (a.time as number) - (b.time as number)),
+    );
+  }, [markers, marks, colors]);
 
-  return <div ref={containerRef} className="candlestick-chart" role="img" aria-label={label} />;
+  const linePrice = priceLine?.price ?? null;
+  const lineTitle = priceLine?.title ?? '';
+  useEffect(() => {
+    const chart = refs.current;
+    if (!chart) return;
+    if (priceLineRef.current) {
+      chart.candles.removePriceLine(priceLineRef.current);
+      priceLineRef.current = null;
+    }
+    if (linePrice === null || !Number.isFinite(linePrice)) return;
+    priceLineRef.current = chart.candles.createPriceLine({
+      price: linePrice,
+      title: lineTitle,
+      color: colors.accent,
+      lineWidth: 1,
+      lineStyle: LineStyle.Dashed,
+      axisLabelVisible: true,
+    });
+  }, [linePrice, lineTitle, colors]);
+
+  const shadeFrom = shade?.from ?? null;
+  const shadeTo = shade?.to ?? null;
+  useEffect(() => {
+    shadeBounds.current = shadeFrom === null || shadeTo === null ? null : { from: shadeFrom, to: shadeTo };
+    positionShade();
+  }, [shadeFrom, shadeTo, positionShade]);
+
+  return (
+    <div className="candlestick-chart">
+      <div ref={containerRef} className="candlestick-chart__canvas" role="img" aria-label={label} />
+      {/* Decorative: the legend under the chart says what the shaded range is, with its times. */}
+      <div ref={shadeRef} className="candlestick-chart__shade" aria-hidden="true" hidden />
+    </div>
+  );
 }

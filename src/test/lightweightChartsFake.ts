@@ -24,6 +24,8 @@ export class FakeSeries {
   data: Options[] = [];
   options: Options;
   markers: Options[] = [];
+  /** Price lines currently on the series (createPriceLine minus removePriceLine). */
+  priceLines: Options[] = [];
   readonly calls: { method: 'setData' | 'update' | 'setMarkers' | 'applyOptions'; arg: unknown }[] = [];
 
   constructor(
@@ -54,6 +56,16 @@ export class FakeSeries {
     return { applyOptions: () => {} };
   }
 
+  createPriceLine(options: Options): Options {
+    const line = { ...options };
+    this.priceLines.push(line);
+    return line;
+  }
+
+  removePriceLine(line: Options): void {
+    this.priceLines = this.priceLines.filter((candidate) => candidate !== line);
+  }
+
   count(method: FakeSeries['calls'][number]['method']): number {
     return this.calls.filter((call) => call.method === method).length;
   }
@@ -64,6 +76,13 @@ export class FakeChart {
   removed = false;
   fitted = 0;
   private handlers: CrosshairHandler[] = [];
+  private scaleHandlers: (() => void)[] = [];
+  /** Pixels per bar and horizontal scroll of the fake time scale. */
+  barSpacing = 10;
+  scrollPx = 0;
+  /** Width of the time scale (the pane without the price axis) and height of the time axis. */
+  paneWidth = 600;
+  axisHeight = 26;
 
   constructor(
     readonly container: HTMLElement,
@@ -81,11 +100,29 @@ export class FakeChart {
   }
 
   timeScale() {
+    const subscribe = (handler: () => void) => {
+      this.scaleHandlers.push(handler);
+    };
+    const unsubscribe = (handler: () => void) => {
+      this.scaleHandlers = this.scaleHandlers.filter((h) => h !== handler);
+    };
     return {
       fitContent: () => {
         this.fitted += 1;
       },
       applyOptions: () => {},
+      options: () => ({ barSpacing: this.barSpacing }),
+      width: () => this.paneWidth,
+      height: () => this.axisHeight,
+      /** Like the library: only times that have a bar map to a coordinate (the bar's center). */
+      timeToCoordinate: (time: number) => {
+        const index = this.candles().data.findIndex((bar) => bar.time === time);
+        return index === -1 ? null : index * this.barSpacing + this.barSpacing / 2 - this.scrollPx;
+      },
+      subscribeVisibleLogicalRangeChange: subscribe,
+      unsubscribeVisibleLogicalRangeChange: unsubscribe,
+      subscribeSizeChange: subscribe,
+      unsubscribeSizeChange: unsubscribe,
     };
   }
 
@@ -108,6 +145,17 @@ export class FakeChart {
 
   volume(): FakeSeries {
     return this.series.find((s) => s.type === 'Histogram')!;
+  }
+
+  /** Simulates the reader scrolling the chart by `px` pixels. */
+  scroll(px: number): void {
+    this.scrollPx += px;
+    for (const handler of [...this.scaleHandlers]) handler();
+  }
+
+  /** Listeners on the time scale (visible range and size). */
+  scaleListenerCount(): number {
+    return this.scaleHandlers.length;
   }
 
   hover(time: number | undefined): void {
@@ -147,5 +195,6 @@ export function createSeriesMarkers(series: FakeSeries, markers: Options[] = [])
 
 export const CandlestickSeries = { type: 'Candlestick' };
 export const HistogramSeries = { type: 'Histogram' };
+export const LineStyle = { Solid: 0, Dotted: 1, Dashed: 2, LargeDashed: 3, SparseDotted: 4 } as const;
 export const ColorType = { Solid: 'solid', VerticalGradient: 'gradient' } as const;
 export const CrosshairMode = { Normal: 0, Magnet: 1, Hidden: 2, MagnetOHLC: 3 } as const;

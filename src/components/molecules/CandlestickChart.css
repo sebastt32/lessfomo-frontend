@@ -1,11 +1,39 @@
 .candlestick-chart {
   position: relative;
   inline-size: 100%;
-  block-size: 18rem;
+  block-size: var(--chart-block-size, 18rem);
+}
+
+.candlestick-chart__canvas {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+/* A time range laid over the chart pane; positioned in pixels from the chart's time scale. */
+.candlestick-chart__shade {
+  position: absolute;
+  inset-block-start: 0;
+  z-index: 3;
+  background: var(--color-accent);
+  opacity: 0.12;
+  border-inline: 1px dashed var(--color-accent);
+  pointer-events: none;
+}
+
+.candlestick-chart__shade[hidden] {
+  display: none;
 }
 
 @media (max-width: 40rem) {
   .candlestick-chart {
-    block-size: 15rem;
+    block-size: var(--chart-block-size-narrow, 15rem);
+  }
+}
+
+@media (forced-colors: active) {
+  .candlestick-chart__shade {
+    background: none;
+    opacity: 1;
+    border-inline: 2px dashed CanvasText;
   }
 }

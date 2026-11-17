@@ -3,8 +3,8 @@ import type { StreamEvent, TokenStreamEvent } from './types';
 /** Connection state of the live SSE feed, as shown to the user. */
 export type ConnectionState = 'connecting' | 'connected' | 'reconnecting' | 'offline';
 
-const EVENT_TYPES = ['token', 'screening', 'momentum', 'status', 'smart-wallet'] as const satisfies readonly StreamEvent['type'][];
-const TOKEN_EVENT_TYPES = ['trade', 'sol-price'] as const satisfies readonly TokenStreamEvent['type'][];
+const EVENT_TYPES = ['token', 'screening', 'momentum', 'status', 'smart-wallet', 'cycle'] as const satisfies readonly StreamEvent['type'][];
+const TOKEN_EVENT_TYPES = ['trade', 'sol-price', 'cycle'] as const satisfies readonly TokenStreamEvent['type'][];
 
 const CLOSED = 2;
 
@@ -45,7 +45,7 @@ interface BaseStreamOptions<E> {
 
 export type StreamOptions = BaseStreamOptions<StreamEvent>;
 
-/** Options for GET /api/tokens/:mint/stream (`trade` and `sol-price` events). */
+/** Options for GET /api/tokens/:mint/stream (`trade`, `sol-price` and `cycle` events). */
 export type TokenStreamOptions = BaseStreamOptions<TokenStreamEvent>;
 
 export interface StreamHandle {
@@ -58,12 +58,12 @@ function defaultEventSource(): EventSourceConstructor | undefined {
   return typeof EventSource === 'undefined' ? undefined : (EventSource as unknown as EventSourceConstructor);
 }
 
-/** Subscribes to GET /api/stream (token, screening, momentum, status and smart-wallet events). */
+/** Subscribes to GET /api/stream (token, screening, momentum, status, smart-wallet and cycle events). */
 export function connectStream(options: StreamOptions): StreamHandle {
   return connectEventSource(options, EVENT_TYPES);
 }
 
-/** Subscribes to GET /api/tokens/:mint/stream (trade and sol-price events of one token). */
+/** Subscribes to GET /api/tokens/:mint/stream (trade, sol-price and cycle events of one token). */
 export function connectTokenStream(options: TokenStreamOptions): StreamHandle {
   return connectEventSource(options, TOKEN_EVENT_TYPES);
 }

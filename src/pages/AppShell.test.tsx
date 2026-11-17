@@ -72,7 +72,8 @@ describe('AppShell navigation', () => {
     renderApp(client);
 
     await user.click(await screen.findByRole('button', { name: 'Show details for FROG' }));
-    const panel = await screen.findByRole('region', { name: 'FROG' });
+    // S1: the token opens in its own view instead of a side panel.
+    const panel = await screen.findByRole('article', { name: 'FROG' });
     expect(await within(panel).findByText(/Snapshots are not available for this token yet/)).toBeInTheDocument();
     expect(within(panel).getByText('Liquidity is not reported for this token yet.')).toBeInTheDocument();
     await waitFor(() => expect(client.getStats).toHaveBeenCalled());
@@ -151,13 +152,14 @@ describe('History view', () => {
     expect(screen.getByRole('region', { name: 'Token history' })).toHaveTextContent('120 tokens created at any time');
   });
 
-  it('opens the token detail with its snapshots when a row is selected', async () => {
+  // S1: the token used to open in a panel beside the list; it now opens in its own view.
+  it('opens the token view with its snapshots when a row is selected', async () => {
     const user = userEvent.setup();
     const client = fakeClient();
     renderApp(client, '/?view=history');
 
     await user.click(await screen.findByRole('button', { name: 'Show details for FROG' }));
-    const panel = await screen.findByRole('region', { name: 'FROG' });
+    const panel = await screen.findByRole('article', { name: 'FROG' });
     const snapshots = await within(panel).findByRole('region', { name: 'Snapshots of FROG' });
     const rows = within(snapshots).getAllByRole('row').slice(1);
     expect(rows.map((row) => within(row).getByRole('rowheader').textContent)).toEqual(['At creation', '5 min']);

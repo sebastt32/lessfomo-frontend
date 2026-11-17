@@ -5,6 +5,7 @@ import { HistoryFilters } from '../components/organisms/HistoryFilters';
 import { TokenHistoryTable } from '../components/organisms/TokenHistoryTable';
 import { useTokenList } from '../hooks/useHistoryData';
 import { describeDateFilter, type DateFilter } from '../lib/dateRange';
+import { CYCLE_UNAVAILABLE } from '../lib/cycle';
 import { formatCount } from '../lib/format';
 import {
   DEFAULT_HISTORY,
@@ -21,7 +22,7 @@ import { useLiveFeedContext } from './LiveFeedProvider';
 export interface HistoryContainerProps {
   filters: Filters;
   onFiltersChange: (filters: Filters) => void;
-  selectedMint: string | null;
+  /** Opens the token's own view. */
   onSelect: (mint: string) => void;
   /** Reference time (ms since epoch); also anchors the date presets to the viewer's local day. */
   now: number;
@@ -50,7 +51,7 @@ function createdPhrase(filter: DateFilter): string {
   }
 }
 
-export function HistoryContainer({ filters, onFiltersChange, selectedMint, onSelect, now }: HistoryContainerProps) {
+export function HistoryContainer({ filters, onFiltersChange, onSelect, now }: HistoryContainerProps) {
   const { meta } = useLiveFeedContext();
   // Presets resolve to local day boundaries, so the query (and the request) only changes when a day rolls over.
   const [minConvictionWallets] = useMinConvictionWallets();
@@ -67,6 +68,8 @@ export function HistoryContainer({ filters, onFiltersChange, selectedMint, onSel
   const smartDataMissing = hasRows && data.tokens.every((t) => !t.smartWallets);
   const convictionMissing =
     hasRows && !smartDataMissing && data.tokens.every((t) => typeof t.smartWallets?.conviction !== 'number');
+  // A backend that predates token cycles sends rows without the `cycle` field and ignores (or rejects) its filters.
+  const cycleMissing = hasRows && data.tokens.every((t) => t.cycle === undefined);
   const smartPhrase =
     smartDataMissing || convictionMissing
       ? ''
@@ -125,9 +128,14 @@ export function HistoryContainer({ filters, onFiltersChange, selectedMint, onSel
             not filtered by the conviction minimum and sorting by conviction wallets may be rejected.
           </p>
         ) : null}
+        {cycleMissing ? (
+          <p className="history__note">
+            {CYCLE_UNAVAILABLE}: this screener API does not report token cycles, so the phase and invest window
+            columns are empty and their filters and sorts may be ignored or rejected.
+          </p>
+        ) : null}
         <TokenHistoryTable
           items={data.tokens}
-          selectedMint={selectedMint}
           onSelect={onSelect}
           sort={filters.sort}
           onSortChange={(sort) => changeFilters({ ...filters, sort })}

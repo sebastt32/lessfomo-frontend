@@ -63,3 +63,25 @@
   color: var(--color-muted);
   box-shadow: inset 0 0 0 1px var(--color-line);
 }
+
+/* Cycle phases: outline while nothing happened yet, filled once the price moved. */
+.tag--phase-stable {
+  color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.tag--phase-exploding {
+  color: var(--color-up);
+  background: var(--color-up-soft);
+  font-weight: 700;
+}
+
+.tag--phase-crashed {
+  color: var(--color-down);
+  background: var(--color-down-soft);
+}
+
+.tag--late {
+  color: var(--color-caution);
+  background: var(--color-caution-soft);
+}

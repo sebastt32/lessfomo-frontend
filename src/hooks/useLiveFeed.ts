@@ -7,6 +7,7 @@ import {
   smartWalletFeedReducer,
   type SmartWalletFeedState,
 } from '../state/smartWalletFeed';
+import { cycleFeedReducer, initialCycleFeedState, type CycleFeedState } from '../state/cycleFeed';
 import { DEFAULT_MIN_CONVICTION_WALLETS } from '../lib/smartWalletFilter';
 import { toFeedError } from '../state/errors';
 
@@ -25,6 +26,8 @@ export interface UseLiveFeedOptions {
 export interface LiveFeed {
   state: LiveFeedState;
   smartWallets: SmartWalletFeedState;
+  /** Token cycles seen in rankings and `cycle` events, and whether the backend reports them. */
+  cycles: CycleFeedState;
   /** Fetches health, movers and screenings again. */
   reload: () => void;
 }
@@ -40,9 +43,11 @@ export function useLiveFeed({
 }: UseLiveFeedOptions): LiveFeed {
   const [state, dispatchFeed] = useReducer(liveFeedReducer, initialLiveFeedState);
   const [smartWallets, dispatchSmart] = useReducer(smartWalletFeedReducer, initialSmartWalletFeedState);
+  const [cycles, dispatchCycles] = useReducer(cycleFeedReducer, initialCycleFeedState);
   const dispatch = useCallback((action: LiveFeedAction) => {
     dispatchFeed(action);
     dispatchSmart(action);
+    dispatchCycles(action);
   }, []);
   const inFlight = useRef<AbortController | null>(null);
   // Read at request time so a new threshold reloads the lists without reopening the stream.
@@ -104,5 +109,5 @@ export function useLiveFeed({
     };
   }, [client, connect, load, dispatch]);
 
-  return { state, smartWallets, reload: load };
+  return { state, smartWallets, cycles, reload: load };
 }

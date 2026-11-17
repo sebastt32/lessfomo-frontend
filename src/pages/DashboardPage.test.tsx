@@ -1,9 +1,10 @@
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, type ApiClient } from '../api/client';
 import type { ConnectionState, StreamOptions } from '../api/stream';
 import { LiveFeedProvider } from '../containers/LiveFeedProvider';
+import { AppShell } from './AppShell';
 import { DashboardPage } from './DashboardPage';
 import { fakeClient } from '../test/fakeClient';
 import { makeMover, MINT_A, MINT_B } from '../test/fixtures';
@@ -30,6 +31,17 @@ function renderPage(client: ApiClient, connect: ReturnType<typeof fakeConnect>['
     </LiveFeedProvider>,
   );
 }
+
+/** The live view inside the app shell, which owns the URL: selecting a token opens its own view (S1). */
+function renderApp(client: ApiClient, connect: ReturnType<typeof fakeConnect>['connect']) {
+  return render(
+    <LiveFeedProvider client={client} connect={connect}>
+      <AppShell />
+    </LiveFeedProvider>,
+  );
+}
+
+afterEach(() => window.history.replaceState(null, '', '/'));
 
 describe('DashboardPage', () => {
   it('shows a friendly offline state when the backend is not running', async () => {
@@ -83,49 +95,60 @@ describe('DashboardPage', () => {
     expect(client.getScreenings).toHaveBeenCalledTimes(2);
   });
 
-  it('loads token detail when a row is selected', async () => {
+  // S1: the token detail used to open in a side panel of the live view; it is now a separate view with its own URL.
+  it('opens the token in its own view when a row is selected, and comes back with Back', async () => {
     const client = fakeClient();
     const user = userEvent.setup();
-    renderPage(client, fakeConnect().connect);
+    renderApp(client, fakeConnect().connect);
 
     await user.click(await screen.findByRole('button', { name: 'Show details for FROG' }));
+    expect(window.location.search).toBe(`?view=token&mint=${MINT_A}`);
     expect(client.getToken).toHaveBeenCalledWith(MINT_A, expect.anything());
-    const panel = await screen.findByRole('region', { name: 'FROG' });
+    expect(await screen.findByRole('heading', { level: 1, name: 'FROG' })).toBeInTheDocument();
+    // The lists are gone: the token has the whole page.
+    expect(screen.queryByRole('region', { name: 'Top movers' })).not.toBeInTheDocument();
+    const view = screen.getByRole('article', { name: 'FROG' });
     // Two stored readings plus the live score seen in the ranking (72 at 20:05).
     expect(
-      within(panel).getByRole('img', { name: 'Momentum score over 3 readings, from 40 to 72 out of 100' }),
+      within(view).getByRole('img', { name: 'Momentum score over 3 readings, from 40 to 72 out of 100' }),
     ).toBeInTheDocument();
-    expect(within(panel).getByText('Safety check history')).toBeInTheDocument();
+    expect(within(view).getByText('Safety check history')).toBeInTheDocument();
 
-    await user.click(within(panel).getByRole('button', { name: 'Close' }));
-    expect(screen.queryByRole('region', { name: 'FROG' })).not.toBeInTheDocument();
+    await user.click(within(view).getByRole('link', { name: 'Back to Live' }));
+    expect(window.location.search).toBe('');
+    expect(screen.queryByRole('article', { name: 'FROG' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Top movers' })).toBeInTheDocument();
   });
 
-  it('shows the live price chart above the safety history in the token detail', async () => {
+  it('shows the live price chart above the safety history in the token view', async () => {
     const client = fakeClient();
     const user = userEvent.setup();
-    renderPage(client, fakeConnect().connect);
+    renderApp(client, fakeConnect().connect);
 
     await user.click(await screen.findByRole('button', { name: 'Show details for FROG' }));
-    const panel = await screen.findByRole('region', { name: 'FROG' });
-    const chart = await within(panel).findByRole('img', { name: 'Price of FROG in SOL, 1m candles, 2 candles' });
+    const view = await screen.findByRole('article', { name: 'FROG' });
+    const chart = await within(view).findByRole('img', { name: 'Price of FROG in SOL, 1m candles, 2 candles' });
     expect(client.getCandles).toHaveBeenCalledWith(MINT_A, expect.objectContaining({ interval: '1m' }));
 
-    const history = within(panel).getByText('Safety check history');
+    const history = within(view).getByText('Safety check history');
     expect(chart.compareDocumentPosition(history) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
-    await user.click(within(panel).getByRole('button', { name: '5m' }));
+    await user.click(within(view).getByRole('button', { name: '5m' }));
     expect(client.getCandles).toHaveBeenLastCalledWith(MINT_A, expect.objectContaining({ interval: '5m' }));
   });
 
-  it('explains a token the API has never seen (404 TOKEN_NOT_FOUND)', async () => {
+  it('explains a token the API has never seen (404 TOKEN_NOT_FOUND), with a way back', async () => {
     const client = fakeClient({
       getToken: vi.fn(async () => Promise.reject(new ApiError(404, 'TOKEN_NOT_FOUND', 'Token was never seen'))),
     });
     const user = userEvent.setup();
-    renderPage(client, fakeConnect().connect);
+    renderApp(client, fakeConnect().connect);
 
     await user.click(await screen.findByRole('button', { name: 'Show details for CAT' }));
-    expect(await screen.findByText("This token is not in the screener's history")).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Token not found' })).toBeInTheDocument();
+    expect(screen.getByText('This token is not available in lessfomo')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Back to Live' }));
+    expect(window.location.search).toBe('');
+    expect(await screen.findByRole('region', { name: 'Top movers' })).toBeInTheDocument();
   });
 });

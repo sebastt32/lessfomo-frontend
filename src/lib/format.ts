@@ -78,7 +78,7 @@ export function formatCurvePct(value: number | null): string {
 
 const dateFormatters = new Map<string, Intl.DateTimeFormat>();
 
-function dateFormatter(kind: 'date' | 'time', timeZone: string | undefined): Intl.DateTimeFormat {
+function dateFormatter(kind: 'date' | 'time' | 'seconds', timeZone: string | undefined): Intl.DateTimeFormat {
   const key = `${kind}|${timeZone ?? ''}`;
   let formatter = dateFormatters.get(key);
   if (!formatter) {
@@ -86,7 +86,13 @@ function dateFormatter(kind: 'date' | 'time', timeZone: string | undefined): Int
       'en-US',
       kind === 'date'
         ? { month: 'short', day: 'numeric', year: 'numeric', timeZone }
-        : { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone },
+        : {
+            hour: '2-digit',
+            minute: '2-digit',
+            ...(kind === 'seconds' ? { second: '2-digit' as const } : {}),
+            hourCycle: 'h23',
+            timeZone,
+          },
     );
     dateFormatters.set(key, formatter);
   }
@@ -103,4 +109,10 @@ export function formatDate(iso: string, timeZone?: string): string {
 export function formatTime(iso: string, timeZone?: string): string {
   const time = Date.parse(iso);
   return Number.isNaN(time) ? DASH : dateFormatter('time', timeZone).format(time);
+}
+
+/** 24-hour clock time with seconds such as "03:15:42", for moments where seconds matter. */
+export function formatTimeWithSeconds(iso: string, timeZone?: string): string {
+  const time = Date.parse(iso);
+  return Number.isNaN(time) ? DASH : dateFormatter('seconds', timeZone).format(time);
 }

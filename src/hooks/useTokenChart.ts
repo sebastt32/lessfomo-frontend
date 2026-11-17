@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { isAbortError, type ApiClient } from '../api/client';
 import { connectTokenStream, type ConnectionState, type StreamHandle, type TokenStreamOptions } from '../api/stream';
-import type { Candle, CandleInterval, DevTrade } from '../api/types';
+import type { Candle, CandleInterval, DevTrade, TokenCycle } from '../api/types';
 import { toFeedError } from '../state/errors';
 import type { FeedError } from '../state/liveFeed';
 import { initialTokenChartState, tokenChartReducer } from '../state/tokenChart';
@@ -13,6 +13,8 @@ export type ConnectTokenStreamFn = (options: TokenStreamOptions) => StreamHandle
 export interface UseTokenChartOptions {
   connect?: ConnectTokenStreamFn;
   limit?: number;
+  /** Called with every `cycle` event of this token from its stream. */
+  onCycle?: (cycle: TokenCycle) => void;
 }
 
 export interface TokenChartResult {
@@ -36,7 +38,7 @@ export function useTokenChart(
   client: ApiClient,
   mint: string,
   interval: CandleInterval,
-  { connect = connectTokenStream, limit = CANDLE_LIMIT }: UseTokenChartOptions = {},
+  { connect = connectTokenStream, limit = CANDLE_LIMIT, onCycle }: UseTokenChartOptions = {},
 ): TokenChartResult {
   const [state, dispatch] = useReducer(tokenChartReducer, initialTokenChartState);
   const inFlight = useRef<AbortController | null>(null);
@@ -72,13 +74,28 @@ export function useTokenChart(
     return () => inFlight.current?.abort();
   }, [load]);
 
+  // Same for the cycle listener: a new callback must not reopen the stream.
+  const onCycleRef = useRef(onCycle);
+  useEffect(() => {
+    onCycleRef.current = onCycle;
+  }, [onCycle]);
+
   useEffect(() => {
     let previous: ConnectionState = 'connecting';
     const handle = connect({
       url: client.tokenStreamUrl(mint),
       onEvent: (event) => {
-        if (event.type === 'trade') dispatch({ type: 'trade', trade: event.data });
-        else dispatch({ type: 'sol-price', solUsd: event.data.solUsd });
+        switch (event.type) {
+          case 'trade':
+            dispatch({ type: 'trade', trade: event.data });
+            break;
+          case 'sol-price':
+            dispatch({ type: 'sol-price', solUsd: event.data.solUsd });
+            break;
+          case 'cycle':
+            if (event.data.mint === mint && event.data.cycle) onCycleRef.current?.(event.data.cycle);
+            break;
+        }
       },
       onConnectionChange: (next) => {
         dispatch({ type: 'connection/changed', state: next });

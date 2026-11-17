@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Disclaimer } from '../components/organisms/Disclaimer';
 import { DashboardTemplate } from '../components/templates/DashboardTemplate';
 import { HeaderContainer } from '../containers/HeaderContainer';
@@ -6,18 +6,18 @@ import { MoversContainer } from '../containers/MoversContainer';
 import { OfflineNoticeContainer } from '../containers/OfflineNoticeContainer';
 import { SmartWalletFilterContainer } from '../containers/SmartWalletFilterContainer';
 import { ScreeningsContainer } from '../containers/ScreeningsContainer';
-import { TokenDetailContainer } from '../containers/TokenDetailContainer';
 import { useNow } from '../hooks/useNow';
+import { openToken } from '../hooks/tokenNavigation';
 
 export interface DashboardPageProps {
   /** View navigation and totals for the header. */
   headerExtras?: ReactNode;
+  /** Opens a token's own view; defaults to navigating to `?view=token&mint=<mint>`. */
+  onOpenToken?: (mint: string) => void;
 }
 
-export function DashboardPage({ headerExtras }: DashboardPageProps = {}) {
-  const [selectedMint, setSelectedMint] = useState<string | null>(null);
+export function DashboardPage({ headerExtras, onOpenToken = openToken }: DashboardPageProps = {}) {
   const now = useNow();
-  const close = useCallback(() => setSelectedMint(null), []);
 
   return (
     <DashboardTemplate
@@ -28,13 +28,8 @@ export function DashboardPage({ headerExtras }: DashboardPageProps = {}) {
           <SmartWalletFilterContainer />
         </>
       }
-      movers={<MoversContainer selectedMint={selectedMint} onSelect={setSelectedMint} now={now} />}
-      detail={
-        selectedMint === null ? null : (
-          <TokenDetailContainer key={selectedMint} mint={selectedMint} onClose={close} now={now} />
-        )
-      }
-      feed={<ScreeningsContainer selectedMint={selectedMint} onSelect={setSelectedMint} now={now} />}
+      movers={<MoversContainer onSelect={onOpenToken} now={now} />}
+      feed={<ScreeningsContainer onSelect={onOpenToken} now={now} />}
       footer={<Disclaimer />}
     />
   );

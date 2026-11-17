@@ -2,6 +2,8 @@ import type {
   ApiErrorBody,
   CandleInterval,
   CandlesResponse,
+  CyclePhase,
+  CyclesAnalysisResponse,
   HealthResponse,
   Lifecycle,
   MoversResponse,
@@ -67,6 +69,12 @@ export interface AnalysisOptions extends RequestOptions {
   by?: 'smartWallets' | 'conviction';
 }
 
+/** Date bounds for GET /api/analysis/cycles; omitted fields use the API default (last 7 days). */
+export interface CyclesAnalysisOptions extends RequestOptions {
+  from?: string;
+  to?: string;
+}
+
 export interface CandlesOptions extends RequestOptions {
   interval: CandleInterval;
   limit?: number;
@@ -86,6 +94,10 @@ export interface TokenListQuery {
   minSmartWallets?: number;
   /** Only tokens bought by at least this many conviction wallets. */
   minConvictionWallets?: number;
+  /** Only tokens in these cycle phases; empty or omitted means every phase. */
+  phase?: readonly CyclePhase[];
+  /** true: only tokens that appeared after they had already exploded; false: only those that appeared in time. */
+  appearedLate?: boolean;
   /** Matches symbol, name or mint prefix. */
   q?: string;
   sort?: TokenSort;
@@ -110,6 +122,8 @@ export function tokenListSearch(query: TokenListQuery): string {
   if (query.minConvictionWallets !== undefined) {
     params.push(['minConvictionWallets', String(query.minConvictionWallets)]);
   }
+  if (query.phase && query.phase.length > 0) params.push(['phase', query.phase.join(',')]);
+  if (query.appearedLate !== undefined) params.push(['appearedLate', String(query.appearedLate)]);
   const q = query.q?.trim();
   if (q) params.push(['q', q]);
   if (query.sort) params.push(['sort', `${query.sort.field}:${query.sort.direction}`]);
@@ -143,6 +157,8 @@ export interface ApiClient {
   getWallet(address: string, options?: RequestOptions): Promise<WalletResponse>;
   /** GET /api/analysis/smart-wallets: success by number of good-history (or, with `by`, conviction) wallets. */
   getSmartWalletAnalysis(options?: AnalysisOptions): Promise<SmartWalletAnalysisResponse>;
+  /** GET /api/analysis/cycles: how tokens that appeared in the range went through their cycle. */
+  getCyclesAnalysis(options?: CyclesAnalysisOptions): Promise<CyclesAnalysisResponse>;
   /** URL of GET /api/tokens/:mint/stream (relative when the base URL is empty). */
   tokenStreamUrl(mint: string): string;
   /** POST /api/auth/login: starts a session (the cookie is set by the server) and returns its user. */
@@ -291,6 +307,12 @@ export function createApiClient({ baseUrl, fetchImpl }: ApiClientConfig): ApiCli
       if (options.to) params.push(['to', options.to]);
       if (options.by === 'conviction') params.push(['by', 'conviction']);
       return request<SmartWalletAnalysisResponse>(`/api/analysis/smart-wallets${toSearch(params)}`, options);
+    },
+    getCyclesAnalysis: (options = {}) => {
+      const params: [string, string][] = [];
+      if (options.from) params.push(['from', options.from]);
+      if (options.to) params.push(['to', options.to]);
+      return request<CyclesAnalysisResponse>(`/api/analysis/cycles${toSearch(params)}`, options);
     },
     tokenStreamUrl: (mint) => `${baseUrl}${tokenPath(mint)}/stream`,
     login: async (username, password, options = {}) => {

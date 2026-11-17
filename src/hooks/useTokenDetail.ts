@@ -33,7 +33,8 @@ export function useTokenDetail(client: ApiClient, mint: string | null): TokenDet
       (data) => setResult({ key, state: { status: 'ready', data } }),
       (error: unknown) => {
         if (isAbortError(error) || controller.signal.aborted) return;
-        if (error instanceof ApiError && error.code === 'TOKEN_NOT_FOUND') {
+        // An address that is not a mint (400 INVALID_MINT, e.g. a mistyped link) is as absent as an unknown token.
+        if (error instanceof ApiError && (error.code === 'TOKEN_NOT_FOUND' || error.code === 'INVALID_MINT')) {
           setResult({ key, state: { status: 'not-found' } });
         } else {
           setResult({ key, state: { status: 'error', error: toFeedError(error) } });

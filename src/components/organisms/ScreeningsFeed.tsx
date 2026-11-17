@@ -1,4 +1,5 @@
-import type { ScreeningView, SmartWalletCounts } from '../../api/types';
+import type { ScreeningView, SmartWalletCounts, TokenCycle } from '../../api/types';
+import { CycleCell } from '../molecules/CycleCell';
 import { SmartWalletCount } from '../molecules/SmartWalletCount';
 import { DateTime } from '../atoms/DateTime';
 import { StatusBadge } from '../atoms/StatusBadge';
@@ -9,7 +10,8 @@ import './ScreeningsFeed.css';
 
 export interface ScreeningsFeedProps {
   screenings: readonly ScreeningView[];
-  selectedMint: string | null;
+  /** The token shown as selected; omit it when selecting opens the token's own view. */
+  selectedMint?: string | null;
   onSelect: (mint: string) => void;
   /** Reference time for relative timestamps (ms since epoch). */
   now: number;
@@ -17,6 +19,8 @@ export interface ScreeningsFeedProps {
   createdAt?: Readonly<Record<string, string>>;
   /** Good-history wallet counts per mint, when known. */
   smartWallets?: Readonly<Record<string, SmartWalletCounts>>;
+  /** Cycle per mint, when known (safety checks do not carry it). */
+  cycles?: Readonly<Record<string, TokenCycle>>;
 }
 
 export function ScreeningsFeed({
@@ -26,6 +30,7 @@ export function ScreeningsFeed({
   now,
   createdAt = {},
   smartWallets = {},
+  cycles = {},
 }: ScreeningsFeedProps) {
   return (
     <ol className="screenings-feed" aria-label="Latest safety checks, newest first">
@@ -44,7 +49,7 @@ export function ScreeningsFeed({
             <button
               type="button"
               className="token-button"
-              aria-pressed={screening.mint === selectedMint}
+              aria-pressed={selectedMint === undefined ? undefined : screening.mint === selectedMint}
               aria-label={`Show details for ${screening.symbol}`}
               onClick={() => onSelect(screening.mint)}
             >
@@ -88,6 +93,12 @@ export function ScreeningsFeed({
                 </dd>
               </div>
             ) : null}
+            <div>
+              <dt>Cycle</dt>
+              <dd>
+                <CycleCell cycle={cycles[screening.mint]} now={now} />
+              </dd>
+            </div>
             {created ? (
               <div>
                 <dt>Created</dt>
