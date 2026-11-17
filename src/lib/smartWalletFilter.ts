@@ -1,22 +1,24 @@
 /**
  * The smart-wallet filter (decision D4): every list shows only tokens bought by at least N good-or-elite
- * wallets, 1 by default. It lives in the URL as `minSmartWallets` and applies to every view.
+ * wallets, 5 by default (the public minimum: fewer is never exposed by the API). It lives in the URL as
+ * `minSmartWallets` and applies to every view.
  */
 
-export const DEFAULT_MIN_SMART_WALLETS = 1;
+export const DEFAULT_MIN_SMART_WALLETS = 5;
 
-/** The thresholds offered; 5 means "5 or more". */
-export const SMART_WALLET_OPTIONS = [1, 2, 3, 4, 5] as const;
+/** The thresholds offered; the last one means "or more". */
+export const SMART_WALLET_OPTIONS = [5, 10, 20, 30] as const;
 
 export const MIN_SMART_WALLETS_PARAM = 'minSmartWallets';
 
-const MAX = 5;
+const MAX = 30;
+const OFFERED: readonly number[] = SMART_WALLET_OPTIONS;
 
 export function parseMinSmartWallets(search: string): number {
   const value = new URLSearchParams(search).get(MIN_SMART_WALLETS_PARAM);
   if (value === null || !/^\d+$/.test(value)) return DEFAULT_MIN_SMART_WALLETS;
   const number = Number(value);
-  return number >= DEFAULT_MIN_SMART_WALLETS && number <= MAX ? number : DEFAULT_MIN_SMART_WALLETS;
+  return OFFERED.includes(number) ? number : DEFAULT_MIN_SMART_WALLETS;
 }
 
 /** `search` with the threshold set (or removed when it is the default); '' when nothing is left. */

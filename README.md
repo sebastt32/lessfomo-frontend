@@ -54,7 +54,7 @@ unfiltered with a "smart-wallet data not available yet" notice instead of being 
 | Parameter | Example | Meaning |
 | --- | --- | --- |
 | `view` | `history`, `insights` | Opens the history list or the insights; anything else is the live view |
-| `minSmartWallets` | `3` | Minimum good-history wallets that bought a token, `1` (default) to `5` (5 or more); applies to every view |
+| `minSmartWallets` | `10` | Minimum good-history wallets that bought a token: `5` (default, the public minimum), `10`, `20` or `30` (30 or more); applies to every view |
 | `range` | `today`, `7d`, `this-month`, `this-year`, `2025`, `2025-02`, `2025-02-14`, `2026-11-01..2026-11-10` | Creation date filter; ranges include both days and either end may be left open (`2026-11-01..`) |
 | `status` | `passed,failed` | Safety statuses |
 | `lifecycle` | `active` or `dead` | Lifecycle |

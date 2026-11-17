@@ -48,7 +48,7 @@ const smartMovers = () =>
     getMovers: vi.fn(async () => ({
       at: '2026-11-13T20:05:00.000Z',
       movers: [
-        makeMover({ mint: MINT_A, symbol: 'FROG', smartWallets: makeCounts({ count: 2, elite: 1, holding: 1 }) }),
+        makeMover({ mint: MINT_A, symbol: 'FROG', smartWallets: makeCounts({ count: 6, elite: 1, holding: 1 }) }),
         makeMover({ mint: MINT_B, symbol: 'CAT', name: 'Cat', smartWallets: makeCounts({ count: 0, elite: 0, holding: 0 }) }),
       ],
     })),
@@ -59,7 +59,7 @@ const smartMovers = () =>
 afterEach(() => window.history.replaceState(null, '', '/'));
 
 describe('smart-wallet filter in the live view', () => {
-  it('shows only tokens bought by at least one good-history wallet by default, and says so', async () => {
+  it('shows only tokens bought by at least five good-history wallets by default, and says so', async () => {
     const client = smartMovers();
     renderApp(client);
 
@@ -67,10 +67,10 @@ describe('smart-wallet filter in the live view', () => {
     const movers = screen.getByRole('region', { name: 'Top movers' });
     expect(within(movers).queryByRole('button', { name: 'Show details for CAT' })).not.toBeInTheDocument();
     const bar = screen.getByRole('region', { name: 'Smart-wallet filter' });
-    expect(bar).toHaveTextContent('Showing tokens bought by ≥1 good-history wallet');
-    expect(within(bar).getByRole('button', { name: '1' })).toHaveAttribute('aria-pressed', 'true');
-    expect(client.getMovers).toHaveBeenCalledWith(expect.objectContaining({ minSmartWallets: 1 }));
-    expect(client.getScreenings).toHaveBeenCalledWith(expect.objectContaining({ minSmartWallets: 1 }));
+    expect(bar).toHaveTextContent('Showing tokens bought by ≥5 good-history wallets');
+    expect(within(bar).getByRole('button', { name: '5' })).toHaveAttribute('aria-pressed', 'true');
+    expect(client.getMovers).toHaveBeenCalledWith(expect.objectContaining({ minSmartWallets: 5 }));
+    expect(client.getScreenings).toHaveBeenCalledWith(expect.objectContaining({ minSmartWallets: 5 }));
 
     const table = screen.getByRole('table');
     expect(within(table).getByText('1 elite, 1 holding')).toBeInTheDocument();
@@ -83,10 +83,10 @@ describe('smart-wallet filter in the live view', () => {
     renderApp(smartMovers());
     await screen.findByRole('button', { name: 'Show details for FROG' });
 
-    await user.click(screen.getByRole('button', { name: '5+' }));
-    expect(window.location.search).toBe('?minSmartWallets=5');
+    await user.click(screen.getByRole('button', { name: '10' }));
+    expect(window.location.search).toBe('?minSmartWallets=10');
     expect(screen.getByRole('region', { name: 'Smart-wallet filter' })).toHaveTextContent(
-      'Showing tokens bought by ≥5 good-history wallets',
+      'Showing tokens bought by ≥10 good-history wallets',
     );
     expect(screen.getByText('No mover passes the smart-wallet filter right now')).toBeInTheDocument();
     expect(screen.getByText(/2 ranked tokens were not bought by enough good-history wallets/)).toBeInTheDocument();
@@ -96,20 +96,20 @@ describe('smart-wallet filter in the live view', () => {
     const client = smartMovers();
     const connect = vi.fn((_options: StreamOptions) => ({ close: vi.fn() }));
     const { rerender } = render(
-      <LiveFeedProvider client={client} connect={connect} minSmartWallets={1}>
+      <LiveFeedProvider client={client} connect={connect} minSmartWallets={5}>
         <AppShell />
       </LiveFeedProvider>,
     );
     await screen.findByRole('button', { name: 'Show details for FROG' });
     rerender(
-      <LiveFeedProvider client={client} connect={connect} minSmartWallets={3}>
+      <LiveFeedProvider client={client} connect={connect} minSmartWallets={10}>
         <AppShell />
       </LiveFeedProvider>,
     );
     await waitFor(() =>
-      expect(client.getMovers).toHaveBeenLastCalledWith(expect.objectContaining({ minSmartWallets: 3 })),
+      expect(client.getMovers).toHaveBeenLastCalledWith(expect.objectContaining({ minSmartWallets: 10 })),
     );
-    expect(client.getScreenings).toHaveBeenLastCalledWith(expect.objectContaining({ minSmartWallets: 3 }));
+    expect(client.getScreenings).toHaveBeenLastCalledWith(expect.objectContaining({ minSmartWallets: 10 }));
     // The stream is not reopened for a new threshold.
     expect(connect).toHaveBeenCalledTimes(1);
   });
@@ -119,7 +119,7 @@ describe('smart-wallet filter in the live view', () => {
     await screen.findByRole('button', { name: 'Show details for FROG' });
     app.emit({
       type: 'smart-wallet',
-      data: { mint: MINT_B, smartWallets: makeCounts({ count: 1, elite: 0, holding: 1 }), wallet: makeSmartWallet() },
+      data: { mint: MINT_B, smartWallets: makeCounts({ count: 5, elite: 0, holding: 1 }), wallet: makeSmartWallet() },
     });
     const movers = screen.getByRole('region', { name: 'Top movers' });
     expect(within(movers).getByRole('button', { name: 'Show details for CAT' })).toBeInTheDocument();
@@ -200,25 +200,25 @@ describe('history: smart wallets', () => {
     const user = userEvent.setup();
     const client = smartMovers();
     client.listTokens = vi.fn(async () => ({
-      tokens: [makeListItem({ smartWallets: makeCounts({ count: 4, elite: 2, holding: 3 }) })],
+      tokens: [makeListItem({ smartWallets: makeCounts({ count: 12, elite: 2, holding: 3 }) })],
       page: 1,
       pageSize: 50,
       total: 1,
     }));
-    renderApp(client, '/?view=history&minSmartWallets=2&page=3');
+    renderApp(client, '/?view=history&minSmartWallets=10&page=3');
     const table = await screen.findByRole('table');
-    expect(lastQuery(client)).toMatchObject({ minSmartWallets: 2, page: 3 });
+    expect(lastQuery(client)).toMatchObject({ minSmartWallets: 10, page: 3 });
     expect(within(table).getByText('2 elite, 3 holding')).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Token history' })).toHaveTextContent(
-      'and bought by ≥2 good-history wallets',
+      'and bought by ≥10 good-history wallets',
     );
 
     await user.click(screen.getByRole('button', { name: 'Sort by smart wallets, descending' }));
-    expect(window.location.search).toBe('?view=history&sort=smartWallets:desc&minSmartWallets=2');
+    expect(window.location.search).toBe('?view=history&sort=smartWallets:desc&minSmartWallets=10');
     expect(lastQuery(client)).toMatchObject({ sort: { field: 'smartWallets', direction: 'desc' }, page: 1 });
 
-    await user.click(screen.getByRole('button', { name: '4' }));
-    expect(window.location.search).toBe('?view=history&sort=smartWallets:desc&minSmartWallets=4');
+    await user.click(screen.getByRole('button', { name: '20' }));
+    expect(window.location.search).toBe('?view=history&sort=smartWallets:desc&minSmartWallets=20');
   });
 
   it('says the list is not filtered when the backend sends no smart-wallet data', async () => {
