@@ -226,6 +226,12 @@ describe('history endpoints', () => {
     expect(tokenListSearch({ status: [], q: '  ' })).toBe('');
   });
 
+  it('sends dateField right after the date bounds', () => {
+    expect(
+      tokenListSearch({ from: '2026-11-17T03:00:00.000Z', to: '2026-11-18T03:00:00.000Z', dateField: 'appearedAt', page: 1 }),
+    ).toBe('?from=2026-11-17T03:00:00.000Z&to=2026-11-18T03:00:00.000Z&dateField=appearedAt&page=1');
+  });
+
   it('GETs the token list, snapshots and stats', async () => {
     const list = { tokens: [], page: 1, pageSize: 50, total: 0 };
     const snapshots = { mint: MINT, lifecycle: 'active', snapshots: [] };

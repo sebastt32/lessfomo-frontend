@@ -1,7 +1,7 @@
 # lessfomo-frontend
 
 A live dashboard for [lessfomo](https://github.com/sebastt32/lessfomo), a Solana pump.fun memecoin screener that
-only uses free data sources. It has three list views, **Live**, **History** and **Insights**, plus a separate view
+only uses free data sources. It has four list views, **Live**, **History**, **Daily record** and **Insights**, plus a separate view
 for each token, and shows:
 
 - **Conviction-wallet filter**: every list shows only tokens bought by conviction wallets: good-history wallets
@@ -41,6 +41,11 @@ for each token, and shows:
   appearing, peak multiple, time to peak, deepest fall and last price vs base. The cycle is only known as it
   happens; nothing predicts the future. Movers, safety checks and history show the phase and window compactly;
   the history filters by phase and by "appeared late" and sorts by appearance time or invest window.
+- **Daily record**: every token that appeared in lessfomo on one local day (from the database, so a deploy never
+  empties it), newest first, with its peak and last price over its appearance price and its result: reached 2×,
+  still tracking (under 24 hours old) or no 2×. Above the list, the share of that day's tokens that reached 2×
+  after appearing and the same share for the whole month. Previous day, next day (never past today), a date
+  picker and "Today" move between days.
 - **Insights ("Cycles")**: the share of tokens that appeared in time, late or never exploded, the share that
   crashed, the median invest window, peak and timings, and the tokens and median peak per window length.
 - **Insights ("Does it work?")**: how often tokens reached 2×, their average and median return and the share of
@@ -112,7 +117,8 @@ app's origin in `CORS_ORIGIN`, and for the wait time of "Too many attempts" to b
 
 | Parameter | Example | Meaning |
 | --- | --- | --- |
-| `view` | `history`, `insights`, `token` | Opens the history list, the insights or a token's own view (with `mint`); anything else is the live view |
+| `view` | `history`, `record`, `insights`, `token` | Opens the history list, the daily record, the insights or a token's own view (with `mint`); anything else is the live view |
+| `day` | `2026-11-16` | Daily record only: the local day shown; omitted for today, and a future or invalid day shows today |
 | `mint` | `7GCi…W2hr` | Token view only: the token's mint address. An unknown or non-public token shows "Token not found" with a way back |
 | `minConvictionWallets` | `5` | Minimum conviction wallets that bought a token: `3` (default, the public minimum), `5` or `10` (10 or more); applies to every view. The old `minSmartWallets` is ignored |
 | `by` | `conviction` | Insights only: group the analysis by conviction wallets instead of good-history wallets |

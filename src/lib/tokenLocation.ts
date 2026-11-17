@@ -41,6 +41,7 @@ function rememberedSearch(state: unknown): string | null {
 const VIEW_NAMES: Record<Exclude<AppView, 'token'>, string> = {
   live: 'Live',
   history: 'History',
+  record: 'Daily record',
   insights: 'Insights',
 };
 

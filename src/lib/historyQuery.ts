@@ -8,7 +8,7 @@ import { ALL_TIME, dateFilterBounds, parseDateFilter, serializeDateFilter, type 
  * and reloaded.
  */
 
-export type AppView = 'live' | 'history' | 'insights' | 'token';
+export type AppView = 'live' | 'history' | 'record' | 'insights' | 'token';
 
 export interface HistoryFilters {
   date: DateFilter;
@@ -98,7 +98,7 @@ export function parseAppLocation(search: string): AppLocation {
   const requested = params.get('view');
   const mint = (params.get('mint') ?? '').trim();
   let view: AppView = 'live';
-  if (requested === 'history' || requested === 'insights') view = requested;
+  if (requested === 'history' || requested === 'record' || requested === 'insights') view = requested;
   // A token view without a mint has nothing to show.
   else if (requested === 'token' && mint !== '') view = 'token';
 
@@ -124,7 +124,8 @@ export function serializeAppLocation({ view, history, mint }: AppLocation): stri
   if (view === 'live') return '';
   if (view === 'token') return mint ? `?${new URLSearchParams({ view, mint }).toString()}` : '';
   const params = new URLSearchParams({ view });
-  if (view === 'insights') return `?${params.toString()}`;
+  // Insights and the daily record keep their own parameters (by, day) outside the history filters.
+  if (view === 'insights' || view === 'record') return `?${params.toString()}`;
   const range = serializeDateFilter(history.date);
   if (range !== null) params.set('range', range);
   if (history.status.length > 0) params.set('status', normalizeStatuses(history.status).join(','));

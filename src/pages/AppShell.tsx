@@ -6,6 +6,7 @@ import { navigate, useLocationSearch } from '../hooks/useLocationSearch';
 import { currentBackTarget } from '../hooks/tokenNavigation';
 import { parseAppLocation, serializeAppLocation, type AppView, type HistoryFilters } from '../lib/historyQuery';
 import { parseMinConvictionWallets, withMinConvictionWallets } from '../lib/smartWalletFilter';
+import { DailyRecordPage } from './DailyRecordPage';
 import { DashboardPage } from './DashboardPage';
 import { HistoryPage } from './HistoryPage';
 import { InsightsPage } from './InsightsPage';
@@ -44,6 +45,7 @@ export function AppShell({ account }: AppShellProps = {}) {
       label: 'History',
       href: withMinConvictionWallets(lastHistorySearch, minConvictionWallets),
     },
+    { value: 'record', label: 'Daily record', href: withMinConvictionWallets('?view=record', minConvictionWallets) },
     { value: 'insights', label: 'Insights', href: withMinConvictionWallets('?view=insights', minConvictionWallets) },
   ];
 
@@ -64,6 +66,8 @@ export function AppShell({ account }: AppShellProps = {}) {
   switch (location.view) {
     case 'history':
       return <HistoryPage filters={location.history} onFiltersChange={onFiltersChange} headerExtras={headerExtras} />;
+    case 'record':
+      return <DailyRecordPage headerExtras={headerExtras} />;
     case 'insights':
       return <InsightsPage headerExtras={headerExtras} />;
     case 'token': {

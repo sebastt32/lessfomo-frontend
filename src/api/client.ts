@@ -86,6 +86,8 @@ export interface TokenListQuery {
   from?: string;
   /** ISO date, exclusive, on detectedAt. */
   to?: string;
+  /** What from/to apply to; the API default is detectedAt. appearedAt filters on when the token appeared in lessfomo. */
+  dateField?: 'detectedAt' | 'appearedAt';
   status?: readonly SafetyStatus[];
   lifecycle?: Lifecycle;
   /** Only tokens whose maxScore is at least this (0-100). */
@@ -115,6 +117,7 @@ export function tokenListSearch(query: TokenListQuery): string {
   const params: [string, string][] = [];
   if (query.from) params.push(['from', query.from]);
   if (query.to) params.push(['to', query.to]);
+  if (query.dateField) params.push(['dateField', query.dateField]);
   if (query.status && query.status.length > 0) params.push(['status', query.status.join(',')]);
   if (query.lifecycle) params.push(['lifecycle', query.lifecycle]);
   if (query.minScore !== undefined) params.push(['minScore', String(query.minScore)]);
