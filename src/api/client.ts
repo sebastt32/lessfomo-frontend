@@ -48,14 +48,18 @@ export interface RequestOptions {
 
 export interface ListOptions extends RequestOptions {
   limit?: number;
-  /** Only tokens bought by at least this many good-or-elite wallets (API default 1; tokens without good-history wallets are never public). */
+  /** Only tokens bought by at least this many good-or-elite wallets. Still accepted by the API; the UI filters by conviction. */
   minSmartWallets?: number;
+  /** Only tokens bought by at least this many conviction wallets (API default and minimum: the public minimum, 3). */
+  minConvictionWallets?: number;
 }
 
 /** Date bounds for GET /api/analysis/smart-wallets; omitted fields use the API defaults. */
 export interface AnalysisOptions extends RequestOptions {
   from?: string;
   to?: string;
+  /** 'conviction' buckets tokens by conviction wallets at entry (`by=conviction`); the default sends nothing. */
+  by?: 'smartWallets' | 'conviction';
 }
 
 export interface CandlesOptions extends RequestOptions {
@@ -75,6 +79,8 @@ export interface TokenListQuery {
   minScore?: number;
   /** Only tokens bought by at least this many good-or-elite wallets. */
   minSmartWallets?: number;
+  /** Only tokens bought by at least this many conviction wallets. */
+  minConvictionWallets?: number;
   /** Matches symbol, name or mint prefix. */
   q?: string;
   sort?: TokenSort;
@@ -96,6 +102,9 @@ export function tokenListSearch(query: TokenListQuery): string {
   if (query.lifecycle) params.push(['lifecycle', query.lifecycle]);
   if (query.minScore !== undefined) params.push(['minScore', String(query.minScore)]);
   if (query.minSmartWallets !== undefined) params.push(['minSmartWallets', String(query.minSmartWallets)]);
+  if (query.minConvictionWallets !== undefined) {
+    params.push(['minConvictionWallets', String(query.minConvictionWallets)]);
+  }
   const q = query.q?.trim();
   if (q) params.push(['q', q]);
   if (query.sort) params.push(['sort', `${query.sort.field}:${query.sort.direction}`]);
@@ -127,7 +136,7 @@ export interface ApiClient {
   getTokenSmartWallets(mint: string, options?: RequestOptions): Promise<TokenSmartWalletsResponse>;
   /** GET /api/wallets/:address: a wallet's record and its recent token results. */
   getWallet(address: string, options?: RequestOptions): Promise<WalletResponse>;
-  /** GET /api/analysis/smart-wallets: success by number of good-history wallets. */
+  /** GET /api/analysis/smart-wallets: success by number of good-history (or, with `by`, conviction) wallets. */
   getSmartWalletAnalysis(options?: AnalysisOptions): Promise<SmartWalletAnalysisResponse>;
   /** URL of GET /api/tokens/:mint/stream (relative when the base URL is empty). */
   tokenStreamUrl(mint: string): string;
@@ -155,10 +164,11 @@ function tokenPath(mint: string): string {
   return `/api/tokens/${encodeURIComponent(mint)}`;
 }
 
-function listPath(path: string, { limit, minSmartWallets }: ListOptions): string {
+function listPath(path: string, { limit, minSmartWallets, minConvictionWallets }: ListOptions): string {
   const params: [string, string][] = [];
   if (limit !== undefined) params.push(['limit', String(limit)]);
   if (minSmartWallets !== undefined) params.push(['minSmartWallets', String(minSmartWallets)]);
+  if (minConvictionWallets !== undefined) params.push(['minConvictionWallets', String(minConvictionWallets)]);
   return `${path}${toSearch(params)}`;
 }
 
@@ -218,6 +228,7 @@ export function createApiClient({ baseUrl, fetchImpl }: ApiClientConfig): ApiCli
       const params: [string, string][] = [];
       if (options.from) params.push(['from', options.from]);
       if (options.to) params.push(['to', options.to]);
+      if (options.by === 'conviction') params.push(['by', 'conviction']);
       return request<SmartWalletAnalysisResponse>(`/api/analysis/smart-wallets${toSearch(params)}`, options);
     },
     tokenStreamUrl: (mint) => `${baseUrl}${tokenPath(mint)}/stream`,

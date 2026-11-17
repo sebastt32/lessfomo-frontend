@@ -3,7 +3,7 @@ import { ViewNav, type ViewNavItem } from '../components/molecules/ViewNav';
 import { StatsContainer } from '../containers/StatsContainer';
 import { navigate, useLocationSearch } from '../hooks/useLocationSearch';
 import { parseAppLocation, serializeAppLocation, type AppView, type HistoryFilters } from '../lib/historyQuery';
-import { parseMinSmartWallets, withMinSmartWallets } from '../lib/smartWalletFilter';
+import { parseMinConvictionWallets, withMinConvictionWallets } from '../lib/smartWalletFilter';
 import { DashboardPage } from './DashboardPage';
 import { HistoryPage } from './HistoryPage';
 import { InsightsPage } from './InsightsPage';
@@ -18,25 +18,25 @@ export function AppShell() {
   const [lastHistorySearch, setLastHistorySearch] = useState(HISTORY_DEFAULT_SEARCH);
   if (location.view === 'history' && search !== lastHistorySearch) setLastHistorySearch(search);
 
-  // The smart-wallet threshold applies to every view, so it travels with every link and filter change.
-  const minSmartWallets = parseMinSmartWallets(search);
+  // The conviction-wallet threshold applies to every view, so it travels with every link and filter change.
+  const minConvictionWallets = parseMinConvictionWallets(search);
 
   const onFiltersChange = useCallback(
     (history: HistoryFilters) => {
-      navigate(withMinSmartWallets(serializeAppLocation({ view: 'history', history }), minSmartWallets));
+      navigate(withMinConvictionWallets(serializeAppLocation({ view: 'history', history }), minConvictionWallets));
     },
-    [minSmartWallets],
+    [minConvictionWallets],
   );
 
-  const liveSearch = withMinSmartWallets('', minSmartWallets);
+  const liveSearch = withMinConvictionWallets('', minConvictionWallets);
   const items: ViewNavItem<AppView>[] = [
     { value: 'live', label: 'Live', href: liveSearch === '' ? window.location.pathname : liveSearch },
     {
       value: 'history',
       label: 'History',
-      href: withMinSmartWallets(lastHistorySearch, minSmartWallets),
+      href: withMinConvictionWallets(lastHistorySearch, minConvictionWallets),
     },
-    { value: 'insights', label: 'Insights', href: withMinSmartWallets('?view=insights', minSmartWallets) },
+    { value: 'insights', label: 'Insights', href: withMinConvictionWallets('?view=insights', minConvictionWallets) },
   ];
 
   const headerExtras = (

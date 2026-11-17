@@ -25,10 +25,11 @@ const SORT_LABELS: Record<TokenSortField, string> = {
   peakMarketCapSol: 'Peak market cap',
   maxScore: 'Max score',
   smartWallets: 'Smart wallets',
+  convictionWallets: 'Conviction wallets',
 };
 
 /** The API sorts these only from highest to lowest. */
-const DESC_ONLY: ReadonlySet<TokenSortField> = new Set(['smartWallets']);
+const DESC_ONLY: ReadonlySet<TokenSortField> = new Set(['smartWallets', 'convictionWallets']);
 
 interface SortableHeaderProps {
   field: TokenSortField;
@@ -93,7 +94,7 @@ export function TokenHistoryTable({ items, selectedMint, onSelect, sort, onSortC
             </th>
             <SortableHeader field="peakMarketCapSol" sort={sort} onSortChange={onSortChange} numeric />
             <SortableHeader field="maxScore" sort={sort} onSortChange={onSortChange} numeric />
-            <SortableHeader field="smartWallets" sort={sort} onSortChange={onSortChange} numeric />
+            <SortableHeader field="convictionWallets" sort={sort} onSortChange={onSortChange} numeric />
             <th scope="col" className="history-table__num">
               Holders
             </th>

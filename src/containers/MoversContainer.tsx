@@ -4,8 +4,8 @@ import { MoversTable } from '../components/organisms/MoversTable';
 import { formatRelativeTime } from '../lib/format';
 import { isNetworkError } from '../state/errors';
 import { selectVisibleMovers } from '../state/smartWalletFeed';
-import { describeSmartWalletFilter } from '../lib/smartWalletFilter';
-import { useMinSmartWallets } from '../hooks/useMinSmartWallets';
+import { describeConvictionFilter } from '../lib/smartWalletFilter';
+import { useMinConvictionWallets } from '../hooks/useMinConvictionWallets';
 import { useLiveFeedContext } from './LiveFeedProvider';
 
 export interface MoversContainerProps {
@@ -16,7 +16,7 @@ export interface MoversContainerProps {
 
 export function MoversContainer({ selectedMint, onSelect, now }: MoversContainerProps) {
   const { state, smartWallets, actions } = useLiveFeedContext();
-  const [min] = useMinSmartWallets();
+  const [min] = useMinConvictionWallets();
   const { status, at, error } = state.movers;
   const visible = selectVisibleMovers(state, smartWallets, min);
   const { items } = visible;
@@ -41,11 +41,11 @@ export function MoversContainer({ selectedMint, onSelect, now }: MoversContainer
     );
   } else if (visible.filtered && (visible.hidden > 0 || (status === 'ready' && at !== null))) {
     body = (
-      <EmptyState title="No mover passes the smart-wallet filter right now">
-        {describeSmartWalletFilter(min)}.{' '}
+      <EmptyState title="No mover passes the conviction-wallet filter right now">
+        {describeConvictionFilter(min)}.{' '}
         {visible.hidden > 0
-          ? `${visible.hidden} ranked ${visible.hidden === 1 ? 'token was' : 'tokens were'} not bought by enough good-history wallets. `
-          : 'No ranked token was bought by enough good-history wallets. '}
+          ? `${visible.hidden} ranked ${visible.hidden === 1 ? 'token was' : 'tokens were'} not bought by enough conviction wallets. `
+          : 'No ranked token was bought by enough conviction wallets. '}
         Lower the minimum above, or wait for the next ranking in a minute.
       </EmptyState>
     );

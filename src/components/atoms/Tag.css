@@ -46,3 +46,20 @@
   color: var(--color-caution);
   background: var(--color-caution-soft);
 }
+
+.tag--style-conviction {
+  color: var(--color-up);
+  background: var(--color-up-soft);
+  font-weight: 700;
+}
+
+.tag--style-flipper {
+  color: var(--color-caution);
+  background: var(--color-caution-soft);
+}
+
+.tag--style-mixed,
+.tag--style-unrated {
+  color: var(--color-muted);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}

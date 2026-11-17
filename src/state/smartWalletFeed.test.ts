@@ -19,11 +19,11 @@ function run(...actions: LiveFeedAction[]) {
   };
 }
 
-const smartEvent = (mint: string, count: number): LiveFeedAction => ({
+const smartEvent = (mint: string, count: number, conviction = count): LiveFeedAction => ({
   type: 'stream/event',
   event: {
     type: 'smart-wallet',
-    data: { mint, smartWallets: makeCounts({ count, elite: 0, holding: count }), wallet: makeSmartWallet() },
+    data: { mint, smartWallets: makeCounts({ count, elite: 0, holding: count, conviction }), wallet: makeSmartWallet() },
   },
 });
 
@@ -56,39 +56,42 @@ describe('smart-wallet event', () => {
       { type: 'movers/loaded', payload: { at: T1, movers: [makeMover({ smartWallets: makeCounts({ count: 1 }) })] } },
       smartEvent(MINT_A, 3),
     );
-    expect(feed.movers.items[0]?.smartWallets).toEqual({ count: 3, elite: 0, holding: 3 });
+    expect(feed.movers.items[0]?.smartWallets).toEqual({ count: 3, elite: 0, holding: 3, conviction: 3 });
   });
 
   it('leaves the live state untouched for tokens outside the ranking but remembers their counts', () => {
     const before = run({ type: 'movers/loaded', payload: { at: T1, movers: [makeMover()] } });
     const after = run({ type: 'movers/loaded', payload: { at: T1, movers: [makeMover()] } }, smartEvent(MINT_B, 2));
     expect(after.feed.movers).toEqual(before.feed.movers);
-    expect(selectSmartWalletCounts(after.smart, MINT_B)).toEqual({ count: 2, elite: 0, holding: 2 });
+    expect(selectSmartWalletCounts(after.smart, MINT_B)).toEqual({ count: 2, elite: 0, holding: 2, conviction: 2 });
   });
 });
 
-describe('threshold filtering', () => {
+// The live lists now filter by conviction wallets (S7, D7), not by good-history wallets.
+describe('conviction threshold filtering', () => {
   const ranking: LiveFeedAction = {
     type: 'movers/loaded',
     payload: {
       at: T1,
       movers: [
-        makeMover({ mint: MINT_A, smartWallets: makeCounts({ count: 0 }) }),
-        makeMover({ mint: MINT_B, symbol: 'CAT', smartWallets: makeCounts({ count: 2 }) }),
+        // Many good wallets, but mostly flippers: only 1 conviction wallet.
+        makeMover({ mint: MINT_A, smartWallets: makeCounts({ count: 9, conviction: 1 }) }),
+        makeMover({ mint: MINT_B, symbol: 'CAT', smartWallets: makeCounts({ count: 4, conviction: 3 }) }),
       ],
     },
   };
 
-  it('keeps only movers bought by at least minSmartWallets good wallets', () => {
+  it('keeps only movers bought by at least minConvictionWallets conviction wallets', () => {
     const { feed, smart } = run(ranking);
-    expect(selectVisibleMovers(feed, smart, 1).items.map((m) => m.mint)).toEqual([MINT_B]);
-    expect(selectVisibleMovers(feed, smart, 1)).toMatchObject({ filtered: true, hidden: 1 });
-    expect(selectVisibleMovers(feed, smart, 3).items).toEqual([]);
+    expect(smart.support).toBe('available');
+    expect(selectVisibleMovers(feed, smart, 3).items.map((m) => m.mint)).toEqual([MINT_B]);
+    expect(selectVisibleMovers(feed, smart, 3)).toMatchObject({ filtered: true, hidden: 1 });
+    expect(selectVisibleMovers(feed, smart, 5).items).toEqual([]);
   });
 
-  it('adds a mover once a smart-wallet event pushes it over the threshold', () => {
-    const { feed, smart } = run(ranking, smartEvent(MINT_A, 1));
-    expect(selectVisibleMovers(feed, smart, 1).items.map((m) => m.mint)).toEqual([MINT_A, MINT_B]);
+  it('adds a mover once a smart-wallet event pushes its conviction count over the threshold', () => {
+    const { feed, smart } = run(ranking, smartEvent(MINT_A, 10, 3));
+    expect(selectVisibleMovers(feed, smart, 3).items.map((m) => m.mint)).toEqual([MINT_A, MINT_B]);
   });
 
   it('filters a momentum event client-side', () => {
@@ -96,33 +99,37 @@ describe('threshold filtering', () => {
       type: 'stream/event',
       event: {
         type: 'momentum',
-        data: { at: T1, movers: [makeMover({ mint: MINT_A, smartWallets: makeCounts({ count: 0 }) })] },
+        data: { at: T1, movers: [makeMover({ mint: MINT_B, smartWallets: makeCounts({ count: 12, conviction: 2 }) })] },
       },
     });
-    expect(selectVisibleMovers(feed, smart, 1).items).toEqual([]);
+    expect(selectVisibleMovers(feed, smart, 3).items).toEqual([]);
   });
 
   it('shows everything, unfiltered, when the backend has no smart-wallet data', () => {
     const { feed, smart } = run({ type: 'movers/loaded', payload: { at: T1, movers: [makeMover()] } });
-    expect(selectVisibleMovers(feed, smart, 1)).toEqual({ items: feed.movers.items, filtered: false, hidden: 0 });
+    expect(selectVisibleMovers(feed, smart, 3)).toEqual({ items: feed.movers.items, filtered: false, hidden: 0 });
   });
 
-  it('trusts screenings the server already filtered and filters live ones by known counts', () => {
-    const state: SmartWalletFeedState = run(
-      ranking,
-      {
-        type: 'screenings/loaded',
-        payload: { screenings: [makeScreening({ mint: 'FromServer1111111111111111111111111111111' })] },
-        minSmartWallets: 2,
-      },
-    ).smart;
+  it('shows the server list unfiltered when the backend reports good wallets but not conviction yet', () => {
+    const legacy = { count: 6, elite: 1, holding: 1 };
+    const { feed, smart } = run({
+      type: 'movers/loaded',
+      payload: { at: T1, movers: [makeMover({ smartWallets: legacy })] },
+    });
+    expect(smart.support).toBe('no-conviction');
+    expect(selectVisibleMovers(feed, smart, 3)).toEqual({ items: feed.movers.items, filtered: false, hidden: 0 });
+  });
+
+  it('trusts screenings the server already filtered and filters live ones by known conviction counts', () => {
+    const fromServer: LiveFeedAction = {
+      type: 'screenings/loaded',
+      payload: { screenings: [makeScreening({ mint: 'FromServer1111111111111111111111111111111' })] },
+      minConvictionWallets: 5,
+    };
+    const state: SmartWalletFeedState = run(ranking, fromServer).smart;
     const feed = run(
       ranking,
-      {
-        type: 'screenings/loaded',
-        payload: { screenings: [makeScreening({ mint: 'FromServer1111111111111111111111111111111' })] },
-        minSmartWallets: 2,
-      },
+      fromServer,
       { type: 'stream/event', event: { type: 'screening', data: makeScreening({ mint: MINT_A, evaluatedAt: T1 }) } },
       {
         type: 'stream/event',
@@ -130,8 +137,12 @@ describe('threshold filtering', () => {
       },
     ).feed;
     const mints = (min: number) => selectVisibleScreenings(feed, state, min).items.map((s) => s.mint);
-    expect(mints(1)).toEqual(['FromServer1111111111111111111111111111111']);
-    expect(mints(2)).toEqual(['FromServer1111111111111111111111111111111']);
-    expect(mints(3)).toEqual([]);
+    expect(mints(3)).toEqual(['FromServer1111111111111111111111111111111']);
+    expect(mints(5)).toEqual(['FromServer1111111111111111111111111111111']);
+    expect(mints(10)).toEqual([]);
+    expect(selectSmartWalletCounts(state, 'FromServer1111111111111111111111111111111')).toMatchObject({
+      count: 5,
+      conviction: 5,
+    });
   });
 });

@@ -5,8 +5,8 @@ import { useMemo } from 'react';
 import type { SmartWalletCounts } from '../api/types';
 import { isNetworkError } from '../state/errors';
 import { selectSmartWalletCounts, selectVisibleScreenings } from '../state/smartWalletFeed';
-import { describeSmartWalletFilter } from '../lib/smartWalletFilter';
-import { useMinSmartWallets } from '../hooks/useMinSmartWallets';
+import { describeConvictionFilter } from '../lib/smartWalletFilter';
+import { useMinConvictionWallets } from '../hooks/useMinConvictionWallets';
 import { useLiveFeedContext } from './LiveFeedProvider';
 
 export interface ScreeningsContainerProps {
@@ -17,7 +17,7 @@ export interface ScreeningsContainerProps {
 
 export function ScreeningsContainer({ selectedMint, onSelect, now }: ScreeningsContainerProps) {
   const { state, smartWallets, actions } = useLiveFeedContext();
-  const [min] = useMinSmartWallets();
+  const [min] = useMinConvictionWallets();
   const { status, error } = state.screenings;
   const visible = selectVisibleScreenings(state, smartWallets, min);
   const { items } = visible;
@@ -55,12 +55,12 @@ export function ScreeningsContainer({ selectedMint, onSelect, now }: ScreeningsC
     );
   } else if (visible.filtered && status === 'ready') {
     body = (
-      <EmptyState title="No safety check passes the smart-wallet filter yet">
-        {describeSmartWalletFilter(min)}.{' '}
+      <EmptyState title="No safety check passes the conviction-wallet filter yet">
+        {describeConvictionFilter(min)}.{' '}
         {visible.hidden > 0
-          ? `${visible.hidden} recent ${visible.hidden === 1 ? 'check is' : 'checks are'} hidden because no or too few good-history wallets bought those tokens. `
+          ? `${visible.hidden} recent ${visible.hidden === 1 ? 'check is' : 'checks are'} hidden because too few conviction wallets bought those tokens. `
           : ''}
-        Tokens appear here as soon as enough good-history wallets buy them. Lower the minimum above to see more.
+        Tokens appear here as soon as enough conviction wallets buy them. Lower the minimum above to see more.
       </EmptyState>
     );
   } else {

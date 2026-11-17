@@ -35,10 +35,11 @@ export const SORT_FIELDS: readonly TokenSortField[] = [
   'peakMarketCapSol',
   'liquidity',
   'smartWallets',
+  'convictionWallets',
 ];
 
 /** Fields the API only sorts in one direction. */
-const DESC_ONLY: readonly TokenSortField[] = ['smartWallets'];
+const DESC_ONLY: readonly TokenSortField[] = ['smartWallets', 'convictionWallets'];
 
 export const DEFAULT_SORT: TokenSort = { field: 'detectedAt', direction: 'desc' };
 

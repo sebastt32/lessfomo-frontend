@@ -12,6 +12,13 @@ describe('history sort by smart wallets', () => {
     expect(parseAppLocation('?view=history&sort=smartWallets:asc').history.sort).toEqual(DEFAULT_SORT);
   });
 
+  it('accepts convictionWallets:desc, round-trips it, and rejects the ascending direction', () => {
+    const { history } = parseAppLocation('?view=history&sort=convictionWallets:desc');
+    expect(history.sort).toEqual({ field: 'convictionWallets', direction: 'desc' });
+    expect(serializeAppLocation({ view: 'history', history })).toBe('?view=history&sort=convictionWallets:desc');
+    expect(parseAppLocation('?view=history&sort=convictionWallets:asc').history.sort).toEqual(DEFAULT_SORT);
+  });
+
   it('opens the insights view', () => {
     expect(parseAppLocation('?view=insights')).toEqual({ view: 'insights', history: DEFAULT_HISTORY });
     expect(serializeAppLocation({ view: 'insights', history: DEFAULT_HISTORY })).toBe('?view=insights');

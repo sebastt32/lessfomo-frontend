@@ -7,7 +7,7 @@ import {
   smartWalletFeedReducer,
   type SmartWalletFeedState,
 } from '../state/smartWalletFeed';
-import { DEFAULT_MIN_SMART_WALLETS } from '../lib/smartWalletFilter';
+import { DEFAULT_MIN_CONVICTION_WALLETS } from '../lib/smartWalletFilter';
 import { toFeedError } from '../state/errors';
 
 export const MOVERS_LIMIT = 20;
@@ -18,8 +18,8 @@ export type ConnectFn = (options: StreamOptions) => StreamHandle;
 export interface UseLiveFeedOptions {
   client: ApiClient;
   connect?: ConnectFn;
-  /** Threshold sent with the movers and safety-check requests; changing it reloads them. */
-  minSmartWallets?: number;
+  /** Conviction-wallet threshold sent with the movers and safety-check requests; changing it reloads them. */
+  minConvictionWallets?: number;
 }
 
 export interface LiveFeed {
@@ -36,7 +36,7 @@ export interface LiveFeed {
 export function useLiveFeed({
   client,
   connect = connectStream,
-  minSmartWallets = DEFAULT_MIN_SMART_WALLETS,
+  minConvictionWallets = DEFAULT_MIN_CONVICTION_WALLETS,
 }: UseLiveFeedOptions): LiveFeed {
   const [state, dispatchFeed] = useReducer(liveFeedReducer, initialLiveFeedState);
   const [smartWallets, dispatchSmart] = useReducer(smartWalletFeedReducer, initialSmartWalletFeedState);
@@ -46,8 +46,8 @@ export function useLiveFeed({
   }, []);
   const inFlight = useRef<AbortController | null>(null);
   // Read at request time so a new threshold reloads the lists without reopening the stream.
-  const threshold = useRef(minSmartWallets);
-  threshold.current = minSmartWallets;
+  const threshold = useRef(minConvictionWallets);
+  threshold.current = minConvictionWallets;
 
   const load = useCallback(() => {
     inFlight.current?.abort();
@@ -66,23 +66,23 @@ export function useLiveFeed({
       .getHealth({ signal })
       .then((payload) => dispatch({ type: 'health/loaded', payload }), fail('health/failed'));
     client
-      .getMovers({ limit: MOVERS_LIMIT, minSmartWallets: min, signal })
-      .then((payload) => dispatch({ type: 'movers/loaded', payload, minSmartWallets: min }), fail('movers/failed'));
+      .getMovers({ limit: MOVERS_LIMIT, minConvictionWallets: min, signal })
+      .then((payload) => dispatch({ type: 'movers/loaded', payload, minConvictionWallets: min }), fail('movers/failed'));
     client
-      .getScreenings({ limit: SCREENINGS_LIMIT, minSmartWallets: min, signal })
+      .getScreenings({ limit: SCREENINGS_LIMIT, minConvictionWallets: min, signal })
       .then(
-        (payload) => dispatch({ type: 'screenings/loaded', payload, minSmartWallets: min }),
+        (payload) => dispatch({ type: 'screenings/loaded', payload, minConvictionWallets: min }),
         fail('screenings/failed'),
       );
   }, [client, dispatch]);
 
   // A new threshold refetches the lists; the first render already loads them below.
-  const loadedWith = useRef(minSmartWallets);
+  const loadedWith = useRef(minConvictionWallets);
   useEffect(() => {
-    if (loadedWith.current === minSmartWallets) return;
-    loadedWith.current = minSmartWallets;
+    if (loadedWith.current === minConvictionWallets) return;
+    loadedWith.current = minConvictionWallets;
     load();
-  }, [minSmartWallets, load]);
+  }, [minConvictionWallets, load]);
 
   useEffect(() => {
     load();

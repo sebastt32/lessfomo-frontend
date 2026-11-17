@@ -2,7 +2,7 @@ import { useId, useState, type ReactNode } from 'react';
 import type { SmartWalletInToken } from '../../api/types';
 import { CopyButton } from '../atoms/CopyButton';
 import { ExternalLink } from '../atoms/ExternalLink';
-import { BotBadge, WalletTierBadge } from '../atoms/Tag';
+import { BotBadge, WalletStyleBadge, WalletTierBadge } from '../atoms/Tag';
 import { formatSolAmount, shortenMint } from '../../lib/format';
 import { solscanAccountUrl } from '../../lib/links';
 import { describeWalletRecord, formatEntrySeconds } from '../../lib/smartWallets';
@@ -22,7 +22,7 @@ function tradeSummary(wallet: SmartWalletInToken): string {
   return `${bought}, sold ${formatSolAmount(wallet.soldSol)}, no longer holding`;
 }
 
-/** One good-history wallet in a token: who it is, what it did here, and why its record is good. */
+/** One good-history wallet in a token: who it is, what it did here, how it trades and why its record is good. */
 export function SmartWalletItem({ wallet, children }: SmartWalletItemProps) {
   const [open, setOpen] = useState(false);
   const resultsId = useId();
@@ -45,6 +45,8 @@ export function SmartWalletItem({ wallet, children }: SmartWalletItemProps) {
         <span className="smart-wallet__badges">
           <WalletTierBadge tier={wallet.tierAtEntry} prefix="At entry" />
           <WalletTierBadge tier={record.tier} prefix="Now" />
+          {wallet.styleAtEntry ? <WalletStyleBadge style={wallet.styleAtEntry} prefix="Style at entry" /> : null}
+          {record.style ? <WalletStyleBadge style={record.style} prefix="Style now" /> : null}
           {record.isBot ? <BotBadge /> : null}
         </span>
       </div>

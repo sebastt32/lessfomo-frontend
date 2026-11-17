@@ -3,14 +3,14 @@ import type { ApiClient } from '../api/client';
 import { useLiveFeed, type ConnectFn } from '../hooks/useLiveFeed';
 import type { LiveFeedState } from '../state/liveFeed';
 import type { SmartWalletFeedState } from '../state/smartWalletFeed';
-import { DEFAULT_MIN_SMART_WALLETS } from '../lib/smartWalletFilter';
+import { DEFAULT_MIN_CONVICTION_WALLETS } from '../lib/smartWalletFilter';
 
 export interface LiveFeedContextValue {
   state: LiveFeedState;
   /** Smart-wallet counts and whether the backend reports them. */
   smartWallets: SmartWalletFeedState;
   actions: { reload: () => void };
-  meta: { client: ApiClient; minSmartWallets: number };
+  meta: { client: ApiClient; minConvictionWallets: number };
 }
 
 const LiveFeedContext = createContext<LiveFeedContextValue | null>(null);
@@ -18,8 +18,8 @@ const LiveFeedContext = createContext<LiveFeedContextValue | null>(null);
 export interface LiveFeedProviderProps {
   client: ApiClient;
   connect?: ConnectFn;
-  /** The active smart-wallet threshold (from the URL); defaults to 1. */
-  minSmartWallets?: number;
+  /** The active conviction-wallet threshold (from the URL); defaults to the public minimum, 3. */
+  minConvictionWallets?: number;
   children: ReactNode;
 }
 
@@ -27,15 +27,15 @@ export interface LiveFeedProviderProps {
 export function LiveFeedProvider({
   client,
   connect,
-  minSmartWallets = DEFAULT_MIN_SMART_WALLETS,
+  minConvictionWallets = DEFAULT_MIN_CONVICTION_WALLETS,
   children,
 }: LiveFeedProviderProps) {
   const { state, smartWallets, reload } = useLiveFeed(
-    connect ? { client, connect, minSmartWallets } : { client, minSmartWallets },
+    connect ? { client, connect, minConvictionWallets } : { client, minConvictionWallets },
   );
   const value = useMemo<LiveFeedContextValue>(
-    () => ({ state, smartWallets, actions: { reload }, meta: { client, minSmartWallets } }),
-    [state, smartWallets, reload, client, minSmartWallets],
+    () => ({ state, smartWallets, actions: { reload }, meta: { client, minConvictionWallets } }),
+    [state, smartWallets, reload, client, minConvictionWallets],
   );
   return <LiveFeedContext value={value}>{children}</LiveFeedContext>;
 }

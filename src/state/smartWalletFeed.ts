@@ -6,17 +6,20 @@ export const MAX_TRACKED_MINTS = 1000;
 
 /**
  * Whether the backend reports smart wallets. 'unavailable' means it predates them (a ranking arrived
- * without `smartWallets`); the UI then shows every token unfiltered and says why.
+ * without `smartWallets`); 'no-conviction' means it reports good-history wallets but not how many of them
+ * are conviction wallets. In both cases the UI shows the server's list without client-side filtering and
+ * says why.
  */
-export type SmartWalletSupport = 'unknown' | 'available' | 'unavailable';
+export type SmartWalletSupport = 'unknown' | 'available' | 'no-conviction' | 'unavailable';
 
 export interface SmartWalletFeedState {
   support: SmartWalletSupport;
   /** Latest counts per mint, from rankings and smart-wallet events. */
   counts: Record<string, SmartWalletCounts>;
   /**
-   * Lower bound per mint for safety checks the server returned for a `minSmartWallets` request:
-   * screenings do not carry counts, but the server only returned tokens with at least that many.
+   * Lower bound of conviction wallets per mint for safety checks the server returned for a
+   * `minConvictionWallets` request: screenings do not carry counts, but the server only returned tokens
+   * with at least that many.
    */
   floor: Record<string, number>;
 }
@@ -38,7 +41,12 @@ function applyRanking(state: SmartWalletFeedState, movers: readonly Mover[]): Sm
     delete counts[mover.mint];
     counts[mover.mint] = mover.smartWallets!;
   }
-  return { ...state, support: 'available', counts: capped(counts) };
+  const support = withCounts.some((m) => hasConviction(m.smartWallets!)) ? 'available' : 'no-conviction';
+  return { ...state, support, counts: capped(counts) };
+}
+
+function hasConviction(counts: SmartWalletCounts): boolean {
+  return typeof counts.conviction === 'number';
 }
 
 export function smartWalletFeedReducer(state: SmartWalletFeedState, action: LiveFeedAction): SmartWalletFeedState {
@@ -46,7 +54,7 @@ export function smartWalletFeedReducer(state: SmartWalletFeedState, action: Live
     case 'movers/loaded':
       return applyRanking(state, action.payload.movers);
     case 'screenings/loaded': {
-      const min = action.minSmartWallets;
+      const min = action.minConvictionWallets;
       if (min === undefined || min <= 0 || action.payload.screenings.length === 0) return state;
       const floor = { ...state.floor };
       for (const screening of action.payload.screenings) {
@@ -61,14 +69,22 @@ export function smartWalletFeedReducer(state: SmartWalletFeedState, action: Live
       const counts = { ...state.counts };
       delete counts[event.data.mint];
       counts[event.data.mint] = event.data.smartWallets;
-      return { ...state, support: 'available', counts: capped(counts) };
+      const support = hasConviction(event.data.smartWallets)
+        ? 'available'
+        : state.support === 'available'
+          ? 'available'
+          : 'no-conviction';
+      return { ...state, support, counts: capped(counts) };
     }
     default:
       return state;
   }
 }
 
-/** Best known counts for a mint: the latest reading, never below what the server guaranteed. */
+/**
+ * Best known counts for a mint: the latest reading, never below what the server guaranteed. The floor is
+ * in conviction wallets, which are a subset of the good-history ones, so it bounds both counts.
+ */
 export function selectSmartWalletCounts(
   state: SmartWalletFeedState,
   mint: string,
@@ -76,15 +92,23 @@ export function selectSmartWalletCounts(
 ): SmartWalletCounts | null {
   const known = state.counts[mint] ?? own;
   const floor = state.floor[mint];
-  if (!known) return floor === undefined ? null : { count: floor, elite: 0, holding: 0 };
-  return floor !== undefined && floor > known.count ? { ...known, count: floor } : known;
+  if (!known) return floor === undefined ? null : { count: floor, elite: 0, holding: 0, conviction: floor };
+  if (floor === undefined) return known;
+  const conviction = Math.max(known.conviction ?? 0, floor);
+  const count = Math.max(known.count, conviction);
+  return count === known.count && conviction === known.conviction ? known : { ...known, count, conviction };
+}
+
+/** Conviction wallets of a mint, as far as the feed knows (0 when unknown). */
+function convictionOf(state: SmartWalletFeedState, mint: string, own?: SmartWalletCounts): number {
+  return selectSmartWalletCounts(state, mint, own)?.conviction ?? 0;
 }
 
 export interface VisibleList<T> {
   items: readonly T[];
   /** False when smart-wallet data is unavailable and the list is shown unfiltered. */
   filtered: boolean;
-  /** Items hidden by the threshold. */
+  /** Items hidden by the conviction threshold. */
   hidden: number;
 }
 
@@ -94,7 +118,9 @@ function filterList<T>(
   min: number,
   countOf: (item: T) => number,
 ): VisibleList<T> {
-  if (state.support === 'unavailable') return { items, filtered: false, hidden: 0 };
+  if (state.support === 'unavailable' || state.support === 'no-conviction') {
+    return { items, filtered: false, hidden: 0 };
+  }
   const visible = items.filter((item) => countOf(item) >= min);
   return { items: visible, filtered: true, hidden: items.length - visible.length };
 }
@@ -108,7 +134,7 @@ export function selectVisibleMovers(
     feed.movers.items,
     state,
     min,
-    (mover) => selectSmartWalletCounts(state, mover.mint, mover.smartWallets)?.count ?? 0,
+    (mover) => convictionOf(state, mover.mint, mover.smartWallets),
   );
 }
 
@@ -121,6 +147,6 @@ export function selectVisibleScreenings(
     feed.screenings.items,
     state,
     min,
-    (screening) => selectSmartWalletCounts(state, screening.mint)?.count ?? 0,
+    (screening) => convictionOf(state, screening.mint),
   );
 }

@@ -193,7 +193,7 @@ export const WALLET_A = '5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1';
 export const WALLET_B = 'HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH';
 
 export function makeCounts(overrides: Partial<SmartWalletCounts> = {}): SmartWalletCounts {
-  return { count: 6, elite: 1, holding: 1, ...overrides };
+  return { count: 6, elite: 1, holding: 1, conviction: 3, ...overrides };
 }
 
 export function makeWalletRecord(overrides: Partial<WalletRecord> = {}): WalletRecord {

@@ -1,58 +1,85 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_MIN_SMART_WALLETS,
-  SMART_WALLET_OPTIONS,
-  describeSmartWalletFilter,
-  parseMinSmartWallets,
-  smartWalletOptionLabel,
-  withMinSmartWallets,
+  ANALYSIS_BY_PARAM,
+  CONVICTION_WALLET_OPTIONS,
+  DEFAULT_MIN_CONVICTION_WALLETS,
+  convictionOptionLabel,
+  describeConvictionFilter,
+  parseAnalysisBy,
+  parseMinConvictionWallets,
+  withAnalysisBy,
+  withMinConvictionWallets,
 } from './smartWalletFilter';
 import { parseAppLocation } from './historyQuery';
 
-describe('parseMinSmartWallets', () => {
-  it('defaults to 5 good-history wallets, the public minimum', () => {
-    expect(DEFAULT_MIN_SMART_WALLETS).toBe(5);
-    expect(parseMinSmartWallets('')).toBe(5);
-    expect(parseMinSmartWallets('?view=history')).toBe(5);
+describe('parseMinConvictionWallets', () => {
+  it('defaults to 3 conviction wallets, the public minimum', () => {
+    expect(DEFAULT_MIN_CONVICTION_WALLETS).toBe(3);
+    expect(parseMinConvictionWallets('')).toBe(3);
+    expect(parseMinConvictionWallets('?view=history')).toBe(3);
   });
 
   it('reads the offered thresholds and falls back to the default for anything else', () => {
-    expect(SMART_WALLET_OPTIONS).toEqual([5, 10, 20, 30]);
-    expect(parseMinSmartWallets('?minSmartWallets=10')).toBe(10);
-    expect(parseMinSmartWallets('?view=history&minSmartWallets=30')).toBe(30);
-    for (const bad of ['0', '1', '4', '7', '31', '-1', '2.5', 'abc', '']) {
-      expect(parseMinSmartWallets(`?minSmartWallets=${bad}`)).toBe(5);
+    expect(CONVICTION_WALLET_OPTIONS).toEqual([3, 5, 10]);
+    expect(parseMinConvictionWallets('?minConvictionWallets=5')).toBe(5);
+    expect(parseMinConvictionWallets('?view=history&minConvictionWallets=10')).toBe(10);
+    for (const bad of ['0', '1', '2', '4', '7', '11', '-1', '2.5', 'abc', '']) {
+      expect(parseMinConvictionWallets(`?minConvictionWallets=${bad}`)).toBe(3);
     }
+  });
+
+  it('ignores the old good-wallet threshold', () => {
+    expect(parseMinConvictionWallets('?minSmartWallets=10')).toBe(3);
   });
 });
 
-describe('withMinSmartWallets', () => {
+describe('withMinConvictionWallets', () => {
   it('omits the default and keeps every other parameter readable', () => {
-    expect(withMinSmartWallets('', 5)).toBe('');
-    expect(withMinSmartWallets('', 10)).toBe('?minSmartWallets=10');
-    expect(withMinSmartWallets('?view=history&status=passed,failed&sort=maxScore:asc', 20)).toBe(
-      '?view=history&status=passed,failed&sort=maxScore:asc&minSmartWallets=20',
+    expect(withMinConvictionWallets('', 3)).toBe('');
+    expect(withMinConvictionWallets('', 5)).toBe('?minConvictionWallets=5');
+    expect(withMinConvictionWallets('?view=history&status=passed,failed&sort=maxScore:asc', 10)).toBe(
+      '?view=history&status=passed,failed&sort=maxScore:asc&minConvictionWallets=10',
     );
-    expect(withMinSmartWallets('?view=history&minSmartWallets=20', 5)).toBe('?view=history');
-    expect(withMinSmartWallets('?minSmartWallets=20', 5)).toBe('');
+    expect(withMinConvictionWallets('?view=history&minConvictionWallets=10', 3)).toBe('?view=history');
+    expect(withMinConvictionWallets('?minConvictionWallets=10', 3)).toBe('');
   });
 
-  it('round-trips with parseMinSmartWallets without disturbing the history filters', () => {
-    const search = withMinSmartWallets('?view=history&minScore=50', 20);
-    expect(parseMinSmartWallets(search)).toBe(20);
+  it('drops a stale minSmartWallets parameter so the URL carries only the conviction filter', () => {
+    expect(withMinConvictionWallets('?view=history&minSmartWallets=20', 5)).toBe('?view=history&minConvictionWallets=5');
+  });
+
+  it('round-trips with parseMinConvictionWallets without disturbing the history filters', () => {
+    const search = withMinConvictionWallets('?view=history&minScore=50', 10);
+    expect(parseMinConvictionWallets(search)).toBe(10);
     expect(parseAppLocation(search).history.minScore).toBe(50);
   });
 });
 
-describe('smartWalletOptionLabel', () => {
+describe('convictionOptionLabel', () => {
   it('labels the top threshold as "or more"', () => {
-    expect(SMART_WALLET_OPTIONS.map(smartWalletOptionLabel)).toEqual(['5', '10', '20', '30+']);
+    expect(CONVICTION_WALLET_OPTIONS.map(convictionOptionLabel)).toEqual(['3', '5', '10+']);
   });
 });
 
-describe('describeSmartWalletFilter', () => {
+describe('describeConvictionFilter', () => {
   it('says which tokens are shown', () => {
-    expect(describeSmartWalletFilter(5)).toBe('Showing tokens bought by ≥5 good-history wallets');
-    expect(describeSmartWalletFilter(30)).toBe('Showing tokens bought by ≥30 good-history wallets');
+    expect(describeConvictionFilter(3)).toBe('Showing tokens bought by ≥3 conviction wallets');
+    expect(describeConvictionFilter(10)).toBe('Showing tokens bought by ≥10 conviction wallets');
+  });
+});
+
+describe('analysis grouping in the URL', () => {
+  it('defaults to good-history wallets and reads by=conviction', () => {
+    expect(ANALYSIS_BY_PARAM).toBe('by');
+    expect(parseAnalysisBy('?view=insights')).toBe('smartWallets');
+    expect(parseAnalysisBy('?view=insights&by=conviction')).toBe('conviction');
+    expect(parseAnalysisBy('?view=insights&by=other')).toBe('smartWallets');
+  });
+
+  it('sets by=conviction and removes it for the default, keeping other parameters', () => {
+    expect(withAnalysisBy('?view=insights', 'conviction')).toBe('?view=insights&by=conviction');
+    expect(withAnalysisBy('?view=insights&by=conviction&minConvictionWallets=5', 'smartWallets')).toBe(
+      '?view=insights&minConvictionWallets=5',
+    );
   });
 });

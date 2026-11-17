@@ -1,5 +1,5 @@
-import type { Lifecycle, WalletTier } from '../../api/types';
-import { TIER_HINTS, TIER_LABELS } from '../../lib/smartWallets';
+import type { Lifecycle, WalletStyle, WalletTier } from '../../api/types';
+import { STYLE_HINTS, STYLE_LABELS, TIER_HINTS, TIER_LABELS } from '../../lib/smartWallets';
 import './Tag.css';
 
 const LIFECYCLE_LABELS: Record<Lifecycle, string> = { active: 'Active', dead: 'Dead' };
@@ -41,6 +41,21 @@ export function WalletTierBadge({ tier, prefix }: WalletTierBadgeProps) {
   return (
     <span className={`tag tag--tier-${tier}`} title={TIER_HINTS[tier]}>
       {prefix ? `${prefix}: ${TIER_LABELS[tier]}` : TIER_LABELS[tier]}
+    </span>
+  );
+}
+
+export interface WalletStyleBadgeProps {
+  style: WalletStyle;
+  /** Prefix that says which moment the style describes, e.g. "At entry". */
+  prefix?: string;
+}
+
+/** How a wallet usually trades: conviction (holds), flipper (sells within 2 minutes), mixed or unrated. */
+export function WalletStyleBadge({ style, prefix }: WalletStyleBadgeProps) {
+  return (
+    <span className={`tag tag--style-${style}`} title={STYLE_HINTS[style]}>
+      {prefix ? `${prefix}: ${STYLE_LABELS[style]}` : STYLE_LABELS[style]}
     </span>
   );
 }

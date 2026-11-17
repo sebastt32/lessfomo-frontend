@@ -282,8 +282,14 @@ export interface TokenListItem {
   smartWallets?: SmartWalletCounts;
 }
 
-/** `smartWallets` only sorts descending. */
-export type TokenSortField = 'detectedAt' | 'maxScore' | 'peakMarketCapSol' | 'liquidity' | 'smartWallets';
+/** `smartWallets` and `convictionWallets` only sort descending. */
+export type TokenSortField =
+  | 'detectedAt'
+  | 'maxScore'
+  | 'peakMarketCapSol'
+  | 'liquidity'
+  | 'smartWallets'
+  | 'convictionWallets';
 
 export type SortDirection = 'asc' | 'desc';
 
@@ -324,7 +330,18 @@ export interface SmartWalletCounts {
   count: number;
   elite: number;
   holding: number;
+  /**
+   * Of those, how many had the conviction style at entry. Optional: a backend that predates trading
+   * styles does not send it; the UI then does not filter by it and says why.
+   */
+  conviction?: number;
 }
+
+/**
+ * How a wallet usually trades (point-in-time, from the same prior results as its tier). A "flip" is a token
+ * it sold within 120 s of its first buy. conviction: flip rate ≤ 30%; flipper: ≥ 60%; unrated: tier none.
+ */
+export type WalletStyle = 'conviction' | 'flipper' | 'mixed' | 'unrated';
 
 export interface WalletRecord {
   address: string;
@@ -343,6 +360,12 @@ export interface WalletRecord {
   avgPnlSol: number;
   /** Seconds from token creation to its first buy. */
   medianEntrySeconds: number | null;
+  /** Current style (last 7 days). Optional: older backends do not send the style fields. */
+  style?: WalletStyle;
+  /** 0-100, share of closed tokens sold within 120 s; null when no closed tokens. */
+  flipRate?: number | null;
+  /** First buy to first sell; tokens never sold before close are excluded. */
+  medianHoldSeconds?: number | null;
   lastActiveAt: string | null;
   updatedAt: string;
 }
@@ -364,6 +387,8 @@ export interface SmartWalletInToken {
   address: string;
   /** Point-in-time tier when it first bought this token. */
   tierAtEntry: WalletTier;
+  /** Point-in-time style when it first bought this token. Optional: older backends do not send it. */
+  styleAtEntry?: WalletStyle;
   /** Current record, to explain why it is good. */
   record: WalletRecord;
   firstBuyAt: string;
@@ -387,8 +412,10 @@ export interface WalletResponse {
 }
 
 export interface SmartWalletBucket {
-  /** "0", "1", "2", "3", "4" or "5+". */
-  smartWallets: string;
+  /** "0", "1", "2", "3", "4" or "5+": the bucket key when grouped by good-history wallets. */
+  smartWallets?: string;
+  /** The bucket key when grouped by conviction wallets at entry (`by=conviction`). */
+  convictionWallets?: string;
   tokens: number;
   reached2xPct: number;
   migratedPct: number;
@@ -403,5 +430,7 @@ export interface SmartWalletAnalysisResponse {
   to: string;
   /** Fraction, e.g. 0.03 for 3%. */
   costRoundTrip: number;
+  /** Grouping echoed by the backend; older backends omit it (always good-history wallets). */
+  by?: 'smartWallets' | 'conviction';
   buckets: SmartWalletBucket[];
 }

@@ -2,6 +2,7 @@ import type { ApiClient } from '../api/client';
 import type { SmartWalletAnalysisResponse, TokenSmartWalletsResponse, WalletResponse } from '../api/types';
 import { isMissingEndpoint, isTokenSubresourceUnavailable, isWalletUnavailable } from '../state/errors';
 import { useResource, type ResourceResult } from './useResource';
+import type { AnalysisBy } from '../lib/smartWalletFilter';
 
 /** GET /api/tokens/:mint/smart-wallets; 'unavailable' on a backend that predates it. */
 export function useTokenSmartWallets(client: ApiClient, mint: string): ResourceResult<TokenSmartWalletsResponse> {
@@ -21,7 +22,14 @@ export function useWallet(client: ApiClient, address: string | null): ResourceRe
   );
 }
 
-/** GET /api/analysis/smart-wallets with the API's default date range. */
-export function useSmartWalletAnalysis(client: ApiClient): ResourceResult<SmartWalletAnalysisResponse> {
-  return useResource('analysis:smart-wallets', (signal) => client.getSmartWalletAnalysis({ signal }), isMissingEndpoint);
+/** GET /api/analysis/smart-wallets with the API's default date range, grouped by good or conviction wallets. */
+export function useSmartWalletAnalysis(
+  client: ApiClient,
+  by: AnalysisBy = 'smartWallets',
+): ResourceResult<SmartWalletAnalysisResponse> {
+  return useResource(
+    `analysis:smart-wallets:${by}`,
+    (signal) => client.getSmartWalletAnalysis(by === 'conviction' ? { signal, by } : { signal }),
+    isMissingEndpoint,
+  );
 }

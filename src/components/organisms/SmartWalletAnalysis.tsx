@@ -5,7 +5,22 @@ import './SmartWalletAnalysis.css';
 
 export interface SmartWalletAnalysisProps {
   data: SmartWalletAnalysisResponse;
+  /** How the buckets are grouped: good-history wallets (default) or conviction wallets at entry. */
+  by?: 'smartWallets' | 'conviction';
 }
+
+const GROUPING = {
+  smartWallets: {
+    noun: 'good-history wallets',
+    column: 'Good wallets',
+    region: 'Success by number of good wallets',
+  },
+  conviction: {
+    noun: 'conviction wallets (good-history wallets that usually hold, by their style when they bought)',
+    column: 'Conviction wallets',
+    region: 'Success by number of conviction wallets',
+  },
+} as const;
 
 /** Buckets with fewer tokens than this are flagged: their percentages swing a lot. */
 export const SMALL_SAMPLE = 30;
@@ -16,8 +31,9 @@ function signClass(value: number): string {
   return '';
 }
 
-/** How success changes with the number of good-history wallets that bought a token. Presentational. */
-export function SmartWalletAnalysis({ data }: SmartWalletAnalysisProps) {
+/** How success changes with the number of good-history (or conviction) wallets that bought a token. Presentational. */
+export function SmartWalletAnalysis({ data, by = 'smartWallets' }: SmartWalletAnalysisProps) {
+  const grouping = GROUPING[by];
   const rows = analysisRows(data.buckets);
   const costPct = `${(data.costRoundTrip * 100).toFixed(1).replace(/\.0$/, '')}%`;
 
@@ -28,19 +44,20 @@ export function SmartWalletAnalysis({ data }: SmartWalletAnalysisProps) {
   return (
     <div className="analysis">
       <p className="analysis__intro">
-        Tokens created from <DateTime iso={data.from} /> to <DateTime iso={data.to} />, grouped by how many
-        good-history wallets bought them while lessfomo tracked them live. Each simulated trade enters right after the
+        Tokens created from <DateTime iso={data.from} /> to <DateTime iso={data.to} />, grouped by how many{' '}
+        {grouping.noun} bought them while lessfomo tracked them live. Each simulated trade enters right after the
         last of those wallets bought, then exits at 2× or after 10 minutes, paying a {costPct} round-trip cost.
       </p>
 
-      <div className="analysis__scroll" role="region" aria-label="Success by number of good wallets" tabIndex={0}>
+      <div className="analysis__scroll" role="region" aria-label={grouping.region} tabIndex={0}>
         <table className="analysis__table">
           <caption className="visually-hidden">
-            Success rates by number of good-history wallets that bought the token, from none to five or more
+            Success rates by number of {by === 'conviction' ? 'conviction' : 'good-history'} wallets that bought the
+            token, from none to the largest group
           </caption>
           <thead>
             <tr>
-              <th scope="col">Good wallets</th>
+              <th scope="col">{grouping.column}</th>
               <th scope="col" className="analysis__num">
                 Tokens
               </th>

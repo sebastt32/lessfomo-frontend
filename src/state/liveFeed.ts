@@ -44,10 +44,10 @@ export interface LiveFeedState {
 export type LiveFeedAction =
   | { type: 'health/loaded'; payload: HealthResponse }
   | { type: 'health/failed'; error: FeedError }
-  /** `minSmartWallets` is the threshold the request was filtered with, if any. */
-  | { type: 'movers/loaded'; payload: MoversResponse; minSmartWallets?: number }
+  /** `minConvictionWallets` is the conviction threshold the request was filtered with, if any. */
+  | { type: 'movers/loaded'; payload: MoversResponse; minConvictionWallets?: number }
   | { type: 'movers/failed'; error: FeedError }
-  | { type: 'screenings/loaded'; payload: ScreeningsResponse; minSmartWallets?: number }
+  | { type: 'screenings/loaded'; payload: ScreeningsResponse; minConvictionWallets?: number }
   | { type: 'screenings/failed'; error: FeedError }
   | { type: 'stream/event'; event: StreamEvent }
   | { type: 'connection/changed'; state: ConnectionState }

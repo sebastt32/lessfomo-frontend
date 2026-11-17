@@ -14,8 +14,8 @@ import {
   type HistoryFilters as Filters,
 } from '../lib/historyQuery';
 import { isNetworkError } from '../state/errors';
-import { describeSmartWalletFilter } from '../lib/smartWalletFilter';
-import { useMinSmartWallets } from '../hooks/useMinSmartWallets';
+import { describeConvictionFilter } from '../lib/smartWalletFilter';
+import { useMinConvictionWallets } from '../hooks/useMinConvictionWallets';
 import { useLiveFeedContext } from './LiveFeedProvider';
 
 export interface HistoryContainerProps {
@@ -53,19 +53,24 @@ function createdPhrase(filter: DateFilter): string {
 export function HistoryContainer({ filters, onFiltersChange, selectedMint, onSelect, now }: HistoryContainerProps) {
   const { meta } = useLiveFeedContext();
   // Presets resolve to local day boundaries, so the query (and the request) only changes when a day rolls over.
-  const [minSmartWallets] = useMinSmartWallets();
-  const query = { ...toTokenListQuery(filters, new Date(now)), minSmartWallets };
+  const [minConvictionWallets] = useMinConvictionWallets();
+  const query = { ...toTokenListQuery(filters, new Date(now)), minConvictionWallets };
   const { state, retry } = useTokenList(meta.client, query);
 
   const changeFilters = (next: Filters) => onFiltersChange({ ...next, page: 1 });
   const reset = () => onFiltersChange({ ...DEFAULT_HISTORY, sort: filters.sort });
   const data = state.status === 'ready' || state.status === 'loading' ? state.data : null;
   const created = `created ${createdPhrase(filters.date)}`;
-  // A backend that predates smart wallets ignores the filter and sends rows without counts.
-  const smartDataMissing = data !== null && data.tokens.length > 0 && data.tokens.every((t) => !t.smartWallets);
-  const smartPhrase = smartDataMissing
-    ? ''
-    : ` and bought by ≥${minSmartWallets} good-history ${minSmartWallets === 1 ? 'wallet' : 'wallets'}`;
+  // A backend that predates smart wallets ignores the filter and sends rows without counts; one that
+  // predates trading styles sends counts without `conviction` and ignores the conviction minimum.
+  const hasRows = data !== null && data.tokens.length > 0;
+  const smartDataMissing = hasRows && data.tokens.every((t) => !t.smartWallets);
+  const convictionMissing =
+    hasRows && !smartDataMissing && data.tokens.every((t) => typeof t.smartWallets?.conviction !== 'number');
+  const smartPhrase =
+    smartDataMissing || convictionMissing
+      ? ''
+      : ` and bought by ≥${minConvictionWallets} conviction ${minConvictionWallets === 1 ? 'wallet' : 'wallets'}`;
   const description = data
     ? `${formatCount(data.total)} ${data.total === 1 ? 'token' : 'tokens'} ${created}${smartPhrase}, from the screener's database.`
     : `Tokens ${created}${smartPhrase}, from the screener's database.`;
@@ -97,12 +102,12 @@ export function HistoryContainer({ filters, onFiltersChange, selectedMint, onSel
   } else if (data.tokens.length === 0) {
     body = (
       <EmptyState
-        title={hasActiveFilters(filters) ? 'No tokens match these filters' : 'No token passes the smart-wallet filter yet'}
+        title={hasActiveFilters(filters) ? 'No tokens match these filters' : 'No token passes the conviction-wallet filter yet'}
       >
-        {describeSmartWalletFilter(minSmartWallets)}.{' '}
+        {describeConvictionFilter(minConvictionWallets)}.{' '}
         {hasActiveFilters(filters)
-          ? 'Try a wider date range, fewer filters or a lower minimum of good-history wallets.'
-          : 'Tokens appear here once enough good-history wallets buy them. Lower the minimum above to see more.'}
+          ? 'Try a wider date range, fewer filters or a lower minimum of conviction wallets.'
+          : 'Tokens appear here once enough conviction wallets buy them. Lower the minimum above to see more.'}
       </EmptyState>
     );
   } else {
@@ -112,6 +117,12 @@ export function HistoryContainer({ filters, onFiltersChange, selectedMint, onSel
           <p className="history__note" role="note">
             Smart-wallet data not available yet: this screener API does not report good-history wallets, so the list
             is not filtered by them.
+          </p>
+        ) : null}
+        {convictionMissing ? (
+          <p className="history__note" role="note">
+            Conviction data not available yet: this screener API does not report conviction wallets, so the list is
+            not filtered by the conviction minimum and sorting by conviction wallets may be rejected.
           </p>
         ) : null}
         <TokenHistoryTable

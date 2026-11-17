@@ -37,7 +37,7 @@ export function MoversTable({ movers, selectedMint, onSelect }: MoversTableProps
             <th scope="col">Created</th>
             <th scope="col">Score</th>
             <th scope="col" className="movers-table__num">
-              <abbr title="Good-history wallets that bought the token: total, elite and still holding">Smart wallets</abbr>
+              <abbr title="Wallets that bought the token: conviction wallets (good record, usually hold), all good-history wallets and how many still hold">Smart wallets</abbr>
             </th>
             <th scope="col" className="movers-table__num">
               <abbr title="Unique buyers in the last minute / last 5 minutes">Buyers 1m / 5m</abbr>

@@ -92,8 +92,8 @@ describe('History view', () => {
       status: ['failed'],
       lifecycle: 'dead',
       minScore: 50,
-      // Decision D4: the history list asks for tokens bought by at least one good-history wallet by default.
-      minSmartWallets: 5,
+      // S7/D7: the history list asks for tokens bought by at least 3 conviction wallets by default.
+      minConvictionWallets: 3,
       q: 'frog',
       sort: { field: 'maxScore', direction: 'asc' },
       page: 2,

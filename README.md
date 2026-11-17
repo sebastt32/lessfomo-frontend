@@ -3,9 +3,11 @@
 A live dashboard for [lessfomo](https://github.com/sebastt32/lessfomo), a Solana pump.fun memecoin screener that
 only uses free data sources. It has three views, **Live**, **History** and **Insights**, and shows:
 
-- **Smart-wallet filter**: every list shows only tokens bought by good-history wallets (wallets that won most of
-  the tokens they traded in the last 7 days with a net profit). The minimum is 1 by default and can be raised to
-  2, 3, 4 or 5+; a banner above the lists says which filter is active.
+- **Conviction-wallet filter**: every list shows only tokens bought by conviction wallets: good-history wallets
+  (they won most of the tokens they traded in the last 7 days with a net profit) that usually hold what they buy
+  (sold within 2 minutes in at most 30% of their recent tokens). Flippers never count, because buying right after
+  them usually means becoming their exit liquidity. The minimum is 3 by default (the public minimum) and can be
+  raised to 5 or 10+; a banner above the lists says which filter is active.
 
 - **Top movers**: the momentum ranking, refreshed every minute, with each token's creation date and time and its
   liquidity (SOL in the market, bonding curve progress, or a "Migrated" badge once it moved to PumpSwap).
@@ -19,14 +21,16 @@ only uses free data sources. It has three views, **Live**, **History** and **Ins
 - **Token detail**: a token's info with its creation date and time, liquidity and lifecycle, a live candlestick
   chart, its momentum score over time, its snapshots over time (at creation, 5 min, 1 h, day 3, migration, new
   peak, holder milestones...) and its safety check history. Its **Smart wallets** section lists every
-  good-history wallet that bought the token (address with copy and Solscan link, tier at entry and now, bot flag,
-  when and how much it bought, whether it still holds) and explains why its record is good, with its recent
+  good-history wallet that bought the token (address with copy and Solscan link, tier and style at entry and now
+  (conviction, flipper or mixed), bot flag, when and how much it bought, whether it still holds), explains why its
+  record is good and how long it usually holds, says what conviction vs flipper means, and loads its recent
   results on demand.
 - **Insights ("Does it work?")**: how often tokens reached 2×, their average and median return and the share of
-  winners, grouped by how many good-history wallets bought them (none, 1, 2, 3, 4, 5+), with the simulated cost
-  and date range.
-- **Smart-wallet counts**: how many good-history wallets bought each token (elite and still holding), in the
-  movers, safety checks and history; the history can be sorted by it.
+  winners, grouped by how many good-history wallets bought them (none, 1, 2, 3, 4, 5+), or, with the toggle, by
+  how many conviction wallets bought them, with the simulated cost and date range.
+- **Smart-wallet counts**: conviction wallets first, then every good-history wallet and how many still hold
+  (e.g. "3 conviction · 7 good · 2 holding"), in the movers, safety checks and history; the history can be sorted
+  by conviction wallets.
 - **Live chart**: candles with volume for 1s, 1m or 5m intervals, as price or market cap, in SOL or USD, with the
   creator's (dev) buys and sells marked. New trades update it as they happen.
 - **Connection status**: whether the live feed is connected and the state of each data source.
@@ -47,20 +51,25 @@ is back. On a backend that predates the history API (`/api/tokens`, `/api/tokens
 `Mover.liquidity`), the live view keeps working: the history list says it is not available yet, the totals are
 hidden and liquidity shows a dash. On a backend that predates smart wallets (`smartWallets` fields,
 `/api/tokens/:mint/smart-wallets`, `/api/wallets/:address`, `/api/analysis/smart-wallets`), the lists are shown
-unfiltered with a "smart-wallet data not available yet" notice instead of being hidden.
+unfiltered with a "smart-wallet data not available yet" notice instead of being hidden. On a backend that reports
+good-history wallets but not trading styles (`smartWallets.conviction`, `styleAtEntry`, `style`, `flipRate`,
+`medianHoldSeconds`, `by=conviction`), the lists show what the backend makes public with a "conviction data not
+available yet" notice, the token detail says the trading style is not available yet, and Insights explains that
+the conviction grouping is not available yet.
 
 ### URL parameters
 
 | Parameter | Example | Meaning |
 | --- | --- | --- |
 | `view` | `history`, `insights` | Opens the history list or the insights; anything else is the live view |
-| `minSmartWallets` | `10` | Minimum good-history wallets that bought a token: `5` (default, the public minimum), `10`, `20` or `30` (30 or more); applies to every view |
+| `minConvictionWallets` | `5` | Minimum conviction wallets that bought a token: `3` (default, the public minimum), `5` or `10` (10 or more); applies to every view. The old `minSmartWallets` is ignored |
+| `by` | `conviction` | Insights only: group the analysis by conviction wallets instead of good-history wallets |
 | `range` | `today`, `7d`, `this-month`, `this-year`, `2025`, `2025-02`, `2025-02-14`, `2026-11-01..2026-11-10` | Creation date filter; ranges include both days and either end may be left open (`2026-11-01..`) |
 | `status` | `passed,failed` | Safety statuses |
 | `lifecycle` | `active` or `dead` | Lifecycle |
 | `minScore` | `50` | Minimum max score (0-100) |
 | `q` | `frog` | Symbol, name or mint prefix |
-| `sort` | `maxScore:desc` | `detectedAt`, `maxScore`, `peakMarketCapSol` or `liquidity`, with `:asc` or `:desc`; or `smartWallets:desc` |
+| `sort` | `maxScore:desc` | `detectedAt`, `maxScore`, `peakMarketCapSol` or `liquidity`, with `:asc` or `:desc`; or `convictionWallets:desc` or `smartWallets:desc` |
 | `page` | `2` | Page of 50 tokens |
 
 Dates are the viewer's local days: they are sent to the API as ISO instants at local midnight.
