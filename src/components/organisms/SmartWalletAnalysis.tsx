@@ -25,7 +25,8 @@ const GROUPING = {
 /** Buckets with fewer tokens than this are flagged: their percentages swing a lot. */
 export const SMALL_SAMPLE = 30;
 
-function signClass(value: number): string {
+function signClass(value: number | null): string {
+  if (value === null) return '';
   if (value > 0) return 'analysis__up';
   if (value < 0) return 'analysis__down';
   return '';

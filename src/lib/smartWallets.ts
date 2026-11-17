@@ -1,6 +1,8 @@
 import type { SmartWalletAnalysisResponse, SmartWalletBucket, WalletRecord, WalletStyle, WalletTier } from '../api/types';
 import { formatCount, formatPercent, formatSignedPercent } from './format';
 
+const DASH = '—';
+
 const MINUS = '−';
 
 export const TIER_LABELS: Record<WalletTier, string> = { elite: 'Elite', good: 'Good', none: 'Not rated' };
@@ -114,33 +116,33 @@ export interface AnalysisRow {
   /** How the 2× rate compares with tokens bought by no good wallet; null without a baseline. */
   lift: string | null;
   /** Raw values, for styling. */
-  avgReturnPct: number;
-  medianReturnPct: number;
+  avgReturnPct: number | null;
+  medianReturnPct: number | null;
 }
 
 /** Table rows for the analysis buckets, in numeric order (0, 1, 2, ..., 5+); unknown buckets go last. */
 export function analysisRows(buckets: readonly SmartWalletBucket[]): AnalysisRow[] {
   const sorted = [...buckets].sort((a, b) => bucketRank(bucketKey(a)) - bucketRank(bucketKey(b)));
-  const best = Math.max(0, ...sorted.map((b) => b.reached2xPct));
+  const best = Math.max(0, ...sorted.map((b) => b.reached2xPct ?? 0));
   const baseline = sorted.find((b) => bucketKey(b) === '0');
-  const baseRate = baseline && baseline.reached2xPct > 0 ? baseline.reached2xPct : null;
+  const baseRate = baseline && baseline.reached2xPct !== null && baseline.reached2xPct > 0 ? baseline.reached2xPct : null;
 
   return sorted.map((bucket) => {
     let lift: string | null = null;
     if (bucket === baseline) lift = 'Baseline';
-    else if (baseRate !== null) lift = `${(bucket.reached2xPct / baseRate).toFixed(1)}× vs none`;
+    else if (baseRate !== null && bucket.reached2xPct !== null) lift = `${(bucket.reached2xPct / baseRate).toFixed(1)}× vs none`;
     return {
       key: bucketKey(bucket),
       label: bucketLabel(bucketKey(bucket)),
       tokens: formatCount(bucket.tokens),
       tokenCount: bucket.tokens,
       reached2x: formatPercent(bucket.reached2xPct),
-      barPct: best > 0 ? (bucket.reached2xPct / best) * 100 : 0,
+      barPct: best > 0 && bucket.reached2xPct !== null ? (bucket.reached2xPct / best) * 100 : 0,
       migrated: formatPercent(bucket.migratedPct),
-      avgReturn: formatSignedPercent(bucket.avgReturnPct),
-      medianReturn: formatSignedPercent(bucket.medianReturnPct),
+      avgReturn: bucket.avgReturnPct === null ? DASH : formatSignedPercent(bucket.avgReturnPct),
+      medianReturn: bucket.medianReturnPct === null ? DASH : formatSignedPercent(bucket.medianReturnPct),
       winners: formatPercent(bucket.winnersPct),
-      medianPeak: `${bucket.medianPeakX.toFixed(2)}×`,
+      medianPeak: bucket.medianPeakX === null ? DASH : `${bucket.medianPeakX.toFixed(2)}×`,
       lift,
       avgReturnPct: bucket.avgReturnPct,
       medianReturnPct: bucket.medianReturnPct,

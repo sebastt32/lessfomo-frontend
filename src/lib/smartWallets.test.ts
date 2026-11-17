@@ -100,6 +100,37 @@ describe('analysisRows', () => {
     expect(analysisGrouping(makeAnalysis({ buckets: [{ ...base, convictionWallets: '3' }] }))).toBe('conviction');
   });
 
+  it('shows dashes for an empty bucket, whose statistics the API sends as null', () => {
+    const [filled] = makeAnalysis().buckets;
+    const empty = {
+      smartWallets: '4',
+      tokens: 0,
+      reached2xPct: null,
+      migratedPct: null,
+      avgReturnPct: null,
+      medianReturnPct: null,
+      winnersPct: null,
+      medianPeakX: null,
+    };
+
+    const rows = analysisRows([filled!, empty]);
+    const row = rows.find((r) => r.key === '4');
+
+    expect(row).toMatchObject({
+      tokens: '0',
+      reached2x: '—',
+      barPct: 0,
+      migrated: '—',
+      avgReturn: '—',
+      medianReturn: '—',
+      winners: '—',
+      medianPeak: '—',
+      lift: null,
+      avgReturnPct: null,
+      medianReturnPct: null,
+    });
+  });
+
   it('has no lift when the baseline is missing or zero', () => {
     const rows = analysisRows(makeAnalysis().buckets.filter((b) => b.smartWallets !== '0'));
     expect(rows[0]?.lift).toBeNull();

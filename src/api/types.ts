@@ -417,12 +417,13 @@ export interface SmartWalletBucket {
   /** The bucket key when grouped by conviction wallets at entry (`by=conviction`). */
   convictionWallets?: string;
   tokens: number;
-  reached2xPct: number;
-  migratedPct: number;
-  avgReturnPct: number;
-  medianReturnPct: number;
-  winnersPct: number;
-  medianPeakX: number;
+  /** Statistics are null for a bucket with no tokens. */
+  reached2xPct: number | null;
+  migratedPct: number | null;
+  avgReturnPct: number | null;
+  medianReturnPct: number | null;
+  winnersPct: number | null;
+  medianPeakX: number | null;
 }
 
 export interface SmartWalletAnalysisResponse {
