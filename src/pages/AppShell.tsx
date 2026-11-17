@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ViewNav, type ViewNavItem } from '../components/molecules/ViewNav';
+import { ThemeToggleContainer } from '../containers/ThemeToggleContainer';
 import { StatsContainer } from '../containers/StatsContainer';
 import { navigate, useLocationSearch } from '../hooks/useLocationSearch';
 import { parseAppLocation, serializeAppLocation, type AppView, type HistoryFilters } from '../lib/historyQuery';
@@ -47,6 +48,7 @@ export function AppShell() {
         onNavigate={(href) => navigate(href.startsWith('?') ? href : '')}
       />
       <StatsContainer />
+      <ThemeToggleContainer />
     </>
   );
 

@@ -48,8 +48,9 @@
   }
 }
 
+/* Dark: follows the device unless the visitor forced light, or when they forced dark (data-theme on <html>). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --color-bg: #0f171d;
     --color-surface: #16212a;
     --color-ink: #e4ebee;
@@ -66,4 +67,27 @@
     --color-caution: #e6b85a;
     --color-caution-soft: #33291a;
   }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg: #0f171d;
+  --color-surface: #16212a;
+  --color-ink: #e4ebee;
+  --color-muted: #9aa8b2;
+  --color-line: #2a3843;
+  --color-track: #263440;
+  --color-hover: #1b2832;
+  --color-accent: #93a6ff;
+  --color-accent-soft: #212f52;
+  --color-up: #52c893;
+  --color-up-soft: #15322a;
+  --color-down: #ff8f80;
+  --color-down-soft: #3a1f1f;
+  --color-caution: #e6b85a;
+  --color-caution-soft: #33291a;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
 }

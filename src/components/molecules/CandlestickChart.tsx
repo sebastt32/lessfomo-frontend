@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { THEME_CHANGE_EVENT } from '../../lib/theme';
 import {
   CandlestickSeries,
   ColorType,
@@ -48,6 +49,7 @@ const FALLBACK_COLORS: ChartColors = {
 };
 
 const DARK_QUERY = '(prefers-color-scheme: dark)';
+
 
 /** Reads the design tokens the chart needs from the element's computed style. */
 function readColors(element: HTMLElement): ChartColors {
@@ -173,9 +175,11 @@ export function CandlestickChart({ bars, markers, secondsVisible, label, onHover
     };
     syncColors();
     media?.addEventListener('change', syncColors);
+    window.addEventListener(THEME_CHANGE_EVENT, syncColors);
 
     return () => {
       media?.removeEventListener('change', syncColors);
+      window.removeEventListener(THEME_CHANGE_EVENT, syncColors);
       chart.unsubscribeCrosshairMove(handleCrosshair);
       chart.remove();
       refs.current = null;
