@@ -188,9 +188,13 @@ export function cycleMarks(createdAt: string | null | undefined, cycle: TokenCyc
     ['peak', cycle?.peakAt],
     ['crash', cycle?.crashAt],
   ];
+  const appeared = toSeconds(cycle?.appearedAt);
   const marks: CycleMark[] = [];
   for (const [kind, at] of moments) {
-    const time = toSeconds(at);
+    let time = toSeconds(at);
+    // Creation is stamped by our clock and the appearance by the chain's, which can run a second or
+    // two earlier; a token cannot appear before it exists, so the creation is drawn no later.
+    if (kind === 'created' && time !== null && appeared !== null && time > appeared) time = appeared;
     if (at && time !== null) marks.push({ kind, label: MARK_LABELS[kind], at, time });
   }
   // Stable sort: moments at the same second keep the order of the cycle.

@@ -118,6 +118,20 @@ describe('cycleMarks', () => {
     ]);
   });
 
+  it('never draws the creation after the appearance when their clocks disagree by a second or two', () => {
+    // detectedAt is our wall clock; appearedAt is the block time of a trade, which can be slightly earlier.
+    const appearedAt = new Date((T0 + 120) * 1000).toISOString();
+    const createdLate = new Date((T0 + 121) * 1000 + 500).toISOString();
+
+    const marks = cycleMarks(createdLate, makeCycle({ appearedAt }));
+
+    expect(marks.slice(0, 2).map((mark) => [mark.kind, mark.time])).toEqual([
+      ['created', T0 + 120],
+      ['appeared', T0 + 120],
+    ]);
+    expect(marks[0]?.at).toBe(createdLate);
+  });
+
   it('leaves out moments that have not happened, and works without a cycle', () => {
     expect(cycleMarks(CREATED, makeStableCycle()).map((mark) => mark.kind)).toEqual(['created', 'appeared']);
     expect(cycleMarks(CREATED, null).map((mark) => mark.kind)).toEqual(['created']);
