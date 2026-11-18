@@ -35,22 +35,22 @@ describe('token view URL', () => {
 describe('backTarget', () => {
   it('returns to the view the reader came from', () => {
     const from = '?view=record&day=2026-11-16';
-    expect(backTarget(from, `?view=token&mint=${MINT_A}`)).toEqual({ search: from, label: 'Back to Daily record' });
-    expect(backTarget('', `?view=token&mint=${MINT_A}`)).toEqual({ search: '', label: 'Back to Live' });
+    expect(backTarget(from, `?view=token&mint=${MINT_A}`)).toEqual({ search: from, label: 'Volver a Registro diario' });
+    expect(backTarget('', `?view=token&mint=${MINT_A}`)).toEqual({ search: '', label: 'Volver a En vivo' });
   });
 
   it('goes to the live view when the token was opened directly, keeping the conviction filter', () => {
-    expect(backTarget(null, `?view=token&mint=${MINT_A}`)).toEqual({ search: '', label: 'Back to Live' });
+    expect(backTarget(null, `?view=token&mint=${MINT_A}`)).toEqual({ search: '', label: 'Volver a En vivo' });
     expect(backTarget(undefined, `?view=token&mint=${MINT_A}&minConvictionWallets=10`)).toEqual({
       search: '?minConvictionWallets=10',
-      label: 'Back to Live',
+      label: 'Volver a En vivo',
     });
   });
 
   it('carries the current conviction filter over the remembered one', () => {
     expect(backTarget('?view=record&day=2026-11-16', `?view=token&mint=${MINT_A}&minConvictionWallets=5`)).toEqual({
       search: '?view=record&day=2026-11-16&minConvictionWallets=5',
-      label: 'Back to Daily record',
+      label: 'Volver a Registro diario',
     });
   });
 

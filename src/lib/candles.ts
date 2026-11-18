@@ -122,7 +122,7 @@ export function devTradeMarkers(
     .map((t) => ({
       time: bucketStart(t.time, interval),
       side: t.side,
-      text: `Dev ${t.side} ${Number(t.solAmount.toPrecision(3))} SOL`,
+      text: `Creador ${t.side === 'buy' ? 'compra' : 'vende'} ${Number(t.solAmount.toPrecision(3))} SOL`,
     }))
     .filter((m) => m.time >= firstCandleTime)
     .sort((a, b) => a.time - b.time);

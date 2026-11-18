@@ -19,14 +19,14 @@ export function AppHeader({ connection, sources, tokensDetected, extras }: AppHe
     <header className="app-header">
       <div className="app-header__brand">
         <Wordmark />
-        <p className="app-header__tagline">Live pump.fun screener for Solana, built on free data.</p>
+        <p className="app-header__tagline">Screener en vivo de tokens de pump.fun en Solana, con datos gratuitos.</p>
       </div>
       <div className="app-header__status">
         <ConnectionIndicator state={connection} />
         <SourceStatusList sources={sources} />
         {tokensDetected > 0 ? (
           <p className="app-header__count">
-            {tokensDetected === 1 ? '1 new token' : `${tokensDetected} new tokens`} since you opened this page
+            {tokensDetected === 1 ? '1 token nuevo' : `${tokensDetected} tokens nuevos`} desde que abriste esta página
           </p>
         ) : null}
       </div>

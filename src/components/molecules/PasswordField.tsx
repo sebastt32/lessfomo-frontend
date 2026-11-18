@@ -62,11 +62,11 @@ export function PasswordField({
           type="button"
           className="button button--quiet field__toggle"
           aria-controls={id}
-          aria-label={`${visible ? 'Hide' : 'Show'} ${label.toLowerCase()}`}
+          aria-label={`${visible ? 'Ocultar' : 'Mostrar'} ${label.toLowerCase()}`}
           disabled={disabled}
           onClick={() => setVisible((shown) => !shown)}
         >
-          {visible ? 'Hide' : 'Show'}
+          {visible ? 'Ocultar' : 'Mostrar'}
         </button>
       </div>
     </div>

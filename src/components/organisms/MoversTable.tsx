@@ -5,6 +5,7 @@ import { ScoreBar } from '../atoms/ScoreBar';
 import { DateTime } from '../atoms/DateTime';
 import { StatusBadge } from '../atoms/StatusBadge';
 import { CycleCell } from '../molecules/CycleCell';
+import { HelpTip } from '../molecules/HelpTip';
 import { LiquidityCell } from '../molecules/Liquidity';
 import { MoneyValue } from '../molecules/MoneyValue';
 import { marketCapSol } from '../../lib/money';
@@ -31,9 +32,9 @@ export function MoversTable({ movers, selectedMint, onSelect, now = Date.now() }
   }
 
   return (
-    <div className="movers-table__scroll" role="region" aria-label="Top movers table" tabIndex={0}>
+    <div className="movers-table__scroll" role="region" aria-label="Tabla de más activos ahora" tabIndex={0}>
       <table className="movers-table">
-        <caption className="visually-hidden">Top movers ranked by momentum score, highest first</caption>
+        <caption className="visually-hidden">Más activos ahora, ordenados por impulso, de mayor a menor</caption>
         <thead>
           <tr>
             <th scope="col" className="movers-table__rank">
@@ -42,34 +43,71 @@ export function MoversTable({ movers, selectedMint, onSelect, now = Date.now() }
             <th scope="col">Token</th>
             <th scope="col" className="movers-table__num">
               Market cap
+              <HelpTip topic="el market cap">
+                Lo que valen todos los tokens juntos al precio actual. En dólares, con el valor en SOL debajo.
+              </HelpTip>
             </th>
-            <th scope="col">Created</th>
-            <th scope="col">Score</th>
+            <th scope="col">Creado</th>
             <th scope="col">
-              <abbr title="Phase of the token's cycle, and how long it could be bought after appearing in lessfomo before its run-up">
-                Cycle
-              </abbr>
+              Impulso
+              <HelpTip topic="el impulso">
+                Un puntaje de 0 a 100 que mide qué tan rápido crecen los compradores nuevos y el volumen de compra en
+                los últimos minutos.
+              </HelpTip>
+            </th>
+            <th scope="col">
+              Ciclo
+              <HelpTip topic="el ciclo">
+                El camino del token después de aparecer en lessfomo: estable, se duplica (2× el precio al aparecer),
+                pico y caída. Debajo, el tiempo para comprar antes de la subida fuerte.
+              </HelpTip>
             </th>
             <th scope="col" className="movers-table__num">
-              <abbr title="Wallets that bought the token: conviction wallets (good record, usually hold), all good-history wallets and how many still hold">Smart wallets</abbr>
+              Wallets que mantienen
+              <HelpTip topic="una wallet que mantiene">
+                Una wallet con buen historial en los últimos 7 días que suele quedarse con lo que compra, en vez de
+                venderlo en menos de 2 minutos. Debajo: cuántas wallets con buen historial lo compraron y cuántas
+                todavía lo tienen.
+              </HelpTip>
             </th>
             <th scope="col" className="movers-table__num">
-              <abbr title="Unique buyers in the last minute / last 5 minutes">Buyers 1m / 5m</abbr>
+              Compradores 1 min / 5 min
+              <HelpTip topic="el conteo de compradores">
+                Cuántas wallets distintas compraron en el último minuto y en los últimos 5 minutos.
+              </HelpTip>
             </th>
             <th scope="col" className="movers-table__num">
-              Acceleration
+              Aceleración
+              <HelpTip topic="la aceleración">
+                Si las compras llegan cada vez más rápido: compara el último minuto con los anteriores. Va de 0 a 1;
+                más alto es más rápido.
+              </HelpTip>
             </th>
             <th scope="col" className="movers-table__num">
-              Buy pressure
+              Presión compradora
+              <HelpTip topic="la presión compradora">
+                Qué parte del volumen reciente son compras y no ventas. Va de 0 a 1; más alto significa más compras.
+              </HelpTip>
             </th>
             <th scope="col" className="movers-table__num">
-              Δ price 5m
+              Cambio 5 min
+              <HelpTip topic="el cambio 5 min">Cuánto cambió el precio en los últimos 5 minutos.</HelpTip>
             </th>
             <th scope="col" className="movers-table__num">
-              Liquidity
+              Liquidez
+              <HelpTip topic="la liquidez">
+                El dinero disponible en el mercado del token para comprar y vender. Con poca liquidez, una venta grande
+                hace caer mucho el precio.
+              </HelpTip>
             </th>
-            <th scope="col">Safety</th>
-            <th scope="col">Links</th>
+            <th scope="col">
+              Seguridad
+              <HelpTip topic="un control de seguridad">
+                Revisa cuánto tienen los 10 mayores holders, cuánto tiene el creador y los permisos del token. Pasarlo
+                no significa que el token vaya a subir.
+              </HelpTip>
+            </th>
+            <th scope="col">Enlaces</th>
           </tr>
         </thead>
         <tbody>
@@ -87,7 +125,7 @@ export function MoversTable({ movers, selectedMint, onSelect, now = Date.now() }
                     type="button"
                     className="token-button"
                     aria-pressed={selectedMint === undefined ? undefined : selected}
-                    aria-label={`Show details for ${mover.symbol}`}
+                    aria-label={`Ver detalle de ${mover.symbol}`}
                   >
                     <TokenName symbol={mover.symbol} name={mover.name} />
                   </button>

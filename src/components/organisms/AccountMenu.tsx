@@ -12,15 +12,15 @@ export interface AccountMenuProps {
 /** Who is signed in, with the account actions. */
 export function AccountMenu({ username, onChangePassword, onSignOut, signingOut, error }: AccountMenuProps) {
   return (
-    <div className="account" role="group" aria-label="Account">
+    <div className="account" role="group" aria-label="Cuenta">
       <p className="account__user">
-        Signed in as <strong>{username}</strong>
+        Sesión iniciada como <strong>{username}</strong>
       </p>
       <button type="button" className="button button--quiet button--small" onClick={onChangePassword}>
-        Change password
+        Cambiar contraseña
       </button>
       <button type="button" className="button button--quiet button--small" onClick={onSignOut} disabled={signingOut}>
-        {signingOut ? 'Signing out…' : 'Sign out'}
+        {signingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
       </button>
       {error !== null ? (
         <p className="account__error" role="alert">

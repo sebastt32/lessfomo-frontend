@@ -8,7 +8,7 @@ describe('OfflineNotice', () => {
     render(<OfflineNotice apiUrl="http://localhost:3001" onRetry={() => {}} />);
 
     const alert = screen.getByRole('alert');
-    expect(alert).toHaveTextContent('The screener API is not answering');
+    expect(alert).toHaveTextContent('El servidor de lessfomo no responde');
     expect(alert).toHaveTextContent('http://localhost:3001');
     expect(alert).toHaveTextContent('VITE_API_URL');
   });
@@ -18,7 +18,7 @@ describe('OfflineNotice', () => {
     const user = userEvent.setup();
     render(<OfflineNotice apiUrl="http://localhost:3001" onRetry={onRetry} />);
 
-    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    await user.click(screen.getByRole('button', { name: 'Reintentar' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });

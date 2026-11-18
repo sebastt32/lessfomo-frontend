@@ -33,24 +33,24 @@ describe('ScreeningsFeed', () => {
   it('renders failure codes, reason, holder stats and relative time', () => {
     render(<ScreeningsFeed screenings={screenings} selectedMint={null} onSelect={() => {}} now={NOW} />);
 
-    const items = within(screen.getByRole('list', { name: /latest safety checks/i })).getAllByRole('listitem');
+    const items = within(screen.getByRole('list', { name: /^Últimos controles de seguridad/ })).getAllByRole('listitem');
     const failed = items.find((item) => item.textContent?.includes('RUG'));
     expect(failed).toBeDefined();
-    const codes = within(failed!).getByRole('list', { name: 'Failed checks' });
+    const codes = within(failed!).getByRole('list', { name: 'Controles no superados' });
     expect(within(codes).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-      'Creator holds too much',
+      'El creador tiene demasiado',
       'SOMETHING_NEW',
     ]);
-    expect(within(codes).getByText('Creator holds too much')).toHaveAttribute('title', 'CREATOR_HOLDS_TOO_MUCH');
-    expect(failed).toHaveTextContent('Failed');
+    expect(within(codes).getByText('El creador tiene demasiado')).toHaveAttribute('title', 'CREATOR_HOLDS_TOO_MUCH');
+    expect(failed).toHaveTextContent('Rechazado');
     expect(failed).toHaveTextContent('81.2%');
     expect(failed).toHaveTextContent('40.0%');
     expect(failed).toHaveTextContent('12');
-    expect(failed).toHaveTextContent('3m ago');
+    expect(failed).toHaveTextContent('hace 3 min');
 
     expect(screen.getByText('RPC rate limited')).toBeInTheDocument();
-    expect(screen.getByText('Unverified')).toBeInTheDocument();
-    expect(screen.getByText('30s ago')).toBeInTheDocument();
+    expect(screen.getByText('Sin verificar')).toBeInTheDocument();
+    expect(screen.getByText('hace 30 s')).toBeInTheDocument();
   });
 
   it('selects a token from the feed', async () => {
@@ -58,7 +58,7 @@ describe('ScreeningsFeed', () => {
     const user = userEvent.setup();
     render(<ScreeningsFeed screenings={screenings} selectedMint={null} onSelect={onSelect} now={NOW} />);
 
-    await user.click(screen.getByRole('button', { name: 'Show details for RUG' }));
+    await user.click(screen.getByRole('button', { name: 'Ver detalle de RUG' }));
     expect(onSelect).toHaveBeenCalledWith(MINT_B);
   });
 
@@ -72,7 +72,7 @@ describe('ScreeningsFeed', () => {
         createdAt={{ [MINT_B]: '2026-11-13T19:58:00.000Z' }}
       />,
     );
-    const created = screen.getAllByText('Created');
+    const created = screen.getAllByText('Creado');
     expect(created).toHaveLength(1);
     const time = screen.getByText(formatDate('2026-11-13T19:58:00.000Z')).closest('time');
     expect(time).toHaveAttribute('title', '2026-11-13T19:58:00.000Z');

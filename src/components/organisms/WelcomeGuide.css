@@ -1,0 +1,73 @@
+.guide-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4) var(--gutter);
+  overflow-y: auto;
+  /* The ink of the light theme in both themes: the page behind recedes without turning grey-on-grey. */
+  background: rgb(23 34 43 / 0.6);
+}
+
+.guide {
+  display: grid;
+  gap: var(--space-3);
+  inline-size: 100%;
+  max-inline-size: 28rem;
+  padding: var(--space-5);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-panel);
+  box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 0.25);
+}
+
+.guide__progress {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.guide__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.guide__body {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+
+.guide__dots {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.guide__dot {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: 50%;
+  background: var(--color-track);
+}
+
+.guide__dot--current {
+  background: var(--color-accent);
+}
+
+.guide__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.guide__skip {
+  margin-inline-start: auto;
+}

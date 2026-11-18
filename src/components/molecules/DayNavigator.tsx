@@ -15,10 +15,10 @@ export function DayNavigator({ day, today, onChange }: DayNavigatorProps) {
   return (
     <div className="day-nav">
       <button type="button" className="button button--quiet" onClick={() => onChange(shiftDay(day, -1))}>
-        <span aria-hidden="true">← </span>Previous day
+        <span aria-hidden="true">← </span>Día anterior
       </button>
       <label className="day-nav__picker">
-        <span className="visually-hidden">Day</span>
+        <span className="visually-hidden">Día</span>
         <input
           type="date"
           value={day}
@@ -30,11 +30,11 @@ export function DayNavigator({ day, today, onChange }: DayNavigatorProps) {
         />
       </label>
       <button type="button" className="button button--quiet" onClick={() => onChange(shiftDay(day, 1))} disabled={isToday}>
-        Next day<span aria-hidden="true"> →</span>
+        Día siguiente<span aria-hidden="true"> →</span>
       </button>
       {isToday ? null : (
         <button type="button" className="button button--quiet" onClick={() => onChange(today)}>
-          Today
+          Hoy
         </button>
       )}
     </div>

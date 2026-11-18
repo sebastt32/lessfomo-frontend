@@ -33,6 +33,12 @@
   font-size: var(--text-xs);
 }
 
+/* The title and its help mark on one line. */
+.daily-record__card-head {
+  display: flex;
+  align-items: center;
+}
+
 .daily-record__pct {
   margin: 0;
   font-family: var(--font-display);

@@ -3,10 +3,10 @@ import { StatusDot, type StatusDotTone } from '../atoms/StatusDot';
 import './ConnectionIndicator.css';
 
 const COPY: Record<ConnectionState, { label: string; tone: StatusDotTone }> = {
-  connecting: { label: 'Connecting to live feed', tone: 'warn' },
-  connected: { label: 'Live', tone: 'good' },
-  reconnecting: { label: 'Reconnecting', tone: 'warn' },
-  offline: { label: 'Offline', tone: 'bad' },
+  connecting: { label: 'Conectando con los datos en vivo', tone: 'warn' },
+  connected: { label: 'Conectado', tone: 'good' },
+  reconnecting: { label: 'Reconectando', tone: 'warn' },
+  offline: { label: 'Sin conexión', tone: 'bad' },
 };
 
 export interface ConnectionIndicatorProps {

@@ -1,10 +1,10 @@
 const countFormatter = new Intl.NumberFormat('en-US');
 
-/** Human label for a snapshot milestone ("0m" -> "At creation", "d3" -> "Day 3", ...). Unknown values pass through. */
+/** Human label for a snapshot milestone ("0m" -> "Al crearse", "d3" -> "Día 3", ...). Unknown values pass through. */
 export function describeMilestone(milestone: string): string {
-  if (milestone === '0m') return 'At creation';
-  if (milestone === 'event:migrated') return 'Migrated to PumpSwap';
-  if (milestone === 'event:new-peak') return 'New peak';
+  if (milestone === '0m') return 'Al crearse';
+  if (milestone === 'event:migrated') return 'Migró a PumpSwap';
+  if (milestone === 'event:new-peak') return 'Nuevo pico';
 
   const holders = /^event:holders-(\d+)$/.exec(milestone);
   if (holders) return `${countFormatter.format(Number(holders[1]))} holders`;
@@ -13,7 +13,7 @@ export function describeMilestone(milestone: string): string {
   if (scheduled) return `${scheduled[1]} ${scheduled[2] === 'm' ? 'min' : 'h'}`;
 
   const calendar = /^(d|w)(\d+)$/.exec(milestone);
-  if (calendar) return `${calendar[1] === 'd' ? 'Day' : 'Week'} ${calendar[2]}`;
+  if (calendar) return `${calendar[1] === 'd' ? 'Día' : 'Semana'} ${calendar[2]}`;
 
   return milestone;
 }

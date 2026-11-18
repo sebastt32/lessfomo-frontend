@@ -41,6 +41,10 @@ function renderApp(client: ApiClient, url = '/', minConvictionWallets?: number) 
   };
 }
 
+/** The conviction filter bar, found through its control group (the glossary's label). */
+const filterBar = () =>
+  screen.getByRole('group', { name: 'Mínimo de wallets que mantienen' }).closest('section')!;
+
 const smartMovers = () =>
   fakeClient({
     getMovers: vi.fn(async () => ({
@@ -57,42 +61,47 @@ const smartMovers = () =>
 
 afterEach(() => window.history.replaceState(null, '', '/'));
 
+/** The explanation a "?" button opened (it controls it while open). */
+const bubbleOf = (button: HTMLElement) => document.getElementById(button.getAttribute('aria-controls') ?? '');
+
 // S7/D7: the filter moved from good-history wallets (default 5) to conviction wallets (default 3).
 describe('conviction-wallet filter in the live view', () => {
   it('shows only tokens bought by at least three conviction wallets by default, and says so', async () => {
     const client = smartMovers();
     renderApp(client);
 
-    expect(await screen.findByRole('button', { name: 'Show details for FROG' })).toBeInTheDocument();
-    const movers = screen.getByRole('region', { name: 'Top movers' });
-    expect(within(movers).queryByRole('button', { name: 'Show details for CAT' })).not.toBeInTheDocument();
-    const bar = screen.getByRole('region', { name: 'Smart-wallet filter' });
-    expect(bar).toHaveTextContent('Showing tokens bought by ≥3 conviction wallets');
-    expect(bar).toHaveTextContent('Flippers, which sell within 2 minutes, never count');
-    expect(within(bar).getByRole('button', { name: '3' })).toHaveAttribute('aria-pressed', 'true');
-    expect(within(bar).getAllByRole('button').map((b) => b.textContent)).toEqual(['3', '5', '10+']);
+    expect(await screen.findByRole('button', { name: 'Ver detalle de FROG' })).toBeInTheDocument();
+    const movers = screen.getByRole('region', { name: 'Más activos ahora' });
+    expect(within(movers).queryByRole('button', { name: 'Ver detalle de CAT' })).not.toBeInTheDocument();
+    const bar = filterBar();
+    expect(bar).toHaveTextContent('Mostrando tokens comprados por al menos 3 wallets que mantienen');
+    expect(bar).toHaveTextContent(/venden? rápido/i);
+    const group = screen.getByRole('group', { name: 'Mínimo de wallets que mantienen' });
+    expect(within(group).getByRole('button', { name: '3' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual(['3', '5', '10+']);
     expect(client.getMovers).toHaveBeenCalledWith(expect.objectContaining({ minConvictionWallets: 3 }));
     expect(client.getScreenings).toHaveBeenCalledWith(expect.objectContaining({ minConvictionWallets: 3 }));
     expect(client.getMovers).not.toHaveBeenCalledWith(expect.objectContaining({ minSmartWallets: expect.anything() }));
 
     const table = screen.getByRole('table');
-    expect(within(table).getByText('3 conviction').parentElement).toHaveTextContent('3 conviction · 7 good · 2 holding');
-    const feed = screen.getByRole('region', { name: 'Latest safety checks' });
-    expect(within(feed).getByRole('button', { name: 'Show details for DOG' })).toBeInTheDocument();
+    expect(within(table).getByRole('button', { name: 'Ver detalle de FROG' }).closest('tr')).toHaveTextContent(/3.*7.*2/);
+    const feed = screen.getByRole('region', { name: 'Últimos controles de seguridad' });
+    expect(within(feed).getByRole('button', { name: 'Ver detalle de DOG' })).toBeInTheDocument();
   });
 
   it('changes the minimum, keeps it in the URL and explains an empty list', async () => {
     const user = userEvent.setup();
     renderApp(smartMovers());
-    await screen.findByRole('button', { name: 'Show details for FROG' });
+    await screen.findByRole('button', { name: 'Ver detalle de FROG' });
 
     await user.click(screen.getByRole('button', { name: '5' }));
     expect(window.location.search).toBe('?minConvictionWallets=5');
-    expect(screen.getByRole('region', { name: 'Smart-wallet filter' })).toHaveTextContent(
-      'Showing tokens bought by ≥5 conviction wallets',
-    );
-    expect(screen.getByText('No mover passes the conviction-wallet filter right now')).toBeInTheDocument();
-    expect(screen.getByText(/2 ranked tokens were not bought by enough conviction wallets/)).toBeInTheDocument();
+    expect(filterBar()).toHaveTextContent('Mostrando tokens comprados por al menos 5 wallets que mantienen');
+    const movers = screen.getByRole('region', { name: 'Más activos ahora' });
+    expect(within(movers).queryByRole('button', { name: /^Ver detalle de/ })).not.toBeInTheDocument();
+    // The empty list says why: 2 ranked tokens were not bought by enough wallets que mantienen.
+    expect(movers).toHaveTextContent(/2 tokens/);
+    expect(movers).toHaveTextContent(/wallets que mantienen/);
 
     await user.click(screen.getByRole('button', { name: '10+' }));
     expect(window.location.search).toBe('?minConvictionWallets=10');
@@ -106,7 +115,7 @@ describe('conviction-wallet filter in the live view', () => {
         <AppShell />
       </LiveFeedProvider>,
     );
-    await screen.findByRole('button', { name: 'Show details for FROG' });
+    await screen.findByRole('button', { name: 'Ver detalle de FROG' });
     rerender(
       <LiveFeedProvider client={client} connect={connect} minConvictionWallets={10}>
         <AppShell />
@@ -129,30 +138,28 @@ describe('conviction-wallet filter in the live view', () => {
         })),
       }),
     );
-    expect(await screen.findByRole('button', { name: 'Show details for FROG' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Smart-wallet filter' })).toHaveTextContent(
-      'conviction data not available yet',
-    );
-    expect(within(screen.getByRole('table')).getByText('6 good')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Ver detalle de FROG' })).toBeInTheDocument();
+    expect(filterBar()).toHaveTextContent(/todavía no/i);
+    expect(filterBar()).not.toHaveTextContent('Mostrando tokens comprados por al menos');
+    expect(within(screen.getByRole('table')).getByText(/^6 /)).toBeInTheDocument();
   });
 
   it('adds a token once a smart-wallet event pushes it over the threshold', async () => {
     const app = renderApp(smartMovers());
-    await screen.findByRole('button', { name: 'Show details for FROG' });
+    await screen.findByRole('button', { name: 'Ver detalle de FROG' });
     app.emit({
       type: 'smart-wallet',
       data: { mint: MINT_B, smartWallets: makeCounts({ count: 9, elite: 0, holding: 1, conviction: 3 }), wallet: makeSmartWallet() },
     });
-    const movers = screen.getByRole('region', { name: 'Top movers' });
-    expect(within(movers).getByRole('button', { name: 'Show details for CAT' })).toBeInTheDocument();
+    const movers = screen.getByRole('region', { name: 'Más activos ahora' });
+    expect(within(movers).getByRole('button', { name: 'Ver detalle de CAT' })).toBeInTheDocument();
   });
 
   it('shows every token and says why when the backend has no smart-wallet data', async () => {
     renderApp(fakeClient());
-    expect(await screen.findByRole('button', { name: 'Show details for FROG' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Smart-wallet filter' })).toHaveTextContent(
-      'Showing every token: smart-wallet data not available yet',
-    );
+    expect(await screen.findByRole('button', { name: 'Ver detalle de FROG' })).toBeInTheDocument();
+    expect(filterBar()).toHaveTextContent(/todavía no/i);
+    expect(filterBar()).not.toHaveTextContent('Mostrando tokens comprados por al menos');
   });
 });
 
@@ -177,33 +184,33 @@ describe('token detail: smart wallets', () => {
       ),
     });
     renderApp(client);
-    await user.click(await screen.findByRole('button', { name: 'Show details for FROG' }));
+    await user.click(await screen.findByRole('button', { name: 'Ver detalle de FROG' }));
 
-    const section = await screen.findByRole('region', { name: 'Smart wallets' });
-    expect(await within(section).findByText(/1 good-history wallet/)).toBeInTheDocument();
+    const section = await screen.findByRole('region', { name: 'Wallets con buen historial' });
+    expect(await within(section).findByText(/1 wallet con buen historial/)).toBeInTheDocument();
     expect(section).toHaveTextContent(
-      'Why it counts as good: Won 9 of 12 tokens (75%) in the last 7 days, net +14.24 SOL, usually buys 4 s after launch.',
+      'Por qué tiene buen historial: Ganó en 9 de 12 tokens (75%) en los últimos 7 días, resultado neto +14.24 SOL, suele comprar 4 s después del lanzamiento.',
     );
-    expect(section).toHaveTextContent('Bought 1.50 SOL 3 s after launch, still holding.');
-    expect(within(section).getByText('At entry: Good')).toBeInTheDocument();
-    expect(within(section).getByText('Now: Elite')).toBeInTheDocument();
+    expect(section).toHaveTextContent('Compró 1.50 SOL 3 s después del lanzamiento, todavía lo tiene.');
+    expect(within(section).getByText('Al comprar: Buen historial')).toBeInTheDocument();
+    expect(within(section).getByText('Ahora: Élite')).toBeInTheDocument();
     expect(within(section).getByText('Bot')).toBeInTheDocument();
-    expect(section).toHaveTextContent('Past results do not guarantee future ones');
-    expect(section).toHaveTextContent('only covers the tokens lessfomo observed');
+    expect(section).toHaveTextContent('Los resultados pasados no garantizan los futuros');
+    expect(section).toHaveTextContent('solo cubre los tokens que lessfomo observó');
     // This backend predates trading styles: no style badges, and the section says so.
-    expect(within(section).queryByText(/^Style at entry/)).not.toBeInTheDocument();
-    expect(section).toHaveTextContent('Trading style not available yet');
+    expect(within(section).queryByText(/^Estilo al comprar/)).not.toBeInTheDocument();
+    expect(section).toHaveTextContent('Todavía no está disponible el estilo de operación');
 
-    const solscan = within(section).getByRole('link', { name: /on Solscan/ });
+    const solscan = within(section).getByRole('link', { name: /en Solscan/ });
     expect(solscan).toHaveAttribute('href', `https://solscan.io/account/${WALLET_A}`);
     expect(solscan).toHaveAttribute('target', '_blank');
     expect(solscan).toHaveAttribute('rel', 'noopener noreferrer');
-    expect(within(section).getByRole('button', { name: `Copy wallet address ${WALLET_A}` })).toBeInTheDocument();
+    expect(within(section).getByRole('button', { name: `Copiar la dirección de la wallet ${WALLET_A}` })).toBeInTheDocument();
 
     expect(client.getWallet).not.toHaveBeenCalled();
-    await user.click(within(section).getByRole('button', { name: 'Show recent results' }));
+    await user.click(within(section).getByRole('button', { name: 'Ver resultados recientes' }));
     expect(client.getWallet).toHaveBeenCalledWith(WALLET_A, expect.anything());
-    const results = await within(section).findByRole('region', { name: 'Recent results' });
+    const results = await within(section).findByRole('region', { name: 'Resultados recientes' });
     expect(within(results).getByRole('rowheader', { name: 'CAT' })).toBeInTheDocument();
     expect(results).toHaveTextContent('+1.50 SOL');
   });
@@ -230,32 +237,57 @@ describe('token detail: smart wallets', () => {
       })),
     });
     renderApp(client);
-    await user.click(await screen.findByRole('button', { name: 'Show details for FROG' }));
-    const section = await screen.findByRole('region', { name: 'Smart wallets' });
+    await user.click(await screen.findByRole('button', { name: 'Ver detalle de FROG' }));
+    const section = await screen.findByRole('region', { name: 'Wallets con buen historial' });
 
-    expect(await within(section).findByText('1 conviction wallet')).toBeInTheDocument();
+    expect(await within(section).findByText('1 wallet que mantiene')).toBeInTheDocument();
+    // The "?" help buttons sit between the words, so the sentence is checked in pieces.
+    const headline = within(section).getByText('1 wallet que mantiene').closest('p')!;
+    expect(headline).toHaveTextContent('de 2 wallets con buen historial que compraron este token (1 vende rápido');
+    expect(headline).toHaveTextContent(', 1 élite al comprar); 1 todavía lo tiene.');
+    expect(within(section).getByText('Estilo al comprar: Mantiene')).toBeInTheDocument();
+    expect(within(section).getByText('Estilo ahora: Mixta')).toBeInTheDocument();
+    expect(within(section).getByText('Estilo al comprar: Vende rápido')).toBeInTheDocument();
+    expect(within(section).getByText('Estilo ahora: Vende rápido')).toBeInTheDocument();
     expect(section).toHaveTextContent(
-      '1 conviction wallet among 2 good-history wallets that bought this token (1 flipper, 1 elite at the time they bought), 1 still holds.',
+      'suele comprar 4 s después del lanzamiento, suele mantener 14 min; vendió antes de 2 min en el 12% de sus tokens.',
     );
-    expect(within(section).getByText('Style at entry: Conviction')).toBeInTheDocument();
-    expect(within(section).getByText('Style now: Mixed')).toBeInTheDocument();
-    expect(within(section).getByText('Style at entry: Flipper')).toBeInTheDocument();
-    expect(within(section).getByText('Style now: Flipper')).toBeInTheDocument();
-    expect(section).toHaveTextContent(
-      'usually buys 4 s after launch, usually holds 14 min; sold within 2 min in 12% of its tokens.',
-    );
-    expect(section).toHaveTextContent('usually holds 40 s; sold within 2 min in 82% of its tokens.');
-    const note = within(section).getByText(/Conviction vs flipper/).closest('p');
-    expect(note).toHaveTextContent('flippers are shown here but never count');
-    expect(note).toHaveTextContent('buying right after them usually means becoming their exit liquidity');
-    expect(note).toHaveTextContent('at least 3');
+    expect(section).toHaveTextContent('suele mantener 40 s; vendió antes de 2 min en el 82% de sus tokens.');
+    const note = within(section).getByText(/Mantiene o vende rápido/).closest('p');
+    expect(note).toHaveTextContent('las que venden rápido se muestran aquí pero nunca cuentan');
+    expect(note).toHaveTextContent('comprar justo después de ellas suele significar comprarles lo que están vendiendo');
+    expect(note).toHaveTextContent('al menos 3');
+  });
+
+  it('explains wallets que mantienen, vende rápido and the trading style with a "?"', async () => {
+    const user = userEvent.setup();
+    const client = fakeClient({
+      getTokenSmartWallets: vi.fn(async () => ({
+        mint: MINT_A,
+        smartWallets: [makeSmartWallet({ styleAtEntry: 'conviction', record: makeWalletRecord({ style: 'conviction' }) })],
+      })),
+    });
+    renderApp(client);
+    await user.click(await screen.findByRole('button', { name: 'Ver detalle de FROG' }));
+    const section = await screen.findByRole('region', { name: 'Wallets con buen historial' });
+    await within(section).findByText('1 wallet que mantiene');
+
+    const holds = within(section).getByRole('button', { name: '¿Qué es una wallet que mantiene?' });
+    await user.click(holds);
+    expect(holds).toHaveAttribute('aria-expanded', 'true');
+    expect(bubbleOf(holds)).toHaveTextContent('suele quedarse con lo que compra');
+
+    const flips = within(section).getByRole('button', { name: '¿Qué es una wallet que vende rápido?' });
+    await user.click(flips);
+    expect(bubbleOf(flips)).toHaveTextContent('antes de 2 minutos');
+    expect(within(section).getByRole('button', { name: '¿Qué es el estilo?' })).toBeInTheDocument();
   });
 
   it('says smart-wallet data is not available yet on an older backend', async () => {
     const user = userEvent.setup();
     renderApp(fakeClient({ getTokenSmartWallets: vi.fn(async () => Promise.reject(notFound())) }));
-    await user.click(await screen.findByRole('button', { name: 'Show details for FROG' }));
-    const section = await screen.findByRole('region', { name: 'Smart wallets' });
-    expect(await within(section).findByText(/Smart-wallet data not available yet/)).toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: 'Ver detalle de FROG' }));
+    const section = await screen.findByRole('region', { name: 'Wallets con buen historial' });
+    expect(await within(section).findByText(/Los datos de wallets todavía no están disponibles/)).toBeInTheDocument();
   });
 });

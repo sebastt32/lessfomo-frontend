@@ -143,8 +143,8 @@ describe('devTradeMarkers', () => {
       { time: T0 - 100, side: 'buy', solAmount: 9 },
     ];
     expect(devTradeMarkers(devTrades, '1m', T0)).toEqual([
-      { time: T0, side: 'buy', text: 'Dev buy 2 SOL' },
-      { time: T0 + 60, side: 'sell', text: 'Dev sell 1.25 SOL' },
+      { time: T0, side: 'buy', text: 'Creador compra 2 SOL' },
+      { time: T0 + 60, side: 'sell', text: 'Creador vende 1.25 SOL' },
     ]);
   });
 

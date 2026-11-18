@@ -14,7 +14,7 @@ export function DashboardTemplate({ header, notice, movers, feed, footer }: Dash
   return (
     <div className="dashboard">
       <a className="skip-link" href="#movers">
-        Skip to top movers
+        Saltar a Más activos ahora
       </a>
       {header}
       <main className="dashboard__main">

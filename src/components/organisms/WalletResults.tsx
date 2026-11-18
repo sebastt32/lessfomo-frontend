@@ -14,30 +14,30 @@ export interface WalletResultsProps {
 /** A wallet's recent closed tokens: when it bought, what it put in and took out, and the result. */
 export function WalletResults({ results, now, limit = 10 }: WalletResultsProps) {
   if (results.length === 0) {
-    return <p className="smart-wallets__note">No closed tokens for this wallet in the last 7 days.</p>;
+    return <p className="smart-wallets__note">Esta wallet no cerró ningún token en los últimos 7 días.</p>;
   }
   const shown = results.slice(0, limit);
   return (
     <div className="wallet-results">
-      <div className="wallet-results__scroll" role="region" aria-label="Recent results" tabIndex={0}>
+      <div className="wallet-results__scroll" role="region" aria-label="Resultados recientes" tabIndex={0}>
         <table className="wallet-results__table">
-          <caption className="visually-hidden">The wallet's most recent closed tokens, newest first</caption>
+          <caption className="visually-hidden">Los tokens cerrados más recientes de la wallet, del más nuevo al más viejo</caption>
           <thead>
             <tr>
               <th scope="col">Token</th>
               <th scope="col" className="wallet-results__num">
-                Bought after
+                Compró después de
               </th>
               <th scope="col" className="wallet-results__num">
-                In
+                Puso
               </th>
               <th scope="col" className="wallet-results__num">
-                Out
+                Sacó
               </th>
               <th scope="col" className="wallet-results__num">
-                Result
+                Resultado
               </th>
-              <th scope="col">Closed</th>
+              <th scope="col">Cerrado</th>
             </tr>
           </thead>
           <tbody>
@@ -70,7 +70,7 @@ export function WalletResults({ results, now, limit = 10 }: WalletResultsProps) 
       </div>
       {results.length > shown.length ? (
         <p className="smart-wallets__note">
-          Showing the {shown.length} most recent of {results.length} closed tokens.
+          Mostrando los {shown.length} más recientes de {results.length} tokens cerrados.
         </p>
       ) : null}
     </div>

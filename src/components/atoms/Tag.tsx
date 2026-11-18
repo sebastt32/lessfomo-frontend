@@ -3,10 +3,10 @@ import { LATE_HINT, PHASE_HINTS, PHASE_LABELS } from '../../lib/cycle';
 import { STYLE_HINTS, STYLE_LABELS, TIER_HINTS, TIER_LABELS } from '../../lib/smartWallets';
 import './Tag.css';
 
-const LIFECYCLE_LABELS: Record<Lifecycle, string> = { active: 'Active', dead: 'Dead' };
+const LIFECYCLE_LABELS: Record<Lifecycle, string> = { active: 'Activo', dead: 'Inactivo' };
 const LIFECYCLE_HINTS: Record<Lifecycle, string> = {
-  active: 'Traded in the last 24 hours',
-  dead: 'No trades for 24 hours',
+  active: 'Tuvo operaciones en las últimas 24 horas',
+  dead: 'Sin operaciones hace 24 horas',
 };
 
 export interface LifecycleBadgeProps {
@@ -25,8 +25,8 @@ export function LifecycleBadge({ lifecycle }: LifecycleBadgeProps) {
 /** The token left the pump.fun bonding curve and trades on PumpSwap. */
 export function MigratedBadge() {
   return (
-    <span className="tag tag--migrated" title="Moved from the pump.fun bonding curve to PumpSwap">
-      Migrated
+    <span className="tag tag--migrated" title="Completó la curva de pump.fun y ahora cotiza en PumpSwap">
+      Graduado
     </span>
   );
 }
@@ -64,7 +64,7 @@ export function WalletStyleBadge({ style, prefix }: WalletStyleBadgeProps) {
 /** The wallet trades so many tokens per hour that it is most likely automated. */
 export function BotBadge() {
   return (
-    <span className="tag tag--bot" title="Trades 20 or more different tokens per hour on average: most likely automated">
+    <span className="tag tag--bot" title="Opera 20 o más tokens distintos por hora en promedio: casi seguro es automática">
       Bot
     </span>
   );
@@ -87,7 +87,7 @@ export function PhaseBadge({ phase }: PhaseBadgeProps) {
 export function LateBadge() {
   return (
     <span className="tag tag--late" title={LATE_HINT}>
-      Appeared late
+      Llegó tarde
     </span>
   );
 }

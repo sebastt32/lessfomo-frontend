@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiError, deferred, fakeBackend, PASSWORD, USERNAME, type FakeBackend } from '../test/fakeBackend';
@@ -9,11 +9,11 @@ function renderApp(backend: FakeBackend, url = '/') {
   return render(<AuthenticatedApp client={backend.client} connect={backend.connect} />);
 }
 
-const loginForm = () => screen.findByRole('form', { name: 'Sign in' });
-const usernameField = () => screen.getByLabelText('Username');
-const passwordField = () => screen.getByLabelText('Password');
-const submitButton = () => screen.getByRole('button', { name: /^Sign(ing)? in/ });
-const platformShown = () => screen.findByRole('region', { name: 'Top movers' });
+const loginForm = () => screen.findByRole('form', { name: 'Iniciar sesión' });
+const usernameField = () => screen.getByLabelText('Usuario');
+const passwordField = () => screen.getByLabelText('Contraseña');
+const submitButton = () => screen.getByRole('button', { name: /^Entra(ndo…|r)$/ });
+const platformShown = () => screen.findByRole('region', { name: 'Más activos ahora' });
 
 async function signIn(user: ReturnType<typeof userEvent.setup>, password = PASSWORD) {
   await loginForm();
@@ -24,9 +24,9 @@ async function signIn(user: ReturnType<typeof userEvent.setup>, password = PASSW
 function expectNothingOfThePlatform(backend: FakeBackend) {
   expect(backend.dataCalls()).toEqual([]);
   expect(backend.connect).not.toHaveBeenCalled();
-  expect(screen.queryByRole('region', { name: 'Top movers' })).not.toBeInTheDocument();
-  expect(screen.queryByRole('region', { name: 'Screener totals' })).not.toBeInTheDocument();
-  expect(screen.queryByRole('navigation', { name: 'Views' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'Más activos ahora' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'Totales del screener' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('navigation', { name: 'Vistas' })).not.toBeInTheDocument();
 }
 
 beforeEach(() => window.localStorage.clear());
@@ -39,9 +39,9 @@ describe('session check on app start', () => {
     backend.state.intercept = (call) => (call.path === '/api/auth/me' ? pending.promise : undefined);
     renderApp(backend);
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Checking your session');
+    expect(await screen.findByRole('status')).toHaveTextContent('Comprobando tu sesión');
     expectNothingOfThePlatform(backend);
-    expect(screen.queryByRole('form', { name: 'Sign in' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('form', { name: 'Iniciar sesión' })).not.toBeInTheDocument();
   });
 
   it('opens the platform directly when the session is valid', async () => {
@@ -49,7 +49,7 @@ describe('session check on app start', () => {
     renderApp(backend);
     expect(await platformShown()).toBeInTheDocument();
     expect(backend.connect).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('form', { name: 'Sign in' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('form', { name: 'Iniciar sesión' })).not.toBeInTheDocument();
   });
 
   it('shows the login page, and nothing of the platform, without a session', async () => {
@@ -66,11 +66,11 @@ describe('session check on app start', () => {
     backend.state.intercept = () => Promise.reject(new TypeError('Failed to fetch'));
     renderApp(backend);
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Cannot reach the server');
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se puede conectar con el servidor');
     expectNothingOfThePlatform(backend);
 
     backend.state.intercept = null;
-    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    await user.click(screen.getByRole('button', { name: 'Reintentar' }));
     expect(await platformShown()).toBeInTheDocument();
   });
 });
@@ -91,19 +91,18 @@ describe('login page', () => {
     const user = userEvent.setup();
     renderApp(fakeBackend());
     await loginForm();
-    const theme = screen.getByRole('group', { name: 'Color theme' });
-    await user.click(within(theme).getByRole('button', { name: 'Dark' }));
+    await user.click(screen.getByRole('button', { name: 'Oscuro' }));
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
-    await user.click(within(theme).getByRole('button', { name: 'Auto' }));
+    await user.click(screen.getByRole('button', { name: 'Auto' }));
   });
 
   it('shows and hides the password', async () => {
     const user = userEvent.setup();
     renderApp(fakeBackend());
     await loginForm();
-    await user.click(screen.getByRole('button', { name: 'Show password' }));
+    await user.click(screen.getByRole('button', { name: 'Mostrar contraseña' }));
     expect(passwordField()).toHaveAttribute('type', 'text');
-    await user.click(screen.getByRole('button', { name: 'Hide password' }));
+    await user.click(screen.getByRole('button', { name: 'Ocultar contraseña' }));
     expect(passwordField()).toHaveAttribute('type', 'password');
   });
 
@@ -117,7 +116,7 @@ describe('login page', () => {
     expect(backend.authCalls('/api/auth/login')).toEqual([
       { method: 'POST', path: '/api/auth/login', body: { username: USERNAME, password: PASSWORD } },
     ]);
-    expect(screen.getByRole('group', { name: 'Account' })).toHaveTextContent(`Signed in as ${USERNAME}`);
+    expect(screen.getByRole('group', { name: 'Cuenta' })).toHaveTextContent(`Sesión iniciada como ${USERNAME}`);
     expect(backend.connect).toHaveBeenCalledTimes(1);
   });
 
@@ -127,7 +126,7 @@ describe('login page', () => {
     const logged = [vi.spyOn(console, 'log'), vi.spyOn(console, 'error'), vi.spyOn(console, 'warn')];
     renderApp(backend, '/?view=record');
     await signIn(user);
-    await screen.findByRole('region', { name: /Daily record/ });
+    await screen.findByRole('region', { name: /Registro diario/ });
 
     expect(document.documentElement.outerHTML).not.toContain(PASSWORD);
     for (const input of document.querySelectorAll('input')) expect(input.value).not.toBe(PASSWORD);
@@ -141,16 +140,16 @@ describe('login page', () => {
     }
   });
 
-  it('says "Wrong username or password", empties the password and puts the focus back on it', async () => {
+  it('says "Usuario o contraseña incorrectos", empties the password and puts the focus back on it', async () => {
     const user = userEvent.setup();
     const backend = fakeBackend();
     renderApp(backend);
     await signIn(user, 'not the password');
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Wrong username or password');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Usuario o contraseña incorrectos');
     expect(passwordField()).toHaveValue('');
     await waitFor(() => expect(passwordField()).toHaveFocus());
-    expect(passwordField()).toHaveAccessibleDescription('Wrong username or password');
+    expect(passwordField()).toHaveAccessibleDescription('Usuario o contraseña incorrectos');
     expect(usernameField()).toHaveValue(USERNAME);
     expectNothingOfThePlatform(backend);
   });
@@ -163,17 +162,17 @@ describe('login page', () => {
     backend.state.intercept = (call) =>
       call.path === '/api/auth/login' ? apiError(429, 'TOO_MANY_ATTEMPTS', { 'Retry-After': '840' }) : undefined;
     await signIn(user);
-    expect(await screen.findByRole('alert')).toHaveTextContent('Too many attempts. Try again in 14 minutes');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Demasiados intentos. Intenta de nuevo en 14 minutos.');
   });
 
-  it('says "Cannot reach the server" on a network failure', async () => {
+  it('says "No se puede conectar con el servidor" on a network failure', async () => {
     const user = userEvent.setup();
     const backend = fakeBackend();
     renderApp(backend);
     await loginForm();
     backend.state.intercept = () => Promise.reject(new TypeError('Failed to fetch'));
     await signIn(user);
-    expect(await screen.findByRole('alert')).toHaveTextContent('Cannot reach the server');
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se puede conectar con el servidor');
   });
 
   it('asks for both fields before sending anything', async () => {
@@ -182,7 +181,7 @@ describe('login page', () => {
     renderApp(backend);
     await loginForm();
     await user.type(usernameField(), `${USERNAME}{Enter}`);
-    expect(await screen.findByRole('alert')).toHaveTextContent('Enter your username and password');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Escribe tu usuario y tu contraseña');
     expect(passwordField()).toHaveFocus();
     expect(backend.authCalls('/api/auth/login')).toEqual([]);
   });
@@ -197,7 +196,7 @@ describe('login page', () => {
     await signIn(user);
 
     expect(submitButton()).toBeDisabled();
-    expect(submitButton()).toHaveTextContent('Signing in');
+    expect(submitButton()).toHaveTextContent('Entrando…');
     expect(usernameField()).toBeDisabled();
     expect(passwordField()).toBeDisabled();
     // The password leaves the field as soon as it is sent.
@@ -219,7 +218,7 @@ describe('login page', () => {
     expect(window.location.pathname + window.location.search).toBe(url);
 
     await signIn(user);
-    expect(await screen.findByRole('region', { name: /Daily record/ })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: /Registro diario/ })).toBeInTheDocument();
     expect(window.location.pathname + window.location.search).toBe(url);
     const listCall = backend.dataCalls().find((call) => call.path.startsWith('/api/tokens?'));
     expect(listCall?.path).toContain(`from=${new Date(2026, 10, 16).toISOString()}`);
@@ -235,13 +234,13 @@ describe('session lost', () => {
     await platformShown();
 
     backend.state.signedIn = false;
-    await user.click(screen.getByRole('link', { name: 'Daily record' }));
+    await user.click(screen.getByRole('link', { name: 'Registro diario' }));
 
     expect(await loginForm()).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('Your session expired. Sign in again.');
+    expect(screen.getByRole('status')).toHaveTextContent('Tu sesión expiró. Inicia sesión de nuevo.');
     expect(backend.streams[0]?.close).toHaveBeenCalled();
-    expect(screen.queryByRole('region', { name: /Daily record/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole('navigation', { name: 'Views' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /Registro diario/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Vistas' })).not.toBeInTheDocument();
 
     const before = backend.state.calls.length;
     await new Promise((resolve) => setTimeout(resolve, 20));
@@ -266,7 +265,7 @@ describe('session lost', () => {
     await platformShown();
     act(() => backend.streams[0]?.options.onRejected?.());
     await waitFor(() => expect(backend.authCalls('/api/auth/me')).toHaveLength(2));
-    expect(screen.getByRole('region', { name: 'Top movers' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Más activos ahora' })).toBeInTheDocument();
   });
 });
 
@@ -278,12 +277,12 @@ describe('sign out', () => {
     await platformShown();
     expect(await screen.findAllByText('FROG')).not.toHaveLength(0);
 
-    await user.click(screen.getByRole('button', { name: 'Sign out' }));
+    await user.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
     expect(await loginForm()).toBeInTheDocument();
     expect(backend.authCalls('/api/auth/logout')).toEqual([{ method: 'POST', path: '/api/auth/logout', body: undefined }]);
     expect(backend.streams[0]?.close).toHaveBeenCalled();
     expect(screen.queryByText('FROG')).not.toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('You signed out.');
+    expect(screen.getByRole('status')).toHaveTextContent('Cerraste sesión.');
     expect(usernameField()).toHaveValue('');
 
     // A new session starts from scratch: a remounted tree, a new stream and freshly fetched data.
@@ -305,11 +304,11 @@ describe('sign out', () => {
 
     backend.state.intercept = (call) =>
       call.path === '/api/auth/logout' ? Promise.reject(new TypeError('Failed to fetch')) : undefined;
-    await user.click(screen.getByRole('button', { name: 'Sign out' }));
+    await user.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
 
-    expect(await screen.findByText('Could not sign out. Cannot reach the server')).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Top movers' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Sign out' })).toBeEnabled();
+    expect(await screen.findByText('No se pudo cerrar sesión. No se puede conectar con el servidor')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Más activos ahora' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeEnabled();
   });
 });
 
@@ -318,11 +317,11 @@ describe('backend without authentication (older version)', () => {
     const backend = fakeBackend({ auth: false });
     renderApp(backend, '/?view=record');
 
-    expect(await screen.findByRole('region', { name: /Daily record/ })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: /Registro diario/ })).toBeInTheDocument();
     expect(backend.connect).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('form', { name: 'Sign in' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('group', { name: 'Account' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('form', { name: 'Iniciar sesión' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Cuenta' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cerrar sesión' })).not.toBeInTheDocument();
     expect(window.location.search).toBe('?view=record');
   });
 
@@ -333,7 +332,7 @@ describe('backend without authentication (older version)', () => {
     await platformShown();
 
     backend.state.intercept = () => apiError(401, 'UNAUTHENTICATED');
-    await user.click(screen.getByRole('link', { name: 'Daily record' }));
+    await user.click(screen.getByRole('link', { name: 'Registro diario' }));
     expect(await loginForm()).toBeInTheDocument();
   });
 });

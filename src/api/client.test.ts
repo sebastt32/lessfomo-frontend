@@ -109,7 +109,11 @@ describe('createApiClient', () => {
     const fetchImpl = vi.fn<FetchLike>(async () => new Response('Bad gateway', { status: 502 }));
     const client = createApiClient({ baseUrl: 'http://api.test', fetchImpl });
 
-    await expect(client.getHealth()).rejects.toMatchObject({ status: 502, code: 'HTTP_ERROR' });
+    await expect(client.getHealth()).rejects.toMatchObject({
+      status: 502,
+      code: 'HTTP_ERROR',
+      message: 'El servidor respondió con un error (HTTP 502).',
+    });
   });
 
   it('maps a network failure to a NETWORK_ERROR ApiError with status 0', async () => {
@@ -120,7 +124,11 @@ describe('createApiClient', () => {
 
     const error = await client.getMovers().catch((e: unknown) => e);
     expect(error).toBeInstanceOf(ApiError);
-    expect(error).toMatchObject({ status: 0, code: 'NETWORK_ERROR' });
+    expect(error).toMatchObject({
+      status: 0,
+      code: 'NETWORK_ERROR',
+      message: 'No se puede conectar con el servidor de lessfomo (http://api.test).',
+    });
   });
 
   it('rethrows aborts untouched so callers can ignore them', async () => {
@@ -135,7 +143,10 @@ describe('createApiClient', () => {
   it('maps an invalid JSON body to INVALID_RESPONSE', async () => {
     const fetchImpl = vi.fn<FetchLike>(async () => new Response('<html>', { status: 200 }));
     const client = createApiClient({ baseUrl: 'http://api.test', fetchImpl });
-    await expect(client.getHealth()).rejects.toMatchObject({ code: 'INVALID_RESPONSE' });
+    await expect(client.getHealth()).rejects.toMatchObject({
+      code: 'INVALID_RESPONSE',
+      message: 'El servidor respondió con datos que no se pueden leer.',
+    });
   });
 
   it('exposes the SSE stream URL', () => {

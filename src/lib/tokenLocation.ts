@@ -39,14 +39,14 @@ function rememberedSearch(state: unknown): string | null {
 }
 
 const VIEW_NAMES: Record<Exclude<AppView, 'token'>, string> = {
-  live: 'Live',
-  record: 'Daily record',
+  live: 'En vivo',
+  record: 'Registro diario',
 };
 
 export interface BackTarget {
   /** '' (the live view) or a search starting with '?'. */
   search: string;
-  /** "Back to Daily record". */
+  /** "Volver a Registro diario". */
   label: string;
 }
 
@@ -59,5 +59,5 @@ export function backTarget(from: unknown, currentSearch: string): BackTarget {
   const remembered = rememberedSearch(from) ?? '';
   const search = withMinConvictionWallets(remembered, parseMinConvictionWallets(currentSearch));
   const view = parseAppLocation(search).view;
-  return { search, label: `Back to ${VIEW_NAMES[view === 'token' ? 'live' : view]}` };
+  return { search, label: `Volver a ${VIEW_NAMES[view === 'token' ? 'live' : view]}` };
 }

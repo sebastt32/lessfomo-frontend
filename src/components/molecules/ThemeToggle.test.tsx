@@ -13,7 +13,7 @@ describe('theme toggle', () => {
   it('follows the system by default', () => {
     render(<ThemeToggleContainer />);
 
-    const group = screen.getByRole('group', { name: 'Color theme' });
+    const group = screen.getByRole('group', { name: 'Tema de color' });
     expect(group).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Auto' })).toHaveAttribute('aria-pressed', 'true');
     expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
@@ -23,9 +23,9 @@ describe('theme toggle', () => {
     const user = userEvent.setup();
     render(<ThemeToggleContainer />);
 
-    await user.click(screen.getByRole('button', { name: 'Dark' }));
+    await user.click(screen.getByRole('button', { name: 'Oscuro' }));
 
-    expect(screen.getByRole('button', { name: 'Dark' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Oscuro' })).toHaveAttribute('aria-pressed', 'true');
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
   });
@@ -35,7 +35,7 @@ describe('theme toggle', () => {
     const user = userEvent.setup();
     render(<ThemeToggleContainer />);
 
-    expect(screen.getByRole('button', { name: 'Light' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Claro' })).toHaveAttribute('aria-pressed', 'true');
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
 
     await user.click(screen.getByRole('button', { name: 'Auto' }));

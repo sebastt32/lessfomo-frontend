@@ -3,6 +3,7 @@ import type { DailyRecordData } from '../../hooks/useDailyRecord';
 import { formatMultiple } from '../../lib/cycle';
 import { OUTCOME_HINTS, OUTCOME_LABELS, recordOutcome, type SuccessSummary } from '../../lib/dailyRecord';
 import { formatPercent, formatTimeWithSeconds } from '../../lib/format';
+import { HelpTip } from '../molecules/HelpTip';
 import { MoneyValue } from '../molecules/MoneyValue';
 import { TokenName } from '../molecules/TokenName';
 import { marketCapSol } from '../../lib/money';
@@ -10,9 +11,9 @@ import './DailyRecord.css';
 import './DataTable.css';
 
 export interface DailyRecordProps {
-  /** "November 17, 2026". */
+  /** "17 de noviembre de 2026". */
   dayLabel: string;
-  /** "November 2026". */
+  /** "noviembre de 2026". */
   monthLabel: string;
   data: DailyRecordData;
   /** Reference time (ms since epoch): tokens younger than 24 hours are still tracked. */
@@ -22,7 +23,10 @@ export interface DailyRecordProps {
   layout?: 'table' | 'cards';
 }
 
-const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
+const tokenCount = (count: number) => `${count} ${count === 1 ? 'token' : 'tokens'}`;
+
+const SUCCESS_HELP =
+  'Un token tiene éxito si su precio llegó a 2× (el doble) del que tenía cuando apareció en lessfomo, en cualquier momento después de aparecer.';
 
 interface SuccessCardProps {
   title: string;
@@ -34,12 +38,17 @@ function SuccessCard({ title, summary, note }: SuccessCardProps) {
   const titleId = useId();
   return (
     <div className="daily-record__card" role="group" aria-labelledby={titleId}>
-      <p id={titleId} className="daily-record__card-title">
-        {title}
-      </p>
+      <div className="daily-record__card-head">
+        <p id={titleId} className="daily-record__card-title">
+          {title}
+        </p>
+        <HelpTip topic="el éxito">{SUCCESS_HELP}</HelpTip>
+      </div>
       <p className="daily-record__pct">{formatPercent(summary.pct)}</p>
       <p className="daily-record__count">
-        {summary.hits} of {plural(summary.tokens, 'token')} reached 2× after appearing
+        {summary.tokens === 1
+          ? `${summary.hits} de 1 token llegó a 2× después de aparecer`
+          : `${summary.hits} de ${summary.tokens} tokens llegaron a 2× después de aparecer`}
       </p>
       {note ? <p className="daily-record__note">{note}</p> : null}
     </div>
@@ -53,23 +62,24 @@ export function DailyRecord({ dayLabel, monthLabel, data, now, onSelect, layout 
   const trackingNote =
     tracking === 0
       ? undefined
-      : `${plural(tracking, 'token')} ${tracking === 1 ? 'is' : 'are'} still being tracked, so this share can still go up.`;
+      : `${tokenCount(tracking)} todavía ${tracking === 1 ? 'está' : 'están'} en seguimiento, así que este porcentaje todavía puede subir.`;
 
   return (
     <div className="daily-record">
       <div className="daily-record__cards">
-        <SuccessCard title={`Success on ${dayLabel}`} summary={data.day} note={trackingNote} />
-        <SuccessCard title={`Success in ${monthLabel}`} summary={data.month} />
+        <SuccessCard title={`Éxito el ${dayLabel}`} summary={data.day} note={trackingNote} />
+        <SuccessCard title={`Éxito en ${monthLabel}`} summary={data.month} />
       </div>
       <p className="daily-record__definition">
-        Success means the price reached at least twice what it was when the token appeared in lessfomo. Every
-        token that appeared is counted, the ones that failed included. Past results do not predict future ones.
+        Éxito significa que el precio llegó al menos al doble del que tenía cuando el token apareció en lessfomo. Se
+        cuentan todos los tokens que aparecieron, también los que no llegaron. Los resultados pasados no predicen los
+        futuros.
       </p>
 
       {data.tokens.length === 0 ? (
-        <p className="daily-record__empty">No token appeared in lessfomo on this day.</p>
+        <p className="daily-record__empty">Ningún token apareció en lessfomo este día.</p>
       ) : layout === 'cards' ? (
-        <ul className="record-cards" aria-label={`Tokens of ${dayLabel}`}>
+        <ul className="record-cards" aria-label={`Tokens del ${dayLabel}`}>
           {data.tokens.map((item, index) => {
             const { token, cycle } = item;
             const outcome = outcomes[index]!;
@@ -78,7 +88,7 @@ export function DailyRecord({ dayLabel, monthLabel, data, now, onSelect, layout 
                 <button
                   type="button"
                   className="record-card__button"
-                  aria-label={`Show details for ${token.symbol || token.mint}`}
+                  aria-label={`Ver detalle de ${token.symbol || token.mint}`}
                   onClick={() => onSelect(token.mint)}
                 >
                   <span className="record-card__top">
@@ -89,19 +99,19 @@ export function DailyRecord({ dayLabel, monthLabel, data, now, onSelect, layout 
                   </span>
                   <span className="record-card__facts">
                     <span>
-                      <span className="record-card__label">Appeared</span>
+                      <span className="record-card__label">Apareció</span>
                       {cycle ? formatTimeWithSeconds(cycle.appearedAt) : '—'}
                     </span>
                     <span>
-                      <span className="record-card__label">Entry</span>
+                      <span className="record-card__label">Al aparecer</span>
                       <MoneyValue sol={marketCapSol(cycle?.appearedPriceSol)} layout="inline" />
                     </span>
                     <span>
-                      <span className="record-card__label">Peak</span>
+                      <span className="record-card__label">Pico</span>
                       {formatMultiple(cycle?.peakX)}
                     </span>
                     <span>
-                      <span className="record-card__label">Last</span>
+                      <span className="record-card__label">Último</span>
                       {formatMultiple(cycle?.lastPriceX)}
                     </span>
                   </span>
@@ -111,22 +121,38 @@ export function DailyRecord({ dayLabel, monthLabel, data, now, onSelect, layout 
           })}
         </ul>
       ) : (
-        <div className="history-table__scroll" tabIndex={0} role="region" aria-label={`Tokens of ${dayLabel}`}>
+        <div className="history-table__scroll" tabIndex={0} role="region" aria-label={`Tokens del ${dayLabel}`}>
           <table className="history-table">
             <thead>
               <tr>
-                <th scope="col">Appeared</th>
+                <th scope="col">Apareció</th>
                 <th scope="col">Token</th>
-                <th scope="col" className="history-table__num" title="Market cap when the token appeared in lessfomo">
-                  Entry market cap
+                <th scope="col" className="history-table__num">
+                  Market cap al aparecer
+                  <HelpTip topic="el market cap al aparecer">
+                    Lo que valían todos los tokens juntos cuando el token apareció en lessfomo.
+                  </HelpTip>
                 </th>
-                <th scope="col" className="history-table__num" title="Highest price after the 2×, over the appearance price">
-                  Peak
+                <th scope="col" className="history-table__num">
+                  Pico
+                  <HelpTip topic="el pico">
+                    El precio más alto después de llegar a 2×, como múltiplo del precio al aparecer. Queda vacío si no
+                    llegó a 2×.
+                  </HelpTip>
                 </th>
-                <th scope="col" className="history-table__num" title="Last known price, over the appearance price">
-                  Last
+                <th scope="col" className="history-table__num">
+                  Último
+                  <HelpTip topic="el último precio">
+                    El último precio conocido, como múltiplo del precio al aparecer (1× es el mismo precio).
+                  </HelpTip>
                 </th>
-                <th scope="col">Result</th>
+                <th scope="col">
+                  Resultado
+                  <HelpTip topic="el resultado">
+                    Llegó a 2× si en algún momento duplicó su precio al aparecer. En seguimiento si apareció hace menos de
+                    24 horas y todavía no llegó. No llegó si pasaron 24 horas sin llegar.
+                  </HelpTip>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -148,7 +174,7 @@ export function DailyRecord({ dayLabel, monthLabel, data, now, onSelect, layout 
                       <button
                         type="button"
                         className="token-button"
-                        aria-label={`Show details for ${token.symbol || token.mint}`}
+                        aria-label={`Ver detalle de ${token.symbol || token.mint}`}
                         onClick={(event) => {
                           event.stopPropagation();
                           onSelect(token.mint);

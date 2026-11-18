@@ -3,8 +3,9 @@ import './Disclaimer.css';
 export function Disclaimer() {
   return (
     <p className="disclaimer">
-      Passing the safety filters does not make a token profitable. Most pump.fun tokens lose nearly all their value,
-      and momentum can reverse within minutes. This is a research tool, not financial advice.
+      Pasar los controles de seguridad no hace que un token dé ganancias. La mayoría de los tokens de pump.fun pierden
+      casi todo su valor, y el impulso puede revertirse en minutos. Esta es una herramienta de investigación, no un
+      consejo financiero.
     </p>
   );
 }

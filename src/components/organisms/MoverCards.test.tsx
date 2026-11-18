@@ -18,24 +18,31 @@ describe('MoverCards', () => {
         now={NOW}
       />,
     );
-    const cards = within(screen.getByRole('list', { name: 'Top movers' })).getAllByRole('listitem');
+    const cards = within(screen.getByRole('list', { name: 'Más activos ahora' })).getAllByRole('listitem');
     expect(cards).toHaveLength(2);
     expect(cards[0]).toHaveTextContent('1');
     expect(cards[0]).toHaveTextContent('FROG');
     expect(cards[0]).toHaveTextContent('32,100 SOL');
-    expect(cards[0]).toHaveTextContent('Crashed');
-    expect(cards[0]).toHaveTextContent('4 conviction');
+    expect(cards[0]).toHaveTextContent('Se desplomó');
+    expect(cards[0]).toHaveTextContent('4 mantienen');
     expect(cards[0]).toHaveTextContent('+18.3%');
-    expect(cards[0]).toHaveTextContent('Passed');
+    expect(cards[0]).toHaveTextContent('Aprobado');
     expect(cards[1]).toHaveTextContent('CAT');
     expect(cards[1]).toHaveTextContent('−7.5%');
-    expect(cards[1]).toHaveTextContent('Failed');
+    expect(cards[1]).toHaveTextContent('Rechazado');
   });
 
   it('opens the token when its card is tapped', async () => {
     const onSelect = vi.fn();
     render(<MoverCards movers={[makeMover()]} onSelect={onSelect} now={NOW} />);
-    await userEvent.setup().click(screen.getByRole('button', { name: /FROG/ }));
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Ver detalle de FROG' }));
     expect(onSelect).toHaveBeenCalledWith(MINT_A);
+  });
+
+  it('keeps help marks out of the card buttons', () => {
+    render(<MoverCards movers={[makeMover({ cycle: makeCycle() })]} onSelect={() => undefined} now={NOW} />);
+    const card = screen.getByRole('button', { name: 'Ver detalle de FROG' });
+    expect(within(card).queryByRole('button')).not.toBeInTheDocument();
+    expect(card).toHaveTextContent('5 min');
   });
 });

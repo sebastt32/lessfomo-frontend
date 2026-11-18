@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { HelpTip } from '../components/molecules/HelpTip';
 import { Panel } from '../components/molecules/Panel';
 import { EmptyState, ErrorState, LoadingState } from '../components/molecules/SectionState';
 import { MoverCards } from '../components/organisms/MoverCards';
@@ -34,9 +35,19 @@ export function MoversContainer({ onSelect, now }: MoversContainerProps) {
     [visible.items, cycles],
   );
 
-  const description = at
-    ? `Ranked by momentum score. Updated ${formatRelativeTime(at, now)}, refreshes every minute.`
-    : 'Ranked by momentum score. Refreshes every minute.';
+  // The table explains the score in its column header; the cards have no headers, so the description does.
+  const description = (
+    <>
+      Ordenados por impulso
+      {small ? (
+        <HelpTip topic="el impulso">
+          Un puntaje de 0 a 100 que mide qué tan rápido crecen los compradores nuevos y el volumen de compra en los
+          últimos minutos.
+        </HelpTip>
+      ) : null}
+      {at ? `. Actualizado ${formatRelativeTime(at, now)}; se actualiza cada minuto.` : '. Se actualiza cada minuto.'}
+    </>
+  );
 
   let body;
   if (items.length > 0) {
@@ -46,11 +57,11 @@ export function MoversContainer({ onSelect, now }: MoversContainerProps) {
       <MoversTable movers={items} onSelect={onSelect} now={now} />
     );
   } else if (status === 'loading') {
-    body = <LoadingState>Loading the latest ranking…</LoadingState>;
+    body = <LoadingState>Cargando los más activos…</LoadingState>;
   } else if (status === 'error') {
     body = (
       <ErrorState
-        title={isNetworkError(error) ? 'Could not reach the screener API' : 'Could not load the ranking'}
+        title={isNetworkError(error) ? 'No se pudo conectar con el servidor' : 'No se pudo cargar la lista de más activos'}
         onRetry={actions.reload}
       >
         {error?.message}
@@ -58,26 +69,26 @@ export function MoversContainer({ onSelect, now }: MoversContainerProps) {
     );
   } else if (visible.filtered && (visible.hidden > 0 || (status === 'ready' && at !== null))) {
     body = (
-      <EmptyState title="No mover passes the conviction-wallet filter right now">
+      <EmptyState title="Ahora ningún token activo pasa el filtro de wallets que mantienen">
         {describeConvictionFilter(min)}.{' '}
         {visible.hidden > 0
-          ? `${visible.hidden} ranked ${visible.hidden === 1 ? 'token was' : 'tokens were'} not bought by enough conviction wallets. `
-          : 'No ranked token was bought by enough conviction wallets. '}
-        Lower the minimum above, or wait for the next ranking in a minute.
+          ? `${visible.hidden} ${visible.hidden === 1 ? 'token de la lista no fue comprado' : 'tokens de la lista no fueron comprados'} por suficientes wallets que mantienen. `
+          : 'Ningún token de la lista fue comprado por suficientes wallets que mantienen. '}
+        Baja el mínimo de arriba o espera la próxima actualización, en un minuto.
       </EmptyState>
     );
   } else {
     body = (
-      <EmptyState title="No movers yet">
+      <EmptyState title="Todavía no hay tokens activos">
         {at === null
-          ? 'The first ranking is published one minute after the screener starts.'
-          : 'No token has enough trading activity right now. The ranking refreshes every minute.'}
+          ? 'La primera lista se publica un minuto después de que arranca el screener.'
+          : 'Ahora ningún token tiene suficiente actividad. La lista se actualiza cada minuto.'}
       </EmptyState>
     );
   }
 
   return (
-    <Panel id="movers" title="Top movers" description={description}>
+    <Panel id="movers" title="Más activos ahora" description={description}>
       {body}
     </Panel>
   );

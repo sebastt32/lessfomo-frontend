@@ -7,13 +7,14 @@ export function formatRelativeTime(iso: string, now: number = Date.now()): strin
   const time = Date.parse(iso);
   if (Number.isNaN(time)) return DASH;
   const seconds = Math.floor((now - time) / 1000);
-  if (seconds < 5) return 'just now';
-  if (seconds < 60) return `${seconds}s ago`;
+  if (seconds < 5) return 'justo ahora';
+  if (seconds < 60) return `hace ${seconds} s`;
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return `hace ${minutes} min`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+  if (hours < 24) return `hace ${hours} h`;
+  const days = Math.floor(hours / 24);
+  return `hace ${days} ${days === 1 ? 'día' : 'días'}`;
 }
 
 export function formatPercent(value: number | null, digits = 1): string {
@@ -83,7 +84,7 @@ function dateFormatter(kind: 'date' | 'time' | 'seconds', timeZone: string | und
   let formatter = dateFormatters.get(key);
   if (!formatter) {
     formatter = new Intl.DateTimeFormat(
-      'en-US',
+      'es',
       kind === 'date'
         ? { month: 'short', day: 'numeric', year: 'numeric', timeZone }
         : {
@@ -99,7 +100,7 @@ function dateFormatter(kind: 'date' | 'time' | 'seconds', timeZone: string | und
   return formatter;
 }
 
-/** Calendar date such as "Nov 14, 2026", in the viewer's timezone unless one is given. */
+/** Calendar date such as "14 nov 2026", in the viewer's timezone unless one is given. */
 export function formatDate(iso: string, timeZone?: string): string {
   const time = Date.parse(iso);
   return Number.isNaN(time) ? DASH : dateFormatter('date', timeZone).format(time);

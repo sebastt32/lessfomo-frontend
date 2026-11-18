@@ -1,3 +1,4 @@
+import { HelpTip } from '../components/molecules/HelpTip';
 import { Panel } from '../components/molecules/Panel';
 import { EmptyState, ErrorState, LoadingState } from '../components/molecules/SectionState';
 import { ScreeningsFeed } from '../components/organisms/ScreeningsFeed';
@@ -53,11 +54,11 @@ export function ScreeningsContainer({ onSelect, now }: ScreeningsContainerProps)
       />
     );
   } else if (status === 'loading') {
-    body = <LoadingState>Loading recent safety checks…</LoadingState>;
+    body = <LoadingState>Cargando los últimos controles de seguridad…</LoadingState>;
   } else if (status === 'error') {
     body = (
       <ErrorState
-        title={isNetworkError(error) ? 'Could not reach the screener API' : 'Could not load safety checks'}
+        title={isNetworkError(error) ? 'No se pudo conectar con el servidor' : 'No se pudieron cargar los controles de seguridad'}
         onRetry={actions.reload}
       >
         {error?.message}
@@ -65,18 +66,19 @@ export function ScreeningsContainer({ onSelect, now }: ScreeningsContainerProps)
     );
   } else if (visible.filtered && status === 'ready') {
     body = (
-      <EmptyState title="No safety check passes the conviction-wallet filter yet">
+      <EmptyState title="Todavía ningún control de seguridad pasa el filtro de wallets que mantienen">
         {describeConvictionFilter(min)}.{' '}
         {visible.hidden > 0
-          ? `${visible.hidden} recent ${visible.hidden === 1 ? 'check is' : 'checks are'} hidden because too few conviction wallets bought those tokens. `
+          ? `${visible.hidden} ${visible.hidden === 1 ? 'control reciente está oculto' : 'controles recientes están ocultos'} porque muy pocas wallets que mantienen compraron esos tokens. `
           : ''}
-        Tokens appear here as soon as enough conviction wallets buy them. Lower the minimum above to see more.
+        Los tokens aparecen aquí apenas los compran suficientes wallets que mantienen. Baja el mínimo de arriba para ver
+        más.
       </EmptyState>
     );
   } else {
     body = (
-      <EmptyState title="No safety checks yet">
-        New tokens are checked shortly after they launch. Results appear here as they finish.
+      <EmptyState title="Todavía no hay controles de seguridad">
+        Los tokens nuevos se revisan poco después de lanzarse. Los resultados aparecen aquí al terminar.
       </EmptyState>
     );
   }
@@ -84,8 +86,16 @@ export function ScreeningsContainer({ onSelect, now }: ScreeningsContainerProps)
   return (
     <Panel
       id="screenings"
-      title="Latest safety checks"
-      description="Holder concentration, creator share and authority checks, newest first."
+      title="Últimos controles de seguridad"
+      description={
+        <>
+          Cuánto tienen los mayores holders y el creador, y los permisos del token, del más nuevo al más antiguo.
+          <HelpTip topic="un control de seguridad">
+            Revisa cuánto tienen los 10 mayores holders, cuánto tiene el creador y los permisos del token. Pasarlo no
+            significa que el token vaya a subir.
+          </HelpTip>
+        </>
+      }
     >
       {body}
     </Panel>

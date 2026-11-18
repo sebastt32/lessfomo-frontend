@@ -31,14 +31,14 @@ function AuthGate({ connect }: { connect: ConnectFn | undefined }) {
     case 'checking':
       return (
         <SessionPage>
-          <LoadingState>Checking your session…</LoadingState>
+          <LoadingState>Comprobando tu sesión…</LoadingState>
         </SessionPage>
       );
     case 'unreachable':
       return (
         <SessionPage>
-          <ErrorState title="Cannot reach the server" onRetry={actions.retry}>
-            The screener did not answer. Check your connection and try again.
+          <ErrorState title="No se puede conectar con el servidor" onRetry={actions.retry} retryLabel="Reintentar">
+            El servidor no respondió. Revisa tu conexión e inténtalo de nuevo.
           </ErrorState>
         </SessionPage>
       );

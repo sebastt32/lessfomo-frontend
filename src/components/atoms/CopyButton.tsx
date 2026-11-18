@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 export interface CopyButtonProps {
   value: string;
-  /** Accessible name, e.g. "Copy wallet address". */
+  /** Accessible name, e.g. "Copiar la dirección de la wallet". */
   label: string;
 }
 
@@ -27,7 +27,7 @@ export function CopyButton({ value, label }: CopyButtonProps) {
 
   return (
     <button type="button" className="button button--quiet button--small" aria-label={label} onClick={copy}>
-      <span aria-live="polite">{state === 'copied' ? 'Copied' : state === 'failed' ? 'Copy failed' : 'Copy'}</span>
+      <span aria-live="polite">{state === 'copied' ? 'Copiado' : state === 'failed' ? 'No se pudo copiar' : 'Copiar'}</span>
     </button>
   );
 }

@@ -24,7 +24,7 @@ export function ViewNav<T extends string>({ items, current, onNavigate }: ViewNa
   }
 
   return (
-    <nav className="view-nav" aria-label="Views">
+    <nav className="view-nav" aria-label="Vistas">
       {items.map((item) => (
         <a
           key={item.value}

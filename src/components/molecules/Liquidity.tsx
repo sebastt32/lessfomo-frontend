@@ -2,6 +2,7 @@ import { useId } from 'react';
 import type { Liquidity } from '../../api/types';
 import { formatCurvePct } from '../../lib/format';
 import { MigratedBadge } from '../atoms/Tag';
+import { HelpTip } from './HelpTip';
 import { MoneyValue } from './MoneyValue';
 import './Liquidity.css';
 
@@ -10,7 +11,7 @@ export interface LiquidityProps {
   liquidity: Liquidity | null | undefined;
 }
 
-/** Compact liquidity for table cells: SOL, then the curve progress or a "Migrated" badge. */
+/** Compact liquidity for table cells: dollars (SOL below), then the curve progress or a "Graduado" badge. */
 export function LiquidityCell({ liquidity }: LiquidityProps) {
   return (
     <span className="liquidity-cell">
@@ -18,7 +19,7 @@ export function LiquidityCell({ liquidity }: LiquidityProps) {
       {liquidity?.migrated ? (
         <MigratedBadge />
       ) : liquidity && liquidity.bondingCurvePct !== null ? (
-        <span className="liquidity-cell__curve">{formatCurvePct(liquidity.bondingCurvePct)} curve</span>
+        <span className="liquidity-cell__curve">{formatCurvePct(liquidity.bondingCurvePct)} de la curva</span>
       ) : null}
     </span>
   );
@@ -33,7 +34,13 @@ export function LiquidityMeter({ liquidity }: LiquidityProps) {
   return (
     <div className="liquidity-meter">
       <div className="liquidity-meter__top">
-        <span className="liquidity-meter__label">Liquidity</span>
+        <span className="liquidity-meter__label">
+          Liquidez
+          <HelpTip topic="la liquidez">
+            El dinero disponible en el mercado del token para comprar y vender. Con poca liquidez, una venta grande
+            hace caer mucho el precio.
+          </HelpTip>
+        </span>
         <strong className="liquidity-meter__sol">
           <MoneyValue sol={liquidity?.sol ?? null} layout="inline" />
         </strong>
@@ -41,11 +48,14 @@ export function LiquidityMeter({ liquidity }: LiquidityProps) {
       </div>
       {clamped === null ? (
         <p className="liquidity-meter__note">
-          {liquidity ? 'Bonding curve progress is not known yet.' : 'Liquidity is not reported for this token yet.'}
+          {liquidity ? 'Todavía no se sabe el avance de la curva.' : 'Todavía no hay datos de liquidez de este token.'}
         </p>
       ) : (
         <div className="liquidity-meter__curve">
-          <span id={labelId}>Bonding curve</span>
+          <span id={labelId}>Curva de pump.fun</span>
+          <HelpTip topic="la curva de pump.fun">
+            Cuánto le falta al token para graduarse: al llegar al 100% deja pump.fun y pasa a cotizar en PumpSwap.
+          </HelpTip>
           <span
             className="liquidity-meter__track"
             role="progressbar"
@@ -53,7 +63,7 @@ export function LiquidityMeter({ liquidity }: LiquidityProps) {
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(clamped)}
-            aria-valuetext={liquidity?.migrated ? 'Complete, migrated to PumpSwap' : formatCurvePct(clamped)}
+            aria-valuetext={liquidity?.migrated ? 'Completa, graduado a PumpSwap' : formatCurvePct(clamped)}
           >
             <span className="liquidity-meter__fill" style={{ inlineSize: `${clamped}%` }} />
           </span>

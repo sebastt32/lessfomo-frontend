@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { ViewNav, type ViewNavItem } from '../components/molecules/ViewNav';
 import { ThemeToggleContainer } from '../containers/ThemeToggleContainer';
+import { WelcomeGuideContainer } from '../containers/WelcomeGuideContainer';
 import { StatsContainer } from '../containers/StatsContainer';
 import { navigate, useLocationSearch } from '../hooks/useLocationSearch';
 import { currentBackTarget } from '../hooks/tokenNavigation';
@@ -24,8 +25,8 @@ export function AppShell({ account }: AppShellProps = {}) {
   const minConvictionWallets = parseMinConvictionWallets(search);
   const liveSearch = withMinConvictionWallets('', minConvictionWallets);
   const items: ViewNavItem<Exclude<AppView, 'token'>>[] = [
-    { value: 'live', label: 'Live', href: liveSearch === '' ? window.location.pathname : liveSearch },
-    { value: 'record', label: 'Daily record', href: withMinConvictionWallets('?view=record', minConvictionWallets) },
+    { value: 'live', label: 'En vivo', href: liveSearch === '' ? window.location.pathname : liveSearch },
+    { value: 'record', label: 'Registro diario', href: withMinConvictionWallets('?view=record', minConvictionWallets) },
   ];
 
   const headerExtras = (
@@ -38,6 +39,7 @@ export function AppShell({ account }: AppShellProps = {}) {
       />
       <StatsContainer />
       <ThemeToggleContainer />
+      <WelcomeGuideContainer />
       {account}
     </>
   );

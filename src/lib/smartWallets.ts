@@ -1,30 +1,29 @@
-import type { SmartWalletAnalysisResponse, SmartWalletBucket, WalletRecord, WalletStyle, WalletTier } from '../api/types';
-import { formatCount, formatPercent, formatSignedPercent } from './format';
+import type { WalletRecord, WalletStyle, WalletTier } from '../api/types';
+import { formatCount } from './format';
 
-const DASH = '—';
 
 const MINUS = '−';
 
-export const TIER_LABELS: Record<WalletTier, string> = { elite: 'Elite', good: 'Good', none: 'Not rated' };
+export const TIER_LABELS: Record<WalletTier, string> = { elite: 'Élite', good: 'Buen historial', none: 'Sin calificar' };
 
 export const TIER_HINTS: Record<WalletTier, string> = {
-  elite: 'Elite: at least 10 closed tokens in the last 7 days, 65% won and 5 SOL or more net profit (default settings)',
-  good: 'Good: at least 5 closed tokens in the last 7 days, 55% won and a net profit (default settings)',
-  none: 'Not enough good results in the last 7 days to be rated good',
+  elite: 'Élite: en los últimos 7 días operó al menos 10 tokens, ganó en el 65% y sumó 5 SOL o más de ganancia',
+  good: 'Buen historial: en los últimos 7 días operó al menos 5 tokens, ganó en el 55% y terminó con ganancia',
+  none: 'No tuvo suficientes buenos resultados en los últimos 7 días para calificarla',
 };
 
 export const STYLE_LABELS: Record<WalletStyle, string> = {
-  conviction: 'Conviction',
-  flipper: 'Flipper',
-  mixed: 'Mixed',
-  unrated: 'Unrated',
+  conviction: 'Mantiene',
+  flipper: 'Vende rápido',
+  mixed: 'Mixta',
+  unrated: 'Sin calificar',
 };
 
 export const STYLE_HINTS: Record<WalletStyle, string> = {
-  conviction: 'Conviction: sold within 2 minutes in at most 30% of its recent tokens; it usually holds what it buys',
-  flipper: 'Flipper: sold within 2 minutes in 60% or more of its recent tokens; it never makes a token public',
-  mixed: 'Mixed: sometimes holds, sometimes sells within 2 minutes; it never makes a token public',
-  unrated: 'Unrated: not enough good results to rate how it trades',
+  conviction: 'Mantiene: vendió antes de 2 minutos en como mucho el 30% de sus tokens recientes; suele quedarse con lo que compra',
+  flipper: 'Vende rápido: vendió antes de 2 minutos en el 60% o más de sus tokens recientes; nunca hace público un token',
+  mixed: 'Mixta: a veces mantiene y a veces vende antes de 2 minutos; nunca hace público un token',
+  unrated: 'Sin calificar: no tiene suficientes buenos resultados para saber cómo opera',
 };
 
 /** A "flip" is a token sold within this many seconds of the first buy (decision D7). */
@@ -53,99 +52,23 @@ export function formatSignedSol(value: number): string {
 
 /** Why a wallet counts as good, in one plain sentence built from its record. */
 export function describeWalletRecord(record: WalletRecord): string {
-  if (record.tokens === 0) return 'No closed tokens in the last 7 days yet';
+  if (record.tokens === 0) return 'Todavía no cerró ningún token en los últimos 7 días';
   const parts = [
-    `Won ${formatCount(record.wins)} of ${formatCount(record.tokens)} ${record.tokens === 1 ? 'token' : 'tokens'} (${Math.round(record.winRate)}%) in the last 7 days`,
-    `net ${formatSignedSol(record.netPnlSol)}`,
+    `Ganó en ${formatCount(record.wins)} de ${formatCount(record.tokens)} ${record.tokens === 1 ? 'token' : 'tokens'} (${Math.round(record.winRate)}%) en los últimos 7 días`,
+    `resultado neto ${formatSignedSol(record.netPnlSol)}`,
   ];
   if (record.medianEntrySeconds !== null) {
-    parts.push(`usually buys ${formatEntrySeconds(record.medianEntrySeconds)} after launch`);
+    parts.push(`suele comprar ${formatEntrySeconds(record.medianEntrySeconds)} después del lanzamiento`);
   }
   const holding: string[] = [];
   if (typeof record.medianHoldSeconds === 'number') {
-    holding.push(`usually holds ${formatEntrySeconds(record.medianHoldSeconds)}`);
+    holding.push(`suele mantener ${formatEntrySeconds(record.medianHoldSeconds)}`);
   }
   if (typeof record.flipRate === 'number') {
     holding.push(
-      `sold within ${formatEntrySeconds(FLIP_SECONDS)} in ${Math.round(record.flipRate)}% of its tokens`,
+      `vendió antes de ${formatEntrySeconds(FLIP_SECONDS)} en el ${Math.round(record.flipRate)}% de sus tokens`,
     );
   }
   if (holding.length > 0) parts.push(holding.join('; '));
   return parts.join(', ');
-}
-
-/** The bucket's key ("0", "1", ..., "5+"), whichever grouping the backend used. */
-export function bucketKey(bucket: SmartWalletBucket): string {
-  return bucket.convictionWallets ?? bucket.smartWallets ?? '';
-}
-
-/**
- * The grouping the backend answered with: its `by` echo when present, else conviction when buckets are keyed
- * by `convictionWallets`. An older backend ignores `by=conviction` and answers by good-history wallets.
- */
-export function analysisGrouping(data: SmartWalletAnalysisResponse): 'smartWallets' | 'conviction' {
-  if (data.by) return data.by;
-  return data.buckets.some((b) => b.convictionWallets !== undefined) ? 'conviction' : 'smartWallets';
-}
-
-/** Numeric order: "0" < "1" < ... < "5+" < "10+"; keys that are not numbers go last. */
-function bucketRank(key: string): number {
-  const match = /^(\d+)(\+?)$/.exec(key);
-  if (!match) return Number.MAX_SAFE_INTEGER;
-  return Number(match[1]) * 2 + (match[2] === '+' ? 1 : 0);
-}
-
-function bucketLabel(key: string): string {
-  if (key === '0') return 'None';
-  return key === '1' ? '1 wallet' : `${key} wallets`;
-}
-
-export interface AnalysisRow {
-  key: string;
-  label: string;
-  tokens: string;
-  tokenCount: number;
-  reached2x: string;
-  /** reached2xPct relative to the best bucket, 0-100, for the bar. */
-  barPct: number;
-  migrated: string;
-  avgReturn: string;
-  medianReturn: string;
-  winners: string;
-  medianPeak: string;
-  /** How the 2× rate compares with tokens bought by no good wallet; null without a baseline. */
-  lift: string | null;
-  /** Raw values, for styling. */
-  avgReturnPct: number | null;
-  medianReturnPct: number | null;
-}
-
-/** Table rows for the analysis buckets, in numeric order (0, 1, 2, ..., 5+); unknown buckets go last. */
-export function analysisRows(buckets: readonly SmartWalletBucket[]): AnalysisRow[] {
-  const sorted = [...buckets].sort((a, b) => bucketRank(bucketKey(a)) - bucketRank(bucketKey(b)));
-  const best = Math.max(0, ...sorted.map((b) => b.reached2xPct ?? 0));
-  const baseline = sorted.find((b) => bucketKey(b) === '0');
-  const baseRate = baseline && baseline.reached2xPct !== null && baseline.reached2xPct > 0 ? baseline.reached2xPct : null;
-
-  return sorted.map((bucket) => {
-    let lift: string | null = null;
-    if (bucket === baseline) lift = 'Baseline';
-    else if (baseRate !== null && bucket.reached2xPct !== null) lift = `${(bucket.reached2xPct / baseRate).toFixed(1)}× vs none`;
-    return {
-      key: bucketKey(bucket),
-      label: bucketLabel(bucketKey(bucket)),
-      tokens: formatCount(bucket.tokens),
-      tokenCount: bucket.tokens,
-      reached2x: formatPercent(bucket.reached2xPct),
-      barPct: best > 0 && bucket.reached2xPct !== null ? (bucket.reached2xPct / best) * 100 : 0,
-      migrated: formatPercent(bucket.migratedPct),
-      avgReturn: bucket.avgReturnPct === null ? DASH : formatSignedPercent(bucket.avgReturnPct),
-      medianReturn: bucket.medianReturnPct === null ? DASH : formatSignedPercent(bucket.medianReturnPct),
-      winners: formatPercent(bucket.winnersPct),
-      medianPeak: bucket.medianPeakX === null ? DASH : `${bucket.medianPeakX.toFixed(2)}×`,
-      lift,
-      avgReturnPct: bucket.avgReturnPct,
-      medianReturnPct: bucket.medianReturnPct,
-    };
-  });
 }

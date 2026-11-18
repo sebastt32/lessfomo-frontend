@@ -45,5 +45,5 @@ export function convictionOptionLabel(min: number): string {
 }
 
 export function describeConvictionFilter(min: number): string {
-  return `Showing tokens bought by ≥${min} conviction ${min === 1 ? 'wallet' : 'wallets'}`;
+  return `Mostrando tokens comprados por al menos ${min} ${min === 1 ? 'wallet que mantiene' : 'wallets que mantienen'}`;
 }

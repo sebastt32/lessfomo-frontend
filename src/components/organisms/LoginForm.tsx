@@ -27,7 +27,7 @@ export function LoginForm({ onSubmit, submitting, error, notice = null }: LoginF
   const username = useRef<HTMLInputElement>(null);
   const password = useRef<HTMLInputElement>(null);
   const [missing, setMissing] = useState(false);
-  const shown = missing ? 'Enter your username and password' : error;
+  const shown = missing ? 'Escribe tu usuario y tu contraseña' : error;
 
   useEffect(() => {
     username.current?.focus();
@@ -59,7 +59,7 @@ export function LoginForm({ onSubmit, submitting, error, notice = null }: LoginF
 
   const describedBy = shown === null ? undefined : ERROR_ID;
   return (
-    <Panel id={PANEL_ID} title="Sign in" description="Use the account your administrator gave you." className="login-form">
+    <Panel id={PANEL_ID} title="Iniciar sesión" description="Usa la cuenta que te dio el administrador." className="login-form">
       {/* method="post" keeps the fields out of the URL even if the script fails to load. */}
       <form
         className="login-form__form"
@@ -81,7 +81,7 @@ export function LoginForm({ onSubmit, submitting, error, notice = null }: LoginF
         <TextField
           ref={username}
           id="login-username"
-          label="Username"
+          label="Usuario"
           name="username"
           autoComplete="username"
           disabled={submitting}
@@ -91,7 +91,7 @@ export function LoginForm({ onSubmit, submitting, error, notice = null }: LoginF
         <PasswordField
           ref={password}
           id="login-password"
-          label="Password"
+          label="Contraseña"
           name="password"
           autoComplete="current-password"
           disabled={submitting}
@@ -99,7 +99,7 @@ export function LoginForm({ onSubmit, submitting, error, notice = null }: LoginF
           describedBy={describedBy}
         />
         <button type="submit" className="button login-form__submit" disabled={submitting}>
-          {submitting ? 'Signing in…' : 'Sign in'}
+          {submitting ? 'Entrando…' : 'Entrar'}
         </button>
       </form>
     </Panel>

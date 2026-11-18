@@ -33,32 +33,32 @@ const makeStableCycle = (overrides: Partial<TokenCycle> = {}) =>
 
 describe('invest window sentences', () => {
   it('says how long the token could be bought before the run-up', () => {
-    expect(investWindowSentence(makeCycle(), NOW)).toBe('Could be bought for 6 min 20 s before the run-up');
-    expect(investWindowCompact(makeCycle(), NOW)).toBe('6m 20s window');
+    expect(investWindowSentence(makeCycle(), NOW)).toBe('Se pudo comprar durante 6 min 20 s antes de la subida');
+    expect(investWindowCompact(makeCycle(), NOW)).toBe('6m 20s para comprar');
   });
 
   it('counts up while the token is still stable', () => {
-    expect(investWindowSentence(makeStableCycle(), NOW)).toBe('Still stable: 12 min since it appeared');
-    expect(investWindowSentence(makeStableCycle(), NOW + 5_000)).toBe('Still stable: 12 min 5 s since it appeared');
-    expect(investWindowCompact(makeStableCycle(), NOW)).toBe('12m so far');
+    expect(investWindowSentence(makeStableCycle(), NOW)).toBe('Sigue estable: 12 min desde que apareció');
+    expect(investWindowSentence(makeStableCycle(), NOW + 5_000)).toBe('Sigue estable: 12 min 5 s desde que apareció');
+    expect(investWindowCompact(makeStableCycle(), NOW)).toBe('12m hasta ahora');
   });
 
   it('explains a negative window: the token appeared after it had already exploded', () => {
     const late = makeCycle({ appearedLate: true, investWindowSeconds: -180 });
-    expect(investWindowSentence(late, NOW)).toBe('Appeared 3 min after it had already exploded');
-    expect(investWindowCompact(late, NOW)).toBe('3m late');
+    expect(investWindowSentence(late, NOW)).toBe('Apareció 3 min después de haberse duplicado');
+    expect(investWindowCompact(late, NOW)).toBe('3m tarde');
     // A late token that has not reached 2× its base price is still late, not "stable and buyable".
     const lateStable = makeStableCycle({ appearedLate: true, investWindowSeconds: -45 });
-    expect(investWindowSentence(lateStable, NOW)).toBe('Appeared 45 s after it had already exploded');
+    expect(investWindowSentence(lateStable, NOW)).toBe('Apareció 45 s después de haberse duplicado');
   });
 
   it('handles a run-up that started the moment it appeared, and unknown windows', () => {
     expect(investWindowSentence(makeCycle({ investWindowSeconds: 0 }), NOW)).toBe(
-      'The run-up started as it appeared: there was no time to buy before it',
+      'La subida empezó al aparecer: no hubo tiempo para comprar antes',
     );
-    expect(investWindowSentence(makeCycle({ investWindowSeconds: null }), NOW)).toBe('Invest window not known');
+    expect(investWindowSentence(makeCycle({ investWindowSeconds: null }), NOW)).toBe('No se sabe cuánto tiempo hubo para comprar');
     expect(investWindowSentence(makeCycle({ appearedLate: true, investWindowSeconds: null }), NOW)).toBe(
-      'Appeared after it had already exploded',
+      'Apareció cuando ya se había duplicado',
     );
     expect(investWindowCompact(makeCycle({ investWindowSeconds: null }), NOW)).toBe('—');
     expect(investWindowCompact(null, NOW)).toBe('—');
@@ -78,11 +78,11 @@ describe('cycleFacts', () => {
   it('describes the rise before appearing, peak, time to peak, drawdown and last price', () => {
     const facts = Object.fromEntries(cycleFacts(makeCycle()).map((fact) => [fact.key, fact.value]));
     expect(facts).toEqual({
-      riseBefore: '1.50× its launch price',
-      peak: '3.20× the base price',
-      timeToPeak: '10 min after it appeared',
-      drawdown: '62% below the peak',
-      lastPrice: '1.40× the base price (+40.0%)',
+      riseBefore: '1.50× su precio de lanzamiento',
+      peak: '3.20× el precio al aparecer',
+      timeToPeak: '10 min después de aparecer',
+      drawdown: '62% debajo del pico',
+      lastPrice: '1.40× el precio al aparecer (+40.0%)',
     });
   });
 
@@ -109,12 +109,12 @@ describe('newerCycle', () => {
 describe('cycleMarks', () => {
   it('lists every known moment of the cycle in time order', () => {
     expect(cycleMarks(CREATED, makeCycle()).map((mark) => [mark.kind, mark.label, mark.time])).toEqual([
-      ['created', 'Created', T0],
-      ['appeared', 'Appeared in lessfomo', T0 + 120],
-      ['runStart', 'Run-up starts', T0 + 500],
-      ['explosion', 'Explosion', T0 + 540],
-      ['peak', 'Peak', T0 + 720],
-      ['crash', 'Crash', T0 + 900],
+      ['created', 'Creado', T0],
+      ['appeared', 'Apareció en lessfomo', T0 + 120],
+      ['runStart', 'Empieza la subida', T0 + 500],
+      ['explosion', 'Se duplica', T0 + 540],
+      ['peak', 'Pico', T0 + 720],
+      ['crash', 'Caída', T0 + 900],
     ]);
   });
 

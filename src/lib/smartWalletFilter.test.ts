@@ -59,7 +59,7 @@ describe('convictionOptionLabel', () => {
 
 describe('describeConvictionFilter', () => {
   it('says which tokens are shown', () => {
-    expect(describeConvictionFilter(3)).toBe('Showing tokens bought by ≥3 conviction wallets');
-    expect(describeConvictionFilter(10)).toBe('Showing tokens bought by ≥10 conviction wallets');
+    expect(describeConvictionFilter(3)).toBe('Mostrando tokens comprados por al menos 3 wallets que mantienen');
+    expect(describeConvictionFilter(10)).toBe('Mostrando tokens comprados por al menos 10 wallets que mantienen');
   });
 });

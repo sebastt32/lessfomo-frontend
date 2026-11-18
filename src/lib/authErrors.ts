@@ -32,28 +32,28 @@ export function toAuthFailure(error: unknown): AuthFailure {
 }
 
 function waitText(seconds: number | null): string {
-  if (seconds === null) return 'a few minutes';
+  if (seconds === null) return 'unos minutos';
   const minutes = Math.max(1, Math.ceil(seconds / 60));
-  return minutes === 1 ? '1 minute' : `${minutes} minutes`;
+  return minutes === 1 ? '1 minuto' : `${minutes} minutos`;
 }
 
 /** What the login form says for a failure. */
 export function authFailureMessage(failure: AuthFailure): string {
   switch (failure.kind) {
     case 'invalidCredentials':
-      return 'Wrong username or password';
+      return 'Usuario o contraseña incorrectos';
     case 'tooManyAttempts':
-      return `Too many attempts. Try again in ${waitText(failure.retryAfterSeconds)}`;
+      return `Demasiados intentos. Intenta de nuevo en ${waitText(failure.retryAfterSeconds)}.`;
     case 'network':
-      return 'Cannot reach the server';
+      return 'No se puede conectar con el servidor';
     case 'forbiddenOrigin':
-      return 'The server does not accept sign-ins from this address';
+      return 'El servidor no acepta inicios de sesión desde esta dirección';
     case 'unauthenticated':
-      return 'Your session expired. Sign in again';
+      return 'Tu sesión expiró. Inicia sesión de nuevo.';
     case 'weakPassword':
-      return 'Use at least 12 characters, different from the current password';
+      return 'Usa al menos 12 caracteres y una contraseña distinta de la actual';
     case 'unknown':
-      return 'Something went wrong. Try again';
+      return 'Algo salió mal. Inténtalo de nuevo';
   }
 }
 
@@ -61,6 +61,6 @@ export const MIN_PASSWORD_LENGTH = 12;
 
 /** What the change-password form says: there, wrong credentials mean the current password. */
 export function passwordChangeFailureMessage(failure: AuthFailure): string {
-  if (failure.kind === 'invalidCredentials') return 'The current password is wrong';
+  if (failure.kind === 'invalidCredentials') return 'La contraseña actual es incorrecta';
   return authFailureMessage(failure);
 }

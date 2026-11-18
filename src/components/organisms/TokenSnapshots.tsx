@@ -1,5 +1,6 @@
 import type { TokenSnapshot } from '../../api/types';
 import { DateTime } from '../atoms/DateTime';
+import { HelpTip } from '../molecules/HelpTip';
 import { LiquidityCell } from '../molecules/Liquidity';
 import { formatCount, formatPercent } from '../../lib/format';
 import { MoneyValue } from '../molecules/MoneyValue';
@@ -13,10 +14,10 @@ export interface TokenSnapshotsProps {
 }
 
 const SOURCE_LABELS: Record<TokenSnapshot['source'], string> = {
-  trades: 'Trades',
+  trades: 'Operaciones',
   dexscreener: 'DexScreener',
   rugcheck: 'RugCheck',
-  mixed: 'Mixed',
+  mixed: 'Mixta',
 };
 
 const pair = (a: number | null, b: number | null) =>
@@ -25,41 +26,46 @@ const pair = (a: number | null, b: number | null) =>
 /** The token's state at each milestone (creation, 5 min, 1 h, day 3, migration, ...), oldest first. */
 export function TokenSnapshots({ snapshots, symbol }: TokenSnapshotsProps) {
   return (
-    <div className="token-snapshots" role="region" aria-label={`Snapshots of ${symbol}`} tabIndex={0}>
+    <div className="token-snapshots" role="region" aria-label={`Registros de ${symbol}`} tabIndex={0}>
       <table className="token-snapshots__table">
         <caption className="visually-hidden">
-          State of {symbol} at each snapshot, oldest first. Volume, buys, sells and buyers count since the previous
-          snapshot.
+          Estado de {symbol} en cada registro, del más viejo al más nuevo. El volumen, las compras, las ventas y los
+          compradores cuentan desde el registro anterior.
         </caption>
         <thead>
           <tr>
-            <th scope="col">Milestone</th>
-            <th scope="col">Taken</th>
+            <th scope="col">Momento</th>
+            <th scope="col">Guardado</th>
             <th scope="col" className="token-snapshots__num">
               Market cap
             </th>
             <th scope="col" className="token-snapshots__num">
-              Volume
+              Volumen
             </th>
             <th scope="col" className="token-snapshots__num">
-              Buys / sells
+              Compras / ventas
             </th>
             <th scope="col" className="token-snapshots__num">
-              Buyers
+              Compradores
             </th>
             <th scope="col" className="token-snapshots__num">
               Holders
             </th>
             <th scope="col" className="token-snapshots__num">
-              Top 10
+              Top 10{' '}
+              <HelpTip topic="el Top 10">
+                Qué parte del total tienen las 10 wallets con más tokens. Si es alta, pocas wallets pueden hacer caer el
+                precio.
+              </HelpTip>
             </th>
             <th scope="col" className="token-snapshots__num">
-              Dev
+              Creador{' '}
+              <HelpTip topic="la columna Creador">Qué parte del total tiene todavía el creador del token.</HelpTip>
             </th>
             <th scope="col" className="token-snapshots__num">
-              Liquidity
+              Liquidez
             </th>
-            <th scope="col">Source</th>
+            <th scope="col">Fuente</th>
           </tr>
         </thead>
         <tbody>

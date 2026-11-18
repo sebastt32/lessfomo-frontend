@@ -30,18 +30,18 @@ describe('TokenChart', () => {
   it('shows the market cap in USD by default, and in SOL while the SOL/USD price is unknown', () => {
     const { initialMetric: _metric, initialCurrency: _currency, ...defaults } = props();
     const view = render(<TokenChart {...defaults} />);
-    expect(screen.getByRole('img', { name: 'Market cap of FROG in USD, 1m candles, 2 candles' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Market cap de FROG en USD, velas de 1m, 2 velas' })).toBeInTheDocument();
     expect(lastChart().candles().data[0]?.open).toBeCloseTo(0.00000003 * 1_000_000_000 * 140);
     view.unmount();
 
     render(<TokenChart {...defaults} solUsd={null} />);
-    expect(screen.getByRole('img', { name: 'Market cap of FROG in SOL, 1m candles, 2 candles' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Market cap de FROG en SOL, velas de 1m, 2 velas' })).toBeInTheDocument();
   });
 
   it('draws candles and volume in SOL, coloring volume by the dominant side, with the attribution logo', () => {
     render(<TokenChart {...props()} />);
 
-    expect(screen.getByRole('img', { name: 'Price of FROG in SOL, 1m candles, 2 candles' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Precio de FROG en SOL, velas de 1m, 2 velas' })).toBeInTheDocument();
     const chart = lastChart();
     expect(chart.options).toMatchObject({ layout: { attributionLogo: true }, autoSize: true });
     expect(chart.candles().data).toEqual([
@@ -55,12 +55,12 @@ describe('TokenChart', () => {
     expect(sellBar).toMatchObject({ time: T0 + 60, value: 3, color: 'rgba(174, 35, 24, 0.5)' });
   });
 
-  it('marks dev trades on their candles', () => {
+  it('marks the creator\'s trades on their candles', () => {
     render(<TokenChart {...props({ devTrades: [{ time: T0 + 70, side: 'sell', solAmount: 2 }, { time: T0 + 10, side: 'buy', solAmount: 1 }] })} />);
 
     expect(lastChart().candles().markers).toEqual([
-      expect.objectContaining({ time: T0, position: 'belowBar', shape: 'arrowUp', text: 'Dev buy 1 SOL' }),
-      expect.objectContaining({ time: T0 + 60, position: 'aboveBar', shape: 'arrowDown', text: 'Dev sell 2 SOL' }),
+      expect.objectContaining({ time: T0, position: 'belowBar', shape: 'arrowUp', text: 'Creador compra 1 SOL' }),
+      expect.objectContaining({ time: T0 + 60, position: 'aboveBar', shape: 'arrowDown', text: 'Creador vende 2 SOL' }),
     ]);
   });
 
@@ -83,7 +83,7 @@ describe('TokenChart', () => {
     const user = userEvent.setup();
     render(<TokenChart {...props({ onIntervalChange })} />);
 
-    const group = screen.getByRole('group', { name: 'Candle interval' });
+    const group = screen.getByRole('group', { name: 'Intervalo de velas' });
     expect(within(group).getByRole('button', { name: '1m' })).toHaveAttribute('aria-pressed', 'true');
     expect(within(group).getByRole('button', { name: '1s' })).toHaveAttribute('aria-pressed', 'false');
     await user.click(within(group).getByRole('button', { name: '5m' }));
@@ -102,15 +102,28 @@ describe('TokenChart', () => {
     await user.click(screen.getByRole('button', { name: 'USD' }));
     expect(lastChart().candles().data.at(-1)?.close).toBeCloseTo(4200, 6);
     expect(lastChart().volume().data.at(-1)?.value).toBeCloseTo(420, 9);
-    expect(screen.getByRole('img', { name: /Market cap of FROG in USD/ })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /Market cap de FROG en USD/ })).toBeInTheDocument();
     expect(screen.getByText('$4.2K (−14.3%)')).toBeInTheDocument();
+  });
+
+  it('explains market cap versus price next to the chart value choice', async () => {
+    const user = userEvent.setup();
+    render(<TokenChart {...props()} />);
+    const help = screen.getByRole('button', { name: '¿Qué es el market cap?' });
+    // Next to the choice, not one of its options.
+    expect(within(screen.getByRole('group', { name: 'Valor del gráfico' })).queryByRole('button', { name: /¿Qué es/ })).toBeNull();
+    await user.click(help);
+    expect(help).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('note')).toHaveTextContent('Lo que valen todos los tokens juntos al precio actual');
+    // Opening the help does not change what the chart shows.
+    expect(screen.getByRole('button', { name: 'Precio' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('disables USD while the SOL/USD price is unknown', () => {
     render(<TokenChart {...props({ solUsd: null })} />);
     const usd = screen.getByRole('button', { name: 'USD' });
     expect(usd).toBeDisabled();
-    expect(usd).toHaveAttribute('title', 'The SOL/USD price is not available right now');
+    expect(usd).toHaveAttribute('title', 'El precio de SOL en USD no está disponible ahora');
     expect(screen.getByRole('button', { name: 'SOL' })).toHaveAttribute('aria-pressed', 'true');
   });
 
@@ -141,7 +154,7 @@ describe('TokenChart', () => {
 
   it('shows a friendly empty state before the first trade', () => {
     render(<TokenChart {...props({ candles: [], devTrades: [] })} />);
-    expect(screen.getByText('No trades yet')).toBeInTheDocument();
+    expect(screen.getByText('Todavía no hay operaciones')).toBeInTheDocument();
     expect(charts).toHaveLength(0);
   });
 
@@ -149,20 +162,20 @@ describe('TokenChart', () => {
     const onRetry = vi.fn();
     const user = userEvent.setup();
     const { rerender } = render(<TokenChart {...props({ status: 'loading', candles: [] })} />);
-    expect(screen.getByRole('status')).toHaveTextContent('Loading chart…');
+    expect(screen.getByRole('status')).toHaveTextContent('Cargando gráfico…');
 
     rerender(<TokenChart {...props({ status: 'error', candles: [], errorMessage: 'Could not reach the API.', onRetry })} />);
-    expect(screen.getByRole('alert')).toHaveTextContent('Could not load the chart');
+    expect(screen.getByRole('alert')).toHaveTextContent('No se pudo cargar el gráfico');
     expect(screen.getByRole('alert')).toHaveTextContent('Could not reach the API.');
-    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    await user.click(screen.getByRole('button', { name: 'Reintentar' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
   it('shows the live connection state', () => {
     const { rerender } = render(<TokenChart {...props({ connection: 'connected' })} />);
-    expect(screen.getByText('Live trades')).toBeInTheDocument();
+    expect(screen.getByText('Operaciones en vivo')).toBeInTheDocument();
     rerender(<TokenChart {...props({ connection: 'reconnecting' })} />);
-    expect(screen.getByText('Reconnecting')).toBeInTheDocument();
+    expect(screen.getByText('Reconectando')).toBeInTheDocument();
   });
 
   it('removes the chart when unmounted', () => {

@@ -3,7 +3,7 @@ import type { FeedError } from './liveFeed';
 
 export function toFeedError(error: unknown): FeedError {
   if (error instanceof ApiError) return { code: error.code, message: error.message };
-  return { code: 'UNKNOWN', message: error instanceof Error ? error.message : 'Something went wrong.' };
+  return { code: 'UNKNOWN', message: error instanceof Error ? error.message : 'Algo salió mal.' };
 }
 
 export function isNetworkError(error: FeedError | null): boolean {

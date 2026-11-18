@@ -33,7 +33,7 @@ export function ScreeningsFeed({
   cycles = {},
 }: ScreeningsFeedProps) {
   return (
-    <ol className="screenings-feed" aria-label="Latest safety checks, newest first">
+    <ol className="screenings-feed" aria-label="Últimos controles de seguridad, del más nuevo al más antiguo">
       {screenings.map((screening) => {
         const created = screening.detectedAt ?? createdAt[screening.mint];
         return (
@@ -50,7 +50,7 @@ export function ScreeningsFeed({
               type="button"
               className="token-button"
               aria-pressed={selectedMint === undefined ? undefined : screening.mint === selectedMint}
-              aria-label={`Show details for ${screening.symbol}`}
+              aria-label={`Ver detalle de ${screening.symbol}`}
               onClick={() => onSelect(screening.mint)}
             >
               <TokenName symbol={screening.symbol} name={screening.name} />
@@ -62,7 +62,7 @@ export function ScreeningsFeed({
           </div>
 
           {screening.failureCodes.length > 0 ? (
-            <ul className="screenings-feed__codes" aria-label="Failed checks">
+            <ul className="screenings-feed__codes" aria-label="Controles no superados">
               {screening.failureCodes.map((code) => (
                 <li key={code} className="screenings-feed__code" title={code}>
                   {describeFailureCode(code)}
@@ -74,11 +74,11 @@ export function ScreeningsFeed({
 
           <dl className="screenings-feed__stats">
             <div>
-              <dt>Top 10</dt>
+              <dt>Top 10 holders</dt>
               <dd>{formatPercent(screening.top10Pct)}</dd>
             </div>
             <div>
-              <dt>Creator</dt>
+              <dt>Creador</dt>
               <dd>{formatPercent(screening.creatorPct)}</dd>
             </div>
             <div>
@@ -87,21 +87,21 @@ export function ScreeningsFeed({
             </div>
             {smartWallets[screening.mint] ? (
               <div>
-                <dt>Smart wallets</dt>
+                <dt>Wallets</dt>
                 <dd>
                   <SmartWalletCount counts={smartWallets[screening.mint]} />
                 </dd>
               </div>
             ) : null}
             <div>
-              <dt>Cycle</dt>
+              <dt>Ciclo</dt>
               <dd>
                 <CycleCell cycle={cycles[screening.mint]} now={now} />
               </dd>
             </div>
             {created ? (
               <div>
-                <dt>Created</dt>
+                <dt>Creado</dt>
                 <dd>
                   <DateTime iso={created} />
                 </dd>

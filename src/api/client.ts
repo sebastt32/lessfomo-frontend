@@ -250,7 +250,7 @@ export function createApiClient({ baseUrl, fetchImpl }: ApiClientConfig): ApiCli
       response = await doFetch(`${baseUrl}${path}`, init);
     } catch (error) {
       if (isAbortError(error)) throw error;
-      throw new ApiError(0, 'NETWORK_ERROR', `Could not reach the lessfomo API at ${baseUrl}.`);
+      throw new ApiError(0, 'NETWORK_ERROR', `No se puede conectar con el servidor de lessfomo (${baseUrl}).`);
     }
 
     let body: unknown;
@@ -264,7 +264,7 @@ export function createApiClient({ baseUrl, fetchImpl }: ApiClientConfig): ApiCli
       const retryAfter = parseRetryAfter(response.headers.get('Retry-After'));
       const error = isApiErrorBody(body)
         ? new ApiError(response.status, body.error.code, body.error.message, retryAfter)
-        : new ApiError(response.status, 'HTTP_ERROR', `The API answered with HTTP ${response.status}.`, retryAfter);
+        : new ApiError(response.status, 'HTTP_ERROR', `El servidor respondió con un error (HTTP ${response.status}).`, retryAfter);
       if (error.status === 401 && error.code === 'UNAUTHENTICATED') {
         for (const listener of [...unauthenticatedListeners]) listener();
       }
@@ -276,7 +276,7 @@ export function createApiClient({ baseUrl, fetchImpl }: ApiClientConfig): ApiCli
   async function request<T>(path: string, options: SendOptions = {}): Promise<T> {
     const { status, body } = await send(path, options);
     if (body === undefined) {
-      throw new ApiError(status, 'INVALID_RESPONSE', 'The API answered with something that is not JSON.');
+      throw new ApiError(status, 'INVALID_RESPONSE', 'El servidor respondió con datos que no se pueden leer.');
     }
     return body as T;
   }

@@ -14,7 +14,7 @@ export interface TokenPageProps {
   headerExtras?: ReactNode;
 }
 
-const SKIP_LINK = { href: `#${TOKEN_VIEW_ID}`, label: 'Skip to the token' };
+const SKIP_LINK = { href: `#${TOKEN_VIEW_ID}`, label: 'Ir al token' };
 
 /** A token's own view (`?view=token&mint=<mint>`): full width, with its chart, cycle and details. */
 export function TokenPage({ mint, back, onBack, headerExtras }: TokenPageProps) {

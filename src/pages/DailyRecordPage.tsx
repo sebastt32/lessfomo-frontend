@@ -16,7 +16,7 @@ export function DailyRecordPage({ headerExtras }: DailyRecordPageProps) {
       notice={<OfflineNoticeContainer />}
       list={<DailyRecordContainer />}
       footer={<Disclaimer />}
-      skipLink={{ href: '#daily-record', label: 'Skip to the daily record' }}
+      skipLink={{ href: '#daily-record', label: 'Saltar al registro diario' }}
     />
   );
 }

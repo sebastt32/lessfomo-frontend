@@ -11,7 +11,7 @@ export interface HistoryTemplateProps {
   skipLink?: { href: string; label: string };
 }
 
-const HISTORY_SKIP_LINK = { href: '#history', label: 'Skip to token history' };
+const HISTORY_SKIP_LINK = { href: '#history', label: 'Saltar al contenido' };
 
 /** Header, notices and one full-width column: the history list, the insights panels or a token's own view. */
 export function HistoryTemplate({ header, notice, list, footer, skipLink = HISTORY_SKIP_LINK }: HistoryTemplateProps) {

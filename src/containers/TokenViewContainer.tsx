@@ -13,6 +13,7 @@ import { useTokenDetail } from '../hooks/useTokenDetail';
 import { newerCycle } from '../lib/cycle';
 import { shortenMint } from '../lib/format';
 import { mergeScoreSeries } from '../lib/series';
+import { isNetworkError } from '../state/errors';
 import { selectCycle } from '../state/cycleFeed';
 import { selectScoreHistory } from '../state/liveFeed';
 import { useLiveFeedContext } from './LiveFeedProvider';
@@ -37,23 +38,27 @@ function SnapshotsBody({ result, symbol }: { result: ResourceResult<TokenSnapsho
       return state.data.snapshots.length > 0 ? (
         <TokenSnapshots snapshots={state.data.snapshots} symbol={symbol} />
       ) : (
-        <p className="token-detail__note">No snapshots yet. The first one is taken when the token is created.</p>
+        <p className="token-detail__note">Todavía no hay registros. El primero se guarda cuando se crea el token.</p>
       );
     case 'unavailable':
       return (
         <p className="token-detail__note">
-          Snapshots are not available for this token yet. They are taken at creation, at 1, 5, 10, 15 and 30 minutes,
-          then hourly, daily and weekly while it keeps trading.
+          Los registros de este token todavía no están disponibles. Se guardan al crearse, a los 1, 5, 10, 15 y 30
+          minutos, y después cada hora, cada día y cada semana mientras se siga operando.
         </p>
       );
     case 'error':
       return (
-        <ErrorState title="Could not load snapshots" onRetry={retry}>
+        <ErrorState
+          title={isNetworkError(state.error) ? 'No se pudo conectar con el servidor' : 'No se pudieron cargar los registros'}
+          onRetry={retry}
+          retryLabel="Reintentar"
+        >
           {state.error.message}
         </ErrorState>
       );
     default:
-      return <LoadingState>Loading snapshots…</LoadingState>;
+      return <LoadingState>Cargando registros…</LoadingState>;
   }
 }
 
@@ -99,9 +104,9 @@ export function TokenViewContainer({ mint, back, onBack }: TokenViewContainerPro
     if (state.status === 'not-found') {
       message = (
         <>
-          <EmptyState title="This token is not available in lessfomo">
-            It may not have been bought by enough conviction wallets, it may have launched before the screener
-            started, or the address is not a pump.fun token.
+          <EmptyState title="Este token no está disponible en lessfomo">
+            Puede que no lo hayan comprado suficientes wallets que mantienen, que se haya lanzado antes de que el
+            screener empezara, o que la dirección no sea de un token de pump.fun.
           </EmptyState>
           <p className="token-view__actions">
             <button type="button" className="button" onClick={onBack}>
@@ -112,18 +117,22 @@ export function TokenViewContainer({ mint, back, onBack }: TokenViewContainerPro
       );
     } else if (state.status === 'error') {
       message = (
-        <ErrorState title="Could not load this token" onRetry={retry}>
+        <ErrorState
+          title={isNetworkError(state.error) ? 'No se pudo conectar con el servidor' : 'No se pudo cargar este token'}
+          onRetry={retry}
+          retryLabel="Reintentar"
+        >
           {state.error.message}
         </ErrorState>
       );
     } else {
-      message = <LoadingState>Loading the token…</LoadingState>;
+      message = <LoadingState>Cargando el token…</LoadingState>;
     }
     return (
       <TokenView
         back={back}
         onBack={onBack}
-        title={state.status === 'not-found' ? 'Token not found' : `Token ${short}`}
+        title={state.status === 'not-found' ? 'Token no encontrado' : `Token ${short}`}
         subtitle={state.status === 'not-found' ? short : undefined}
       >
         {message}
@@ -139,7 +148,7 @@ export function TokenViewContainer({ mint, back, onBack }: TokenViewContainerPro
       title={symbol}
       subtitle={detail.token.name}
       chart={
-        <Suspense fallback={<LoadingState>Loading chart…</LoadingState>}>
+        <Suspense fallback={<LoadingState>Cargando gráfico…</LoadingState>}>
           <TokenChartContainer
             mint={mint}
             symbol={symbol}

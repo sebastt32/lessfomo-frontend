@@ -5,8 +5,8 @@ import type { SignedOutReason } from '../state/auth';
 import { useAuth } from './AuthProvider';
 
 const NOTICES: Record<Exclude<SignedOutReason, null>, string> = {
-  expired: 'Your session expired. Sign in again.',
-  signedOut: 'You signed out.',
+  expired: 'Tu sesión expiró. Inicia sesión de nuevo.',
+  signedOut: 'Cerraste sesión.',
 };
 
 /** Owns the sign-in attempt. The password goes straight from the form to the request and is not kept. */

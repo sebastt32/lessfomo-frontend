@@ -28,7 +28,7 @@ export function AccountContainer() {
     const failure = await actions.signOut();
     // On success the whole platform, this container included, is unmounted.
     if (failure === null) return;
-    setSignOutError(`Could not sign out. ${authFailureMessage(failure)}`);
+    setSignOutError(`No se pudo cerrar sesión. ${authFailureMessage(failure)}`);
     setSigningOut(false);
   }, [actions]);
 

@@ -21,12 +21,13 @@ const NOW = Date.parse('2026-11-13T20:10:00.000Z');
 
 describe('formatRelativeTime', () => {
   it.each([
-    ['2026-11-13T20:09:58.000Z', 'just now'],
-    ['2026-11-13T20:09:30.000Z', '30s ago'],
-    ['2026-11-13T20:07:00.000Z', '3m ago'],
-    ['2026-11-13T18:10:00.000Z', '2h ago'],
-    ['2026-11-10T20:10:00.000Z', '3d ago'],
-    ['2026-11-13T20:10:30.000Z', 'just now'],
+    ['2026-11-13T20:09:58.000Z', 'justo ahora'],
+    ['2026-11-13T20:09:30.000Z', 'hace 30 s'],
+    ['2026-11-13T20:07:00.000Z', 'hace 3 min'],
+    ['2026-11-13T18:10:00.000Z', 'hace 2 h'],
+    ['2026-11-10T20:10:00.000Z', 'hace 3 días'],
+    ['2026-11-12T20:10:00.000Z', 'hace 1 día'],
+    ['2026-11-13T20:10:30.000Z', 'justo ahora'],
   ])('%s -> %s', (iso, expected) => {
     expect(formatRelativeTime(iso, NOW)).toBe(expected);
   });
@@ -89,9 +90,9 @@ describe('liquidity, SOL amounts and dates', () => {
   });
 
   it('formats a creation date and time in the given timezone', () => {
-    expect(formatDate('2026-11-14T03:15:03.912Z', 'UTC')).toBe('Nov 14, 2026');
+    expect(formatDate('2026-11-14T03:15:03.912Z', 'UTC')).toBe('14 nov 2026');
     expect(formatTime('2026-11-14T03:15:03.912Z', 'UTC')).toBe('03:15');
-    expect(formatDate('2026-11-14T03:15:03.912Z', 'America/Bogota')).toBe('Nov 13, 2026');
+    expect(formatDate('2026-11-14T03:15:03.912Z', 'America/Bogota')).toBe('13 nov 2026');
     expect(formatTime('2026-11-14T03:15:03.912Z', 'America/Bogota')).toBe('22:15');
     expect(formatDate('nope')).toBe('—');
     expect(formatTime('nope')).toBe('—');

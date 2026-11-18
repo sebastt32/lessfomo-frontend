@@ -4,6 +4,15 @@ A live dashboard for [lessfomo](https://github.com/sebastt32/lessfomo), a Solana
 only uses free data sources. It has two views, **Live** and **Daily record**, plus a separate view
 for each token, and shows:
 
+- **Spanish, plain language**: the whole interface is in Spanish (neutral, "tú"); dates use the `es` locale (e.g.
+  "14 nov 2026", 24-hour times) and numbers keep "." decimals ("$45.2K", "18.4%"). Concepts use plain names
+  (e.g. "wallets que mantienen" for conviction wallets, "Impulso" for the momentum score, "precio al aparecer"
+  for the base price), and a "?" next to each one opens a short explanation with a tap (`HelpTip`; another tap,
+  Escape or a tap elsewhere closes it), so it works on phones too.
+- **First-visit guide**: the first time the platform opens in a browser, a four-step guide explains lessfomo,
+  En vivo, Registro diario and the "?" marks; it can be skipped (button or Escape) and reopened from **Guía** in
+  the header. Whether it was seen is kept in `localStorage` (`lessfomo:guide-seen`); blocked storage counts as
+  seen so it never shows on every load.
 - **Conviction-wallet filter**: every list shows only tokens bought by conviction wallets: good-history wallets
   (they won most of the tokens they traded in the last 7 days with a net profit) that usually hold what they buy
   (sold within 2 minutes in at most 30% of their recent tokens). Flippers never count, because buying right after

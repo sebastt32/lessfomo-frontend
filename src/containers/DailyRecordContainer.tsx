@@ -37,26 +37,26 @@ export function DailyRecordContainer() {
   } else if (state.status === 'error') {
     body = (
       <ErrorState
-        title={isNetworkError(state.error) ? 'Could not reach the screener API' : 'Could not load the daily record'}
+        title={isNetworkError(state.error) ? 'No se pudo conectar con el servidor' : 'No se pudo cargar el registro diario'}
         onRetry={retry}
       >
         {state.error.message}
       </ErrorState>
     );
   } else {
-    body = <LoadingState>Loading the daily record…</LoadingState>;
+    body = <LoadingState>Cargando el registro diario…</LoadingState>;
   }
 
   return (
     <Panel
       id="daily-record"
-      title={`Daily record · ${dayLabel}`}
-      description="Every token that appeared in lessfomo that day, and how many reached 2× after appearing."
+      title={`Registro diario · ${dayLabel}`}
+      description="Todos los tokens que aparecieron en lessfomo ese día, y cuántos llegaron a 2× después de aparecer."
       actions={
         <>
           <DayNavigator day={day} today={today} onChange={(next) => navigate(withRecordDay(search, next, new Date()))} />
           <button type="button" className="button button--quiet" onClick={retry}>
-            Refresh
+            Actualizar
           </button>
         </>
       }

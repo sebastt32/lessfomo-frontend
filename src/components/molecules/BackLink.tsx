@@ -3,7 +3,7 @@ import './BackLink.css';
 
 export interface BackLinkProps {
   href: string;
-  /** Says where it goes, e.g. "Back to History". */
+  /** Says where it goes, e.g. "Volver a Registro diario". */
   children: string;
   /** Called for plain left clicks; modified clicks (new tab, etc.) keep the browser's behavior. */
   onNavigate: () => void;

@@ -18,6 +18,7 @@ import { formatSignedPercent } from '../../lib/format';
 import { ExternalLink } from '../atoms/ExternalLink';
 import { StatusDot, type StatusDotTone } from '../atoms/StatusDot';
 import { CandlestickChart, type ChartMark } from '../molecules/CandlestickChart';
+import { HelpTip } from '../molecules/HelpTip';
 import { SegmentedControl, type SegmentedOption } from '../molecules/SegmentedControl';
 import { EmptyState, ErrorState, LoadingState } from '../molecules/SectionState';
 import { CycleLegend } from './CycleLegend';
@@ -51,26 +52,26 @@ const NO_MARKS: readonly CycleMark[] = [];
 
 /** Short texts for the canvas, where space is tight; the legend under the chart has the full labels. */
 const MARK_TEXT: Record<CycleMark['kind'], string> = {
-  created: 'Created',
-  appeared: 'Appeared',
-  runStart: 'Run-up',
-  explosion: 'Explosion',
-  peak: 'Peak',
-  crash: 'Crash',
+  created: 'Creado',
+  appeared: 'Apareció',
+  runStart: 'Subida',
+  explosion: 'Se duplica',
+  peak: 'Pico',
+  crash: 'Caída',
 };
 
 const INTERVAL_OPTIONS: SegmentedOption<CandleInterval>[] = CANDLE_INTERVALS.map((value) => ({ value, label: value }));
 
 const METRIC_OPTIONS: SegmentedOption<ChartMetric>[] = [
-  { value: 'price', label: 'Price' },
+  { value: 'price', label: 'Precio' },
   { value: 'marketCap', label: 'Market cap' },
 ];
 
 const LIVE_COPY: Record<ConnectionState, { label: string; tone: StatusDotTone }> = {
-  connecting: { label: 'Connecting', tone: 'warn' },
-  connected: { label: 'Live trades', tone: 'good' },
-  reconnecting: { label: 'Reconnecting', tone: 'warn' },
-  offline: { label: 'Live updates offline', tone: 'bad' },
+  connecting: { label: 'Conectando', tone: 'warn' },
+  connected: { label: 'Operaciones en vivo', tone: 'good' },
+  reconnecting: { label: 'Reconectando', tone: 'warn' },
+  offline: { label: 'Sin actualizaciones en vivo', tone: 'bad' },
 };
 
 function changePercent(bar: ChartBar): number {
@@ -133,7 +134,7 @@ export function TokenChart({
   );
   const basePrice =
     basePriceSol === null ? null : toChartValue(basePriceSol, { metric, currency, totalSupply, solUsd });
-  const priceLine = useMemo(() => (basePrice === null ? null : { price: basePrice, title: 'Base price' }), [basePrice]);
+  const priceLine = useMemo(() => (basePrice === null ? null : { price: basePrice, title: 'Precio al aparecer' }), [basePrice]);
 
   const currencyOptions: SegmentedOption<ChartCurrency>[] = [
     { value: 'SOL', label: 'SOL' },
@@ -141,27 +142,28 @@ export function TokenChart({
       value: 'USD',
       label: 'USD',
       disabled: solUsd === null,
-      ...(solUsd === null ? { hint: 'The SOL/USD price is not available right now' } : {}),
+      ...(solUsd === null ? { hint: 'El precio de SOL en USD no está disponible ahora' } : {}),
     },
   ];
 
-  const metricName = metric === 'price' ? 'Price' : 'Market cap';
+  const metricName = metric === 'price' ? 'Precio' : 'Market cap';
   const shown = (hoverTime === null ? undefined : bars.find((bar) => bar.time === hoverTime)) ?? bars.at(-1);
   const live = LIVE_COPY[connection];
 
   let body;
   if (status === 'loading') {
-    body = <LoadingState>Loading chart…</LoadingState>;
+    body = <LoadingState>Cargando gráfico…</LoadingState>;
   } else if (status === 'error') {
     body = (
-      <ErrorState title="Could not load the chart" onRetry={onRetry}>
+      <ErrorState title="No se pudo cargar el gráfico" onRetry={onRetry} retryLabel="Reintentar">
         {errorMessage}
       </ErrorState>
     );
   } else if (bars.length === 0) {
     body = (
-      <EmptyState title="No trades yet">
-        The chart starts with this token's first trade and updates live, so you can keep it open.
+      <EmptyState title="Todavía no hay operaciones">
+        El gráfico empieza con la primera operación de este token y se actualiza en vivo, así que puedes dejarlo
+        abierto.
       </EmptyState>
     );
   } else {
@@ -170,7 +172,7 @@ export function TokenChart({
         bars={bars}
         markers={markers}
         secondsVisible={interval === '1s'}
-        label={`${metricName} of ${symbol} in ${currency}, ${interval} candles, ${bars.length} candles`}
+        label={`${metricName} de ${symbol} en ${currency}, velas de ${interval}, ${bars.length} velas`}
         onHover={setHoverTime}
         marks={chartMarks}
         priceLine={priceLine}
@@ -180,11 +182,17 @@ export function TokenChart({
   }
 
   return (
-    <section className="token-chart" aria-label={`${symbol} chart`}>
+    <section className="token-chart" aria-label={`Gráfico de ${symbol}`}>
       <div className="token-chart__toolbar">
-        <SegmentedControl label="Candle interval" options={INTERVAL_OPTIONS} value={interval} onChange={onIntervalChange} />
-        <SegmentedControl label="Chart value" options={METRIC_OPTIONS} value={metric} onChange={setMetric} />
-        <SegmentedControl label="Currency" options={currencyOptions} value={currency} onChange={setCurrency} />
+        <SegmentedControl label="Intervalo de velas" options={INTERVAL_OPTIONS} value={interval} onChange={onIntervalChange} />
+        <span className="token-chart__choice">
+          <SegmentedControl label="Valor del gráfico" options={METRIC_OPTIONS} value={metric} onChange={setMetric} />
+          <HelpTip topic="el market cap">
+            Lo que valen todos los tokens juntos al precio actual. El precio es lo que vale un solo token. Puedes ver
+            cualquiera de los dos en USD o en SOL.
+          </HelpTip>
+        </span>
+        <SegmentedControl label="Moneda" options={currencyOptions} value={currency} onChange={setCurrency} />
         <span className="token-chart__live">
           <StatusDot tone={live.tone} />
           {live.label}
@@ -192,28 +200,28 @@ export function TokenChart({
       </div>
 
       {shown && status === 'ready' ? (
-        <dl className="token-chart__legend" aria-label={`${metricName} in ${currency}`}>
+        <dl className="token-chart__legend" aria-label={`${metricName} en ${currency}`}>
           <div>
             <dt>
-              <abbr title="Open">O</abbr>
+              <abbr title="Apertura">A</abbr>
             </dt>
             <dd>{formatChartNumber(shown.open)}</dd>
           </div>
           <div>
             <dt>
-              <abbr title="High">H</abbr>
+              <abbr title="Máximo">Máx</abbr>
             </dt>
             <dd>{formatChartNumber(shown.high)}</dd>
           </div>
           <div>
             <dt>
-              <abbr title="Low">L</abbr>
+              <abbr title="Mínimo">Mín</abbr>
             </dt>
             <dd>{formatChartNumber(shown.low)}</dd>
           </div>
           <div>
             <dt>
-              <abbr title="Close">C</abbr>
+              <abbr title="Cierre">C</abbr>
             </dt>
             <dd className={shown.close >= shown.open ? 'token-chart__up' : 'token-chart__down'}>
               {formatChartValue(shown.close, currency)} ({formatSignedPercent(changePercent(shown))})
@@ -221,7 +229,7 @@ export function TokenChart({
           </div>
           <div>
             <dt>
-              <abbr title="Volume">Vol</abbr>
+              <abbr title="Volumen">Vol</abbr>
             </dt>
             <dd>{formatChartValue(shown.volume, currency)}</dd>
           </div>
@@ -247,7 +255,7 @@ export function TokenChart({
 
       {/* Attribution notice required by the Lightweight Charts license (its NOTICE file). */}
       <p className="token-chart__notice">
-        Chart by TradingView Lightweight Charts™, Copyright (с) 2025 TradingView, Inc.{' '}
+        Gráfico hecho con TradingView Lightweight Charts™, Copyright (с) 2025 TradingView, Inc.{' '}
         <ExternalLink href="https://www.tradingview.com/">tradingview.com</ExternalLink>
       </p>
     </section>

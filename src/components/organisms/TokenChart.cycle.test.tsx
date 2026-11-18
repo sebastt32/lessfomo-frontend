@@ -33,13 +33,13 @@ function props(overrides: Partial<TokenChartProps> = {}): TokenChartProps {
 }
 
 const shade = () => document.querySelector<HTMLElement>('.candlestick-chart__shade')!;
-const legend = () => screen.getByRole('heading', { name: 'Marks on the chart' }).parentElement!;
+const legend = () => screen.getByRole('heading', { name: 'Marcas en el gráfico' }).parentElement!;
 
 describe('TokenChart: cycle marks', () => {
   it('offers the 15m and 1h intervals', async () => {
     const onIntervalChange = vi.fn();
     render(<TokenChart {...props({ onIntervalChange })} />);
-    const group = screen.getByRole('group', { name: 'Candle interval' });
+    const group = screen.getByRole('group', { name: 'Intervalo de velas' });
     expect(within(group).getAllByRole('button').map((button) => button.textContent)).toEqual([
       '1s',
       '1m',
@@ -51,28 +51,28 @@ describe('TokenChart: cycle marks', () => {
     expect(onIntervalChange).toHaveBeenCalledWith('1h');
   });
 
-  it('marks created, appeared, run-up, explosion, peak and crash on their candles', () => {
+  it('marks created, appeared, run-up, doubling, peak and crash on their candles', () => {
     render(<TokenChart {...props()} />);
     expect(lastChart().candles().markers).toEqual([
-      expect.objectContaining({ time: T0, text: 'Created', position: 'belowBar', shape: 'circle' }),
-      expect.objectContaining({ time: T0 + 120, text: 'Appeared', position: 'belowBar', shape: 'arrowUp' }),
-      expect.objectContaining({ time: T0 + 480, text: 'Run-up', position: 'belowBar' }),
-      expect.objectContaining({ time: T0 + 540, text: 'Explosion', position: 'aboveBar' }),
-      expect.objectContaining({ time: T0 + 720, text: 'Peak', position: 'aboveBar', shape: 'arrowDown' }),
-      expect.objectContaining({ time: T0 + 900, text: 'Crash', position: 'aboveBar', shape: 'arrowDown' }),
+      expect.objectContaining({ time: T0, text: 'Creado', position: 'belowBar', shape: 'circle' }),
+      expect.objectContaining({ time: T0 + 120, text: 'Apareció', position: 'belowBar', shape: 'arrowUp' }),
+      expect.objectContaining({ time: T0 + 480, text: 'Subida', position: 'belowBar' }),
+      expect.objectContaining({ time: T0 + 540, text: 'Se duplica', position: 'aboveBar' }),
+      expect.objectContaining({ time: T0 + 720, text: 'Pico', position: 'aboveBar', shape: 'arrowDown' }),
+      expect.objectContaining({ time: T0 + 900, text: 'Caída', position: 'aboveBar', shape: 'arrowDown' }),
     ]);
   });
 
   it('keeps dev trades among the cycle marks, in time order', () => {
     render(<TokenChart {...props({ devTrades: [{ time: T0 + 200, side: 'sell', solAmount: 2 }] })} />);
     expect(lastChart().candles().markers.map((marker) => marker.text)).toEqual([
-      'Created',
-      'Appeared',
-      'Dev sell 2 SOL',
-      'Run-up',
-      'Explosion',
-      'Peak',
-      'Crash',
+      'Creado',
+      'Apareció',
+      'Creador vende 2 SOL',
+      'Subida',
+      'Se duplica',
+      'Pico',
+      'Caída',
     ]);
   });
 
@@ -80,7 +80,7 @@ describe('TokenChart: cycle marks', () => {
     const user = userEvent.setup();
     render(<TokenChart {...props()} />);
     expect(lastChart().candles().priceLines).toEqual([
-      expect.objectContaining({ price: 0.00000003, title: 'Base price' }),
+      expect.objectContaining({ price: 0.00000003, title: 'Precio al aparecer' }),
     ]);
 
     await user.click(screen.getByRole('button', { name: 'Market cap' }));
@@ -125,7 +125,7 @@ describe('TokenChart: cycle marks', () => {
     );
     expect(shade().style.left).toBe('20px');
     expect(shade().style.width).toBe('20px');
-    expect(legend()).toHaveTextContent('to now (still stable)');
+    expect(legend()).toHaveTextContent('a ahora (sigue estable)');
 
     // A new candle arrives: the window grows with it.
     view.rerender(
@@ -144,36 +144,36 @@ describe('TokenChart: cycle marks', () => {
     render(<TokenChart {...props()} />);
     const items = within(legend()).getAllByRole('listitem');
     expect(items.map((item) => item.querySelector('.cycle-legend__label')?.textContent)).toEqual([
-      'Created',
-      'Appeared in lessfomo',
-      'Run-up starts',
-      'Explosion',
-      'Peak',
-      'Crash',
-      'Shaded: invest window',
-      'Dashed line: base price',
+      'Creado',
+      'Apareció en lessfomo',
+      'Empieza la subida',
+      'Se duplica',
+      'Pico',
+      'Caída',
+      'Sombreado: tiempo para comprar',
+      'Línea punteada: precio al aparecer',
     ]);
     expect(within(items[1]!).getByText(/\d{2}:\d{2}:\d{2}/)).toHaveAttribute('datetime', isoAt(T0 + 120));
     expect(items[7]).toHaveTextContent('0.0₇3 SOL');
-    expect(legend()).not.toHaveTextContent('outside the loaded candles');
+    expect(legend()).not.toHaveTextContent('fuera de las velas cargadas');
   });
 
   it('keeps marks outside the loaded candles off the chart and says so in the legend', () => {
     // Only minutes 9 to 13 are loaded: creation, appearance and run-up are older, the crash is newer.
     render(<TokenChart {...props({ candles: makeMinuteCandles(9, 10, 11, 12, 13) })} />);
-    expect(lastChart().candles().markers.map((marker) => marker.text)).toEqual(['Explosion', 'Peak']);
+    expect(lastChart().candles().markers.map((marker) => marker.text)).toEqual(['Se duplica', 'Pico']);
     expect(shade()).toHaveAttribute('hidden');
 
     const items = within(legend()).getAllByRole('listitem');
-    const outside = items.filter((item) => item.textContent?.includes('outside the loaded candles'));
+    const outside = items.filter((item) => item.textContent?.includes('fuera de las velas cargadas'));
     expect(outside.map((item) => item.querySelector('.cycle-legend__label')?.textContent)).toEqual([
-      'Created',
-      'Appeared in lessfomo',
-      'Run-up starts',
-      'Crash',
-      'Shaded: invest window',
+      'Creado',
+      'Apareció en lessfomo',
+      'Empieza la subida',
+      'Caída',
+      'Sombreado: tiempo para comprar',
     ]);
-    expect(screen.getByRole('img', { name: 'Price of FROG in SOL, 1m candles, 5 candles' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Precio de FROG en SOL, velas de 1m, 5 velas' })).toBeInTheDocument();
   });
 
   it('does not redraw the marks on a live tick that leaves them where they were', () => {
@@ -195,7 +195,7 @@ describe('TokenChart: cycle marks', () => {
         {...props({ candles: data.candles, marks: cycleMarks(isoAt(T0), null), investRange: null, basePriceSol: null })}
       />,
     );
-    expect(lastChart().candles().markers.map((marker) => marker.text)).toEqual(['Created']);
+    expect(lastChart().candles().markers.map((marker) => marker.text)).toEqual(['Creado']);
     expect(lastChart().candles().priceLines).toEqual([]);
     expect(shade()).toHaveAttribute('hidden');
     expect(within(legend()).getAllByRole('listitem')).toHaveLength(1);

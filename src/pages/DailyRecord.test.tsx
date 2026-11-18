@@ -54,9 +54,9 @@ describe('daily record', () => {
     const queries = (client.listTokens as ReturnType<typeof vi.fn>).mock.calls.map((call) => call[0] as TokenListQuery);
     expect(queries.map((query) => query.page)).toEqual([1, 2]);
     expect(queries[0]).toMatchObject({ ...dayBounds(yesterday), dateField: 'appearedAt', pageSize: 200 });
-    expect(screen.getByText('100 of 250 tokens reached 2× after appearing')).toBeInTheDocument();
-    expect(screen.getByText('213 of 1000 tokens reached 2× after appearing')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Daily record' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByText('100 de 250 tokens llegaron a 2× después de aparecer')).toBeInTheDocument();
+    expect(screen.getByText('213 de 1000 tokens llegaron a 2× después de aparecer')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Registro diario' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('moves between days through the URL, never past today', async () => {
@@ -64,10 +64,10 @@ describe('daily record', () => {
     renderApp(recordClient(), `/?view=record&day=${yesterday}`);
     await screen.findByRole('table');
 
-    await user.click(screen.getByRole('button', { name: 'Previous day' }));
+    await user.click(screen.getByRole('button', { name: 'Día anterior' }));
     expect(window.location.search).toBe(`?view=record&day=${shiftDay(yesterday, -1)}`);
-    await user.click(screen.getByRole('button', { name: 'Today' }));
+    await user.click(screen.getByRole('button', { name: 'Hoy' }));
     expect(window.location.search).toBe('?view=record');
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Next day' })).toBeDisabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Día siguiente' })).toBeDisabled());
   });
 });

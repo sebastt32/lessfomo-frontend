@@ -17,12 +17,12 @@ describe('cycle in the lists', () => {
     ];
     render(<MoversTable movers={movers} onSelect={() => {}} now={NOW} />);
     const rows = screen.getAllByRole('row').slice(1);
-    expect(rows[0]).toHaveTextContent('Crashed6m 20s window');
-    expect(rows[1]).toHaveTextContent('Stable12m so far');
-    expect(rows[2]).toHaveTextContent('Crashed3m late');
-    expect(within(rows[3]!).getByTitle('Cycle data not available yet')).toHaveTextContent('—');
+    expect(rows[0]).toHaveTextContent('Se desplomó6m 20s para comprar');
+    expect(rows[1]).toHaveTextContent('Estable12m hasta ahora');
+    expect(rows[2]).toHaveTextContent('Se desplomó3m tarde');
+    expect(within(rows[3]!).getByTitle('Todavía no hay datos del ciclo')).toHaveTextContent('—');
     // Selecting opens the token's own view: the buttons are not toggles any more.
-    expect(screen.getByRole('button', { name: 'Show details for FROG' })).not.toHaveAttribute('aria-pressed');
+    expect(screen.getByRole('button', { name: 'Ver detalle de FROG' })).not.toHaveAttribute('aria-pressed');
   });
 
   it('shows the cycle of each safety check when it is known', () => {
@@ -35,7 +35,7 @@ describe('cycle in the lists', () => {
       />,
     );
     const [frog, cat] = screen.getAllByRole('listitem');
-    expect(frog).toHaveTextContent('CycleExploding6m 20s window');
-    expect(within(cat!).getByTitle('Cycle data not available yet')).toHaveTextContent('—');
+    expect(frog).toHaveTextContent('CicloDuplicó6m 20s para comprar');
+    expect(within(cat!).getByTitle('Todavía no hay datos del ciclo')).toHaveTextContent('—');
   });
 });

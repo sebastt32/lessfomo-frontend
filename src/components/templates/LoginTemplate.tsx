@@ -19,7 +19,7 @@ export function LoginTemplate({ tools, children, footnote }: LoginTemplateProps)
       <main className="login-page__main">
         <header className="login-page__brand">
           <Wordmark />
-          <p className="login-page__tagline">Live pump.fun screener for Solana, built on free data.</p>
+          <p className="login-page__tagline">Seguimiento en vivo de tokens de pump.fun en Solana, con datos gratuitos.</p>
         </header>
         {children}
         {footnote ? <p className="login-page__footnote">{footnote}</p> : null}

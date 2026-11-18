@@ -27,7 +27,7 @@ export interface TokenViewProps {
 export function TokenView({ back, onBack, title, subtitle, chart, cycle, details, children }: TokenViewProps) {
   return (
     <article id={TOKEN_VIEW_ID} className="token-view" aria-labelledby={TOKEN_VIEW_TITLE_ID}>
-      <nav className="token-view__back" aria-label="Back">
+      <nav className="token-view__back" aria-label="Volver">
         <BackLink href={back.href} onNavigate={onBack}>
           {back.label}
         </BackLink>
@@ -51,7 +51,7 @@ export function TokenView({ back, onBack, title, subtitle, chart, cycle, details
       {details ? (
         <section className="token-view__details" aria-labelledby="token-details-title">
           <h2 id="token-details-title" className="token-view__section-title">
-            Token details
+            Detalles del token
           </h2>
           {details}
         </section>

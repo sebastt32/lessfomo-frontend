@@ -10,10 +10,10 @@ export interface TokenLinksProps {
 export function TokenLinks({ mint, symbol }: TokenLinksProps) {
   return (
     <span className="token-links">
-      <ExternalLink href={dexscreenerUrl(mint)} aria-label={`Open ${symbol} on DexScreener (new tab)`}>
+      <ExternalLink href={dexscreenerUrl(mint)} aria-label={`Abrir ${symbol} en DexScreener (pestaña nueva)`}>
         DexScreener
       </ExternalLink>
-      <ExternalLink href={pumpFunUrl(mint)} aria-label={`Open ${symbol} on pump.fun (new tab)`}>
+      <ExternalLink href={pumpFunUrl(mint)} aria-label={`Abrir ${symbol} en pump.fun (pestaña nueva)`}>
         pump.fun
       </ExternalLink>
     </span>

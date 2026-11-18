@@ -1,6 +1,7 @@
 import { ErrorState, LoadingState } from '../components/molecules/SectionState';
 import { WalletResults } from '../components/organisms/WalletResults';
 import { useWallet } from '../hooks/useSmartWallets';
+import { isNetworkError } from '../state/errors';
 import { useLiveFeedContext } from './LiveFeedProvider';
 
 export interface WalletResultsContainerProps {
@@ -18,16 +19,24 @@ export function WalletResultsContainer({ address, now }: WalletResultsContainerP
     case 'unavailable':
       return (
         <p className="smart-wallets__note">
-          This wallet's recent results are not available yet on this screener API.
+          Los resultados recientes de esta wallet todavía no están disponibles en esta API del screener.
         </p>
       );
     case 'error':
       return (
-        <ErrorState title="Could not load this wallet's results" onRetry={retry}>
+        <ErrorState
+          title={
+            isNetworkError(state.error)
+              ? 'No se pudo conectar con el servidor'
+              : 'No se pudieron cargar los resultados de esta wallet'
+          }
+          onRetry={retry}
+          retryLabel="Reintentar"
+        >
           {state.error.message}
         </ErrorState>
       );
     default:
-      return <LoadingState>Loading recent results…</LoadingState>;
+      return <LoadingState>Cargando resultados recientes…</LoadingState>;
   }
 }

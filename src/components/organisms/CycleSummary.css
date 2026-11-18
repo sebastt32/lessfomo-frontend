@@ -9,6 +9,12 @@
   min-inline-size: 0;
 }
 
+.cycle-summary__heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .cycle-summary__title {
   margin: 0;
   color: var(--color-muted);

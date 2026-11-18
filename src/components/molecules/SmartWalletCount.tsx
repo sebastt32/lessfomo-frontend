@@ -16,18 +16,18 @@ const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 export function SmartWalletCount({ counts }: SmartWalletCountProps) {
   if (!counts) {
     return (
-      <span className="smart-count smart-count--unknown" title="Smart-wallet data not available yet">
+      <span className="smart-count smart-count--unknown" title="Todavía no hay datos de wallets">
         —
       </span>
     );
   }
-  const good = `${counts.count} good-history ${plural(counts.count, 'wallet', 'wallets')} bought it, ${counts.elite} elite, ${counts.holding} still holding`;
+  const good = `${counts.count} ${plural(counts.count, 'wallet con buen historial lo compró', 'wallets con buen historial lo compraron')}, ${counts.elite} élite, ${counts.holding} todavía lo ${plural(counts.holding, 'tiene', 'tienen')}`;
   if (typeof counts.conviction !== 'number') {
     return (
-      <span className="smart-count" title={`${good}. Conviction data not available yet`}>
-        <span className="smart-count__total">{formatCount(counts.count)} good</span>
+      <span className="smart-count" title={`${good}. Todavía no hay datos de wallets que mantienen`}>
+        <span className="smart-count__total">{formatCount(counts.count)} buen historial</span>
         <span className="smart-count__detail">
-          {formatCount(counts.elite)} elite · {formatCount(counts.holding)} holding
+          {formatCount(counts.elite)} élite · {formatCount(counts.holding)} lo tienen
         </span>
       </span>
     );
@@ -35,13 +35,13 @@ export function SmartWalletCount({ counts }: SmartWalletCountProps) {
   return (
     <span
       className="smart-count"
-      title={`${counts.conviction} conviction ${plural(counts.conviction, 'wallet', 'wallets')} (good record, usually hold). ${good}`}
+      title={`${counts.conviction} ${plural(counts.conviction, 'wallet que mantiene', 'wallets que mantienen')} (buen historial, suelen quedarse con lo que compran). ${good}`}
     >
-      <span className="smart-count__total">{formatCount(counts.conviction)} conviction</span>
+      <span className="smart-count__total">{formatCount(counts.conviction)} mantienen</span>
       {/* Stacked visually; the separator keeps the text readable as one line for copy and screen readers. */}
       <span className="visually-hidden"> · </span>
       <span className="smart-count__detail">
-        {formatCount(counts.count)} good · {formatCount(counts.holding)} holding
+        {formatCount(counts.count)} buen historial · {formatCount(counts.holding)} lo tienen
       </span>
     </span>
   );

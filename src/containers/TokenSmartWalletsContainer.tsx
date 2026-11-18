@@ -3,6 +3,7 @@ import { SmartWalletItem } from '../components/organisms/SmartWalletItem';
 import { SmartWalletsSummary } from '../components/organisms/SmartWalletsSummary';
 import type { TokenSmartWalletsResponse } from '../api/types';
 import type { ResourceResult } from '../hooks/useResource';
+import { isNetworkError } from '../state/errors';
 import { WalletResultsContainer } from './WalletResultsContainer';
 
 export interface TokenSmartWalletsBodyProps {
@@ -18,8 +19,8 @@ export function TokenSmartWalletsBody({ result, now }: TokenSmartWalletsBodyProp
     case 'ready':
       return state.data.smartWallets.length === 0 ? (
         <p className="token-detail__note">
-          No good-history wallet has bought this token yet. A wallet counts as good when it won most of the tokens it
-          traded in the last 7 days with a net profit.
+          Todavía ninguna wallet con buen historial compró este token. Una wallet tiene buen historial cuando ganó en la
+          mayoría de los tokens que operó en los últimos 7 días y terminó con ganancia.
         </p>
       ) : (
         <SmartWalletsSummary wallets={state.data.smartWallets}>
@@ -33,17 +34,21 @@ export function TokenSmartWalletsBody({ result, now }: TokenSmartWalletsBodyProp
     case 'unavailable':
       return (
         <p className="token-detail__note">
-          Smart-wallet data not available yet: this screener API does not report which good-history wallets bought
-          the token. It appears once the backend is updated.
+          Los datos de wallets todavía no están disponibles: esta API del screener no informa qué wallets con buen
+          historial compraron el token. Aparecerán cuando se actualice el backend.
         </p>
       );
     case 'error':
       return (
-        <ErrorState title="Could not load smart wallets" onRetry={retry}>
+        <ErrorState
+          title={isNetworkError(state.error) ? 'No se pudo conectar con el servidor' : 'No se pudieron cargar las wallets'}
+          onRetry={retry}
+          retryLabel="Reintentar"
+        >
           {state.error.message}
         </ErrorState>
       );
     default:
-      return <LoadingState>Loading smart wallets…</LoadingState>;
+      return <LoadingState>Cargando wallets…</LoadingState>;
   }
 }

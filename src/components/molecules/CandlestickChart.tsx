@@ -137,9 +137,11 @@ const asTime = (time: number) => time as UTCTimestamp;
 
 function formatLocalTime(time: Time, withSeconds: boolean): string {
   if (typeof time !== 'number') return '';
-  return new Date(time * 1000).toLocaleTimeString([], {
+  // Spanish 24-hour clock, like every other time in the app, whatever the browser's language.
+  return new Date(time * 1000).toLocaleTimeString('es', {
     hour: '2-digit',
     minute: '2-digit',
+    hourCycle: 'h23',
     ...(withSeconds ? { second: '2-digit' } : {}),
   });
 }

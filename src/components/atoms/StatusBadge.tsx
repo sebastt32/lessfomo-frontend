@@ -2,10 +2,10 @@ import type { SafetyStatus } from '../../api/types';
 import './StatusBadge.css';
 
 const LABELS: Record<SafetyStatus, string> = {
-  pending: 'Pending',
-  passed: 'Passed',
-  failed: 'Failed',
-  unverified: 'Unverified',
+  pending: 'Pendiente',
+  passed: 'Aprobado',
+  failed: 'Rechazado',
+  unverified: 'Sin verificar',
 };
 
 /** Glyphs give a non-color cue for each status. */

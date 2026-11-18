@@ -10,23 +10,23 @@ import { formatEntrySeconds } from './smartWallets';
 
 const DASH = '—';
 
-export const CYCLE_UNAVAILABLE = 'Cycle data not available yet';
+export const CYCLE_UNAVAILABLE = 'Todavía no hay datos del ciclo';
 
 export const PHASE_LABELS: Record<CyclePhase, string> = {
-  stable: 'Stable',
-  exploding: 'Exploding',
-  crashed: 'Crashed',
+  stable: 'Estable',
+  exploding: 'Duplicó',
+  crashed: 'Se desplomó',
 };
 
 export const PHASE_HINTS: Record<CyclePhase, string> = {
-  stable: 'Has not reached 2× the price it had when it appeared in lessfomo',
-  exploding: 'Reached 2× the price it had when it appeared in lessfomo',
-  crashed: 'Fell to half of its peak or lower',
+  stable: 'Todavía no llegó al doble del precio que tenía cuando apareció en lessfomo',
+  exploding: 'Llegó al doble (2×) del precio que tenía cuando apareció en lessfomo',
+  crashed: 'Después del pico cayó a la mitad o menos',
 };
 
 export const PHASE_ORDER: readonly CyclePhase[] = ['stable', 'exploding', 'crashed'];
 
-export const LATE_HINT = 'Before it appeared in lessfomo, its price had already doubled from launch';
+export const LATE_HINT = 'Antes de aparecer en lessfomo, su precio ya se había duplicado desde el lanzamiento';
 
 function toSeconds(iso: string | null | undefined): number | null {
   if (!iso) return null;
@@ -61,30 +61,30 @@ export function investWindowSentence(cycle: TokenCycle, now: number): string {
   const window = cycle.investWindowSeconds;
   if (isLate(cycle)) {
     return window === null
-      ? 'Appeared after it had already exploded'
-      : `Appeared ${formatEntrySeconds(Math.abs(window))} after it had already exploded`;
+      ? 'Apareció cuando ya se había duplicado'
+      : `Apareció ${formatEntrySeconds(Math.abs(window))} después de haberse duplicado`;
   }
   if (window !== null) {
     return window === 0
-      ? 'The run-up started as it appeared: there was no time to buy before it'
-      : `Could be bought for ${formatEntrySeconds(window)} before the run-up`;
+      ? 'La subida empezó al aparecer: no hubo tiempo para comprar antes'
+      : `Se pudo comprar durante ${formatEntrySeconds(window)} antes de la subida`;
   }
   if (cycle.phase === 'stable') {
     const elapsed = secondsSinceAppeared(cycle, now);
-    return elapsed === null ? 'Still stable' : `Still stable: ${formatEntrySeconds(elapsed)} since it appeared`;
+    return elapsed === null ? 'Sigue estable' : `Sigue estable: ${formatEntrySeconds(elapsed)} desde que apareció`;
   }
-  return 'Invest window not known';
+  return 'No se sabe cuánto tiempo hubo para comprar';
 }
 
-/** The same fact for a table cell: "6m 20s window", "12m so far", "3m late" or a dash. */
+/** The same fact for a table cell: "6m 20s para comprar", "12m hasta ahora", "3m tarde" or a dash. */
 export function investWindowCompact(cycle: TokenCycle | null | undefined, now: number): string {
   if (!cycle) return DASH;
   const window = cycle.investWindowSeconds;
-  if (isLate(cycle)) return window === null ? 'late' : `${formatDurationCompact(Math.abs(window))} late`;
-  if (window !== null) return `${formatDurationCompact(window)} window`;
+  if (isLate(cycle)) return window === null ? 'tarde' : `${formatDurationCompact(Math.abs(window))} tarde`;
+  if (window !== null) return `${formatDurationCompact(window)} para comprar`;
   if (cycle.phase === 'stable') {
     const elapsed = secondsSinceAppeared(cycle, now);
-    return elapsed === null ? DASH : `${formatDurationCompact(elapsed)} so far`;
+    return elapsed === null ? DASH : `${formatDurationCompact(elapsed)} hasta ahora`;
   }
   return DASH;
 }
@@ -111,33 +111,33 @@ export function cycleFacts(cycle: TokenCycle): CycleFact[] {
   return [
     {
       key: 'riseBefore',
-      label: 'Rise before appearing',
-      value: cycle.riseBeforeAppearanceX === null ? DASH : `${formatMultiple(cycle.riseBeforeAppearanceX)} its launch price`,
-      hint: 'Price when it appeared in lessfomo, compared with its first trade',
+      label: 'Subida antes de aparecer',
+      value: cycle.riseBeforeAppearanceX === null ? DASH : `${formatMultiple(cycle.riseBeforeAppearanceX)} su precio de lanzamiento`,
+      hint: 'Precio cuando apareció en lessfomo, comparado con su primera operación'
     },
     {
       key: 'peak',
-      label: 'Peak',
-      value: cycle.peakX === null ? DASH : `${formatMultiple(cycle.peakX)} the base price`,
-      hint: 'Highest price after the explosion, compared with the price when it appeared',
+      label: 'Pico',
+      value: cycle.peakX === null ? DASH : `${formatMultiple(cycle.peakX)} el precio al aparecer`,
+      hint: 'Precio más alto después de duplicarse, comparado con el precio cuando apareció'
     },
     {
       key: 'timeToPeak',
-      label: 'Time to peak',
-      value: toPeak === null ? DASH : `${formatEntrySeconds(toPeak)} after it appeared`,
-      hint: 'From the moment it appeared in lessfomo to its highest price so far',
+      label: 'Tiempo hasta el pico',
+      value: toPeak === null ? DASH : `${formatEntrySeconds(toPeak)} después de aparecer`,
+      hint: 'Desde que apareció en lessfomo hasta su precio más alto por ahora'
     },
     {
       key: 'drawdown',
-      label: 'Deepest fall',
-      value: cycle.maxDrawdownPct === null ? DASH : `${Math.round(cycle.maxDrawdownPct)}% below the peak`,
-      hint: 'Deepest fall from the peak so far',
+      label: 'Mayor caída',
+      value: cycle.maxDrawdownPct === null ? DASH : `${Math.round(cycle.maxDrawdownPct)}% debajo del pico`,
+      hint: 'La caída más grande desde el pico, por ahora'
     },
     {
       key: 'lastPrice',
-      label: 'Last price',
-      value: last === null ? DASH : `${formatMultiple(last)} the base price (${formatSignedPercent((last - 1) * 100)})`,
-      hint: 'Latest price compared with the price when it appeared',
+      label: 'Último precio',
+      value: last === null ? DASH : `${formatMultiple(last)} el precio al aparecer (${formatSignedPercent((last - 1) * 100)})`,
+      hint: 'Último precio comparado con el precio cuando apareció'
     },
   ];
 }
@@ -161,21 +161,21 @@ export interface CycleMark {
 }
 
 export const MARK_LABELS: Record<CycleMarkKind, string> = {
-  created: 'Created',
-  appeared: 'Appeared in lessfomo',
-  runStart: 'Run-up starts',
-  explosion: 'Explosion',
-  peak: 'Peak',
-  crash: 'Crash',
+  created: 'Creado',
+  appeared: 'Apareció en lessfomo',
+  runStart: 'Empieza la subida',
+  explosion: 'Se duplica',
+  peak: 'Pico',
+  crash: 'Caída',
 };
 
 export const MARK_HINTS: Record<CycleMarkKind, string> = {
-  created: 'The token was created on pump.fun',
-  appeared: 'It became public in lessfomo: enough conviction wallets had bought it. Its price then is the base price',
-  runStart: 'Last trade at no more than 1.2× the base price before the explosion',
-  explosion: 'First trade at 2× the base price or more',
-  peak: 'Highest price after the explosion, so far',
-  crash: 'First trade at half the peak or lower',
+  created: 'El token se creó en pump.fun',
+  appeared: 'Se hizo público en lessfomo: lo compraron suficientes wallets que mantienen. Su precio en ese momento es el precio al aparecer',
+  runStart: 'Última operación a no más de 1,2× el precio al aparecer, antes de duplicarse',
+  explosion: 'Primera operación al doble del precio al aparecer o más',
+  peak: 'Precio más alto después de duplicarse, por ahora',
+  crash: 'Primera operación a la mitad del pico o menos',
 };
 
 /** The moments of a cycle that already happened, oldest first. Works without a cycle (creation only). */

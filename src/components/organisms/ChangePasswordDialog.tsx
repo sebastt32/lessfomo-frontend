@@ -72,12 +72,12 @@ export function ChangePasswordDialog({
     if (submitting) return;
     const currentPassword = current.current?.value ?? '';
     const newPassword = next.current?.value ?? '';
-    if (currentPassword === '') return fail('current', 'Enter your current password');
+    if (currentPassword === '') return fail('current', 'Escribe tu contraseña actual');
     if (newPassword.length < MIN_PASSWORD_LENGTH) {
-      return fail('next', `The new password needs at least ${MIN_PASSWORD_LENGTH} characters`);
+      return fail('next', `La nueva contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres`);
     }
-    if (newPassword === currentPassword) return fail('next', 'The new password must be different from the current one');
-    if (confirm.current?.value !== newPassword) return fail('confirm', 'The two new passwords do not match');
+    if (newPassword === currentPassword) return fail('next', 'La nueva contraseña debe ser distinta de la actual');
+    if (confirm.current?.value !== newPassword) return fail('confirm', 'Las dos contraseñas nuevas no coinciden');
     setProblem(null);
     onSubmit({ currentPassword, newPassword });
   }
@@ -122,16 +122,16 @@ export function ChangePasswordDialog({
         onKeyDown={handleKeyDown}
       >
         <h2 className="dialog__title" id={TITLE_ID}>
-          Change password
+          Cambiar contraseña
         </h2>
         {succeeded ? (
           <div className="dialog__body">
             <p className="form-message form-message--success" role="status">
-              Password changed. Your other sessions were signed out.
+              Contraseña cambiada. Se cerraron tus otras sesiones.
             </p>
             <div className="dialog__actions">
               <button ref={done} type="button" className="button" onClick={onClose}>
-                Close
+                Cerrar
               </button>
             </div>
           </div>
@@ -147,7 +147,7 @@ export function ChangePasswordDialog({
             <PasswordField
               ref={current}
               id="change-password-current"
-              label="Current password"
+              label="Contraseña actual"
               name="currentPassword"
               autoComplete="current-password"
               disabled={submitting}
@@ -157,10 +157,10 @@ export function ChangePasswordDialog({
             <PasswordField
               ref={next}
               id="change-password-new"
-              label="New password"
+              label="Nueva contraseña"
               name="newPassword"
               autoComplete="new-password"
-              hint={`At least ${MIN_PASSWORD_LENGTH} characters.`}
+              hint={`Al menos ${MIN_PASSWORD_LENGTH} caracteres.`}
               disabled={submitting}
               invalid={invalid('next')}
               describedBy={invalid('next') ? describedBy : undefined}
@@ -168,7 +168,7 @@ export function ChangePasswordDialog({
             <PasswordField
               ref={confirm}
               id="change-password-confirm"
-              label="Confirm new password"
+              label="Confirmación de la nueva contraseña"
               name="confirmPassword"
               autoComplete="new-password"
               disabled={submitting}
@@ -177,10 +177,10 @@ export function ChangePasswordDialog({
             />
             <div className="dialog__actions">
               <button type="button" className="button button--quiet" onClick={onClose} disabled={submitting}>
-                Cancel
+                Cancelar
               </button>
               <button type="submit" className="button" disabled={submitting}>
-                {submitting ? 'Changing…' : 'Change password'}
+                {submitting ? 'Cambiando…' : 'Cambiar contraseña'}
               </button>
             </div>
           </form>

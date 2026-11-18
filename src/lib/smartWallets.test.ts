@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { analysisGrouping, analysisRows, describeWalletRecord, formatEntrySeconds, formatSignedSol } from './smartWallets';
-import { makeAnalysis, makeWalletRecord } from '../test/fixtures';
+import { describeWalletRecord, formatEntrySeconds, formatSignedSol } from './smartWallets';
+import { makeWalletRecord } from '../test/fixtures';
 
 describe('formatEntrySeconds', () => {
   it('reads as seconds, minutes or hours after launch', () => {
@@ -23,25 +23,25 @@ describe('formatSignedSol', () => {
 describe('describeWalletRecord', () => {
   it('explains the track record in plain language', () => {
     expect(describeWalletRecord(makeWalletRecord())).toBe(
-      'Won 9 of 12 tokens (75%) in the last 7 days, net +14.24 SOL, usually buys 4 s after launch',
+      'Ganó en 9 de 12 tokens (75%) en los últimos 7 días, resultado neto +14.24 SOL, suele comprar 4 s después del lanzamiento',
     );
   });
 
   it('omits the entry time when unknown and handles singular and losses', () => {
     expect(
       describeWalletRecord(makeWalletRecord({ tokens: 1, wins: 1, winRate: 100, netPnlSol: -0.5, medianEntrySeconds: null })),
-    ).toBe('Won 1 of 1 token (100%) in the last 7 days, net −0.50 SOL');
+    ).toBe('Ganó en 1 de 1 token (100%) en los últimos 7 días, resultado neto −0.50 SOL');
   });
 
   it('adds how long the wallet usually holds and how often it flips', () => {
     expect(describeWalletRecord(makeWalletRecord({ medianHoldSeconds: 840, flipRate: 12.4 }))).toBe(
-      'Won 9 of 12 tokens (75%) in the last 7 days, net +14.24 SOL, usually buys 4 s after launch, usually holds 14 min; sold within 2 min in 12% of its tokens',
+      'Ganó en 9 de 12 tokens (75%) en los últimos 7 días, resultado neto +14.24 SOL, suele comprar 4 s después del lanzamiento, suele mantener 14 min; vendió antes de 2 min en el 12% de sus tokens',
     );
     expect(describeWalletRecord(makeWalletRecord({ medianEntrySeconds: null, medianHoldSeconds: null, flipRate: 0 }))).toBe(
-      'Won 9 of 12 tokens (75%) in the last 7 days, net +14.24 SOL, sold within 2 min in 0% of its tokens',
+      'Ganó en 9 de 12 tokens (75%) en los últimos 7 días, resultado neto +14.24 SOL, vendió antes de 2 min en el 0% de sus tokens',
     );
     expect(describeWalletRecord(makeWalletRecord({ medianHoldSeconds: 95, flipRate: null }))).toBe(
-      'Won 9 of 12 tokens (75%) in the last 7 days, net +14.24 SOL, usually buys 4 s after launch, usually holds 1 min 35 s',
+      'Ganó en 9 de 12 tokens (75%) en los últimos 7 días, resultado neto +14.24 SOL, suele comprar 4 s después del lanzamiento, suele mantener 1 min 35 s',
     );
   });
 
@@ -51,88 +51,13 @@ describe('describeWalletRecord', () => {
       flipRate: 10,
     });
     expect(describeWalletRecord(legacy)).toBe(
-      'Won 9 of 12 tokens (75%) in the last 7 days, net +14.24 SOL, usually buys 4 s after launch',
+      'Ganó en 9 de 12 tokens (75%) en los últimos 7 días, resultado neto +14.24 SOL, suele comprar 4 s después del lanzamiento',
     );
   });
 
   it('says when there is no closed token yet', () => {
     expect(describeWalletRecord(makeWalletRecord({ tokens: 0, wins: 0, winRate: 0, netPnlSol: 0 }))).toBe(
-      'No closed tokens in the last 7 days yet',
+      'Todavía no cerró ningún token en los últimos 7 días',
     );
-  });
-});
-
-describe('analysisRows', () => {
-  it('orders buckets 0, 1, 2, 3, 4, 5+, formats them and compares each with tokens bought by none', () => {
-    const rows = analysisRows(makeAnalysis().buckets);
-    expect(rows.map((r) => r.label)).toEqual(['None', '1 wallet', '2 wallets', '5+ wallets']);
-    expect(rows[1]).toMatchObject({
-      key: '1',
-      tokens: '400',
-      reached2x: '6.2%',
-      avgReturn: '−1.0%',
-      medianReturn: '−3.5%',
-      winners: '12.5%',
-      lift: '2.0× vs none',
-    });
-    expect(rows[0]?.lift).toBe('Baseline');
-    // Bar widths are relative to the best bucket.
-    expect(rows.find((r) => r.key === '5+')?.barPct).toBe(100);
-    expect(rows[0]?.barPct).toBeCloseTo(12.4);
-  });
-
-  it('reads conviction buckets keyed by convictionWallets and orders numerically, 10+ last', () => {
-    const base = makeAnalysis().buckets[0]!;
-    const conviction = (key: string, reached2xPct: number) => {
-      const { smartWallets: _omit, ...rest } = base;
-      return { ...rest, convictionWallets: key, reached2xPct };
-    };
-    const rows = analysisRows([conviction('10+', 40), conviction('3', 20), conviction('0', 5), conviction('1', 10)]);
-    expect(rows.map((r) => r.key)).toEqual(['0', '1', '3', '10+']);
-    expect(rows.map((r) => r.label)).toEqual(['None', '1 wallet', '3 wallets', '10+ wallets']);
-    expect(rows[3]?.lift).toBe('8.0× vs none');
-  });
-
-  it('tells which grouping the backend actually answered with', () => {
-    expect(analysisGrouping(makeAnalysis())).toBe('smartWallets');
-    expect(analysisGrouping(makeAnalysis({ by: 'conviction' }))).toBe('conviction');
-    const { smartWallets: _key, ...base } = makeAnalysis().buckets[0]!;
-    expect(analysisGrouping(makeAnalysis({ buckets: [{ ...base, convictionWallets: '3' }] }))).toBe('conviction');
-  });
-
-  it('shows dashes for an empty bucket, whose statistics the API sends as null', () => {
-    const [filled] = makeAnalysis().buckets;
-    const empty = {
-      smartWallets: '4',
-      tokens: 0,
-      reached2xPct: null,
-      migratedPct: null,
-      avgReturnPct: null,
-      medianReturnPct: null,
-      winnersPct: null,
-      medianPeakX: null,
-    };
-
-    const rows = analysisRows([filled!, empty]);
-    const row = rows.find((r) => r.key === '4');
-
-    expect(row).toMatchObject({
-      tokens: '0',
-      reached2x: '—',
-      barPct: 0,
-      migrated: '—',
-      avgReturn: '—',
-      medianReturn: '—',
-      winners: '—',
-      medianPeak: '—',
-      lift: null,
-      avgReturnPct: null,
-      medianReturnPct: null,
-    });
-  });
-
-  it('has no lift when the baseline is missing or zero', () => {
-    const rows = analysisRows(makeAnalysis().buckets.filter((b) => b.smartWallets !== '0'));
-    expect(rows[0]?.lift).toBeNull();
   });
 });

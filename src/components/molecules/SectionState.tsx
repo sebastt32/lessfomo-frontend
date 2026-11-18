@@ -36,7 +36,7 @@ export interface ErrorStateProps {
   retryLabel?: string;
 }
 
-export function ErrorState({ title, children, onRetry, retryLabel = 'Try again' }: ErrorStateProps) {
+export function ErrorState({ title, children, onRetry, retryLabel = 'Reintentar' }: ErrorStateProps) {
   return (
     <div className="section-state section-state--error" role="alert">
       <p className="section-state__title">{title}</p>

@@ -8,7 +8,7 @@ export interface TokenNameProps {
 export function TokenName({ symbol, name }: TokenNameProps) {
   return (
     <span className="token-name">
-      <span className="token-name__symbol">{symbol === '' ? '(no symbol)' : symbol}</span>
+      <span className="token-name__symbol">{symbol === '' ? '(sin símbolo)' : symbol}</span>
       <span className="token-name__name">{name}</span>
     </span>
   );

@@ -53,6 +53,12 @@
   font-size: var(--text-lg);
 }
 
+.token-detail__heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
 .token-detail__subtitle {
   margin: 0;
   font-family: var(--font-display);

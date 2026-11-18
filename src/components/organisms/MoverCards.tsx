@@ -15,16 +15,19 @@ export interface MoverCardsProps {
   now: number;
 }
 
-/** The top movers as cards for small screens: the essentials of each token, the full detail one tap away. */
+/**
+ * The top movers as cards for small screens: the essentials of each token, the full detail one tap away. Each card is
+ * one button, so the help marks live outside it (in the panel description).
+ */
 export function MoverCards({ movers, onSelect, now }: MoverCardsProps) {
   return (
-    <ol className="mover-cards" aria-label="Top movers">
+    <ol className="mover-cards" aria-label="Más activos ahora">
       {movers.map((mover, index) => (
         <li key={mover.mint} className="mover-card">
           <button
             type="button"
             className="mover-card__button"
-            aria-label={`Show details for ${mover.symbol}`}
+            aria-label={`Ver detalle de ${mover.symbol}`}
             onClick={() => onSelect(mover.mint)}
           >
             <span className="mover-card__top">

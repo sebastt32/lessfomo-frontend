@@ -99,17 +99,17 @@ export function recordOutcome(cycle: TokenCycle | null | undefined, now: number)
 }
 
 export const OUTCOME_LABELS: Record<RecordOutcome, string> = {
-  hit: 'Reached 2×',
-  tracking: 'Tracking',
-  missed: 'No 2×',
-  unknown: 'No data',
+  hit: 'Llegó a 2×',
+  tracking: 'En seguimiento',
+  missed: 'No llegó',
+  unknown: 'Sin datos',
 };
 
 export const OUTCOME_HINTS: Record<RecordOutcome, string> = {
-  hit: 'Its price reached at least twice the price it had when it appeared in lessfomo',
-  tracking: 'Appeared less than 24 hours ago and has not reached 2× yet; it still can',
-  missed: 'Did not reach 2× its appearance price in the 24 hours after appearing',
-  unknown: 'The screener has not reported this token’s cycle yet',
+  hit: 'Su precio llegó al menos al doble del que tenía cuando apareció en lessfomo',
+  tracking: 'Apareció hace menos de 24 horas y todavía no llegó a 2×; todavía puede',
+  missed: 'Pasaron más de 24 horas y no llegó al doble de su precio al aparecer; si llega más tarde, cuenta como éxito',
+  unknown: 'Todavía no hay datos del ciclo de este token',
 };
 
 export interface SuccessSummary {
@@ -127,16 +127,16 @@ export function successSummary(analysis: CyclesAnalysisResponse): SuccessSummary
 }
 
 // Calendar labels do not depend on the viewer's timezone: format the parts as a UTC date.
-const longDay = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-const monthYear = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+const longDay = new Intl.DateTimeFormat('es', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+const monthYear = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
-/** "November 17, 2026". */
+/** "17 de noviembre de 2026". */
 export function describeRecordDay(day: string): string {
   const { year, month, day: date } = parseDay(day)!;
   return longDay.format(Date.UTC(year, month - 1, date));
 }
 
-/** "November 2026". */
+/** "noviembre de 2026". */
 export function describeRecordMonth(day: string): string {
   const { year, month } = parseDay(day)!;
   return monthYear.format(Date.UTC(year, month - 1, 1));

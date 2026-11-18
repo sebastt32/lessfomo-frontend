@@ -137,7 +137,7 @@ describe('successSummary', () => {
 
 describe('labels', () => {
   it('names the day and its month', () => {
-    expect(describeRecordDay('2026-11-17')).toBe('November 17, 2026');
-    expect(describeRecordMonth('2026-11-17')).toBe('November 2026');
+    expect(describeRecordDay('2026-11-17')).toBe('17 de noviembre de 2026');
+    expect(describeRecordMonth('2026-11-17')).toBe('noviembre de 2026');
   });
 });

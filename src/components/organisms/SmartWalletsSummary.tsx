@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { SmartWalletInToken } from '../../api/types';
 import { DEFAULT_MIN_CONVICTION_WALLETS } from '../../lib/smartWalletFilter';
+import { HelpTip } from '../molecules/HelpTip';
 import './SmartWallets.css';
 
 export interface SmartWalletsSummaryProps {
@@ -19,46 +20,61 @@ export function SmartWalletsSummary({ wallets, children }: SmartWalletsSummaryPr
   const styleKnown = wallets.some((w) => w.styleAtEntry !== undefined);
   const conviction = wallets.filter((w) => w.styleAtEntry === 'conviction').length;
   const flippers = wallets.filter((w) => w.styleAtEntry === 'flipper').length;
+  const goodWallets = `${wallets.length} ${plural(wallets.length, 'wallet con buen historial', 'wallets con buen historial')}`;
+  const stillHolds = `${holding} todavía lo ${plural(holding, 'tiene', 'tienen')}`;
   return (
     <div className="smart-wallets">
       <p className="smart-wallets__summary">
         {styleKnown ? (
           <>
             <strong>
-              {conviction} conviction {plural(conviction, 'wallet', 'wallets')}
-            </strong>{' '}
-            among {wallets.length} good-history {plural(wallets.length, 'wallet', 'wallets')} that bought this token (
-            {flippers} {plural(flippers, 'flipper', 'flippers')}, {elite} elite at the time they bought), {holding}{' '}
-            still {plural(holding, 'holds', 'hold')}.
+              {conviction} {plural(conviction, 'wallet que mantiene', 'wallets que mantienen')}
+            </strong>
+            <HelpTip topic="una wallet que mantiene">
+              Una wallet con buen historial en los últimos 7 días que suele quedarse con lo que compra en lugar de
+              venderlo antes de 2 minutos. Un token aparece en lessfomo solo cuando lo compraron al menos{' '}
+              {DEFAULT_MIN_CONVICTION_WALLETS}.
+            </HelpTip>{' '}
+            de {goodWallets} que compraron este token ({flippers} {plural(flippers, 'vende', 'venden')} rápido
+            <HelpTip topic="una wallet que vende rápido">
+              Una wallet que suele vender antes de 2 minutos. Comprar justo después de ella suele significar comprarle lo
+              que está vendiendo.
+            </HelpTip>
+            , {elite} élite al comprar); {stillHolds}.
           </>
         ) : (
           <>
-            <strong>
-              {wallets.length} good-history {plural(wallets.length, 'wallet', 'wallets')}
-            </strong>{' '}
-            bought this token ({elite} elite at the time they bought), {holding} still {plural(holding, 'holds', 'hold')}.
+            <strong>{goodWallets}</strong> {plural(wallets.length, 'compró', 'compraron')} este token ({elite} élite al
+            comprar); {stillHolds}.
           </>
         )}
       </p>
       <p className="smart-wallets__note" role="note">
         {styleKnown ? (
           <>
-            <strong>Conviction vs flipper.</strong> A conviction wallet has a good record and usually holds what it buys:
-            it sold within 2 minutes in at most 30% of its recent tokens. A flipper sold within 2 minutes in 60% or more.
-            Only conviction wallets make a token public (at least {DEFAULT_MIN_CONVICTION_WALLETS}); flippers are shown
-            here but never count, because buying right after them usually means becoming their exit liquidity.
+            <strong>Mantiene o vende rápido.</strong>
+            <HelpTip topic="el estilo">
+              Cómo suele operar una wallet: si mantiene lo que compra, si vende rápido (antes de 2 minutos) o si es
+              mixta.
+            </HelpTip>{' '}
+            Una wallet que mantiene tiene buen historial y suele quedarse con lo que compra: vendió antes de 2 minutos
+            en como mucho el 30% de sus tokens recientes. Una que vende rápido lo hizo en el 60% o más. Solo las wallets
+            que mantienen hacen público un token (al menos {DEFAULT_MIN_CONVICTION_WALLETS}); las que venden rápido se
+            muestran aquí pero nunca cuentan, porque comprar justo después de ellas suele significar comprarles lo que
+            están vendiendo.
           </>
         ) : (
           <>
-            Trading style not available yet: this screener API does not report whether these wallets usually hold or
-            flip. It appears once the backend is updated.
+            Todavía no está disponible el estilo de operación: esta API del screener no informa si estas wallets suelen
+            mantener o vender rápido. Aparecerá cuando se actualice el backend.
           </>
         )}
       </p>
       <ul className="smart-wallets__list">{children}</ul>
       <p className="smart-wallets__note">
-        Past results do not guarantee future ones. A wallet's record only covers the tokens lessfomo observed in the
-        last 7 days, and its tier and style at entry use only results that had closed before it bought.
+        Los resultados pasados no garantizan los futuros. El historial de una wallet solo cubre los tokens que lessfomo
+        observó en los últimos 7 días, y su nivel y su estilo al comprar usan solo resultados que ya habían cerrado
+        antes de que comprara.
       </p>
     </div>
   );

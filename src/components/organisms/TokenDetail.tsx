@@ -6,6 +6,7 @@ import { ExternalLink } from '../atoms/ExternalLink';
 import { Sparkline } from '../atoms/Sparkline';
 import { StatusBadge } from '../atoms/StatusBadge';
 import { LifecycleBadge } from '../atoms/Tag';
+import { HelpTip } from '../molecules/HelpTip';
 import { LiquidityMeter } from '../molecules/Liquidity';
 import { TokenLinks } from '../molecules/TokenLinks';
 import { describeFailureCode } from '../../lib/failureCodes';
@@ -45,8 +46,8 @@ function isHttpsUrl(value: string): boolean {
 function describeSeries(scores: readonly ScorePoint[]): string {
   const first = scores[0];
   const last = scores.at(-1);
-  if (!first || !last) return 'No score readings yet';
-  return `Momentum score over ${scores.length} readings, from ${formatScore(first.score)} to ${formatScore(last.score)} out of 100`;
+  if (!first || !last) return 'Todavía no hay lecturas de impulso';
+  return `Impulso en ${scores.length} lecturas, de ${formatScore(first.score)} a ${formatScore(last.score)} sobre 100`;
 }
 
 export function TokenDetail({
@@ -72,37 +73,48 @@ export function TokenDetail({
 
       <dl className="token-detail__facts">
         <div>
-          <dt>Mint</dt>
+          <dt>Dirección del token</dt>
           <dd title={token.mint}>{shortenMint(token.mint)}</dd>
         </div>
         <div>
-          <dt>Creator</dt>
+          <dt>Creador</dt>
           <dd title={token.creator}>{shortenMint(token.creator)}</dd>
         </div>
         <div>
-          <dt>Created</dt>
+          <dt>Creado</dt>
           <dd>
             <DateTime iso={token.detectedAt} />
             <span className="token-detail__ago">{formatRelativeTime(token.detectedAt, now)}</span>
           </dd>
         </div>
         <div>
-          <dt>Creator's first buy</dt>
+          <dt>
+            Primera compra del creador{' '}
+            <HelpTip topic="la primera compra del creador">
+              Cuánto compró el creador de su propio token al lanzarlo. Si compró mucho, puede vender una parte grande
+              después.
+            </HelpTip>
+          </dt>
           <dd>
             <MoneyValue sol={token.initialBuySol} layout="inline" />
           </dd>
         </div>
         <div>
-          <dt>Market cap at launch</dt>
+          <dt>
+            Market cap al lanzar{' '}
+            <HelpTip topic="el market cap al lanzar">
+              Lo que valían todos los tokens juntos cuando el token se creó en pump.fun.
+            </HelpTip>
+          </dt>
           <dd>
             <MoneyValue sol={token.marketCapSol} layout="inline" />
           </dd>
         </div>
         {isHttpsUrl(token.metadataUri) ? (
           <div>
-            <dt>Metadata</dt>
+            <dt>Metadatos</dt>
             <dd>
-              <ExternalLink href={token.metadataUri}>Open JSON</ExternalLink>
+              <ExternalLink href={token.metadataUri}>Abrir JSON</ExternalLink>
             </dd>
           </div>
         ) : null}
@@ -112,16 +124,27 @@ export function TokenDetail({
 
       {smartWallets ? (
         <section className="token-detail__section" aria-labelledby="token-detail-smart-wallets">
-          <h3 id="token-detail-smart-wallets" className="token-detail__subtitle">
-            Smart wallets
-          </h3>
+          <div className="token-detail__heading">
+            <h3 id="token-detail-smart-wallets" className="token-detail__subtitle">
+              Wallets con buen historial
+            </h3>
+            <HelpTip topic="una wallet con buen historial">
+              Una wallet que en los últimos 7 días ganó en la mayoría de los tokens que operó y terminó con ganancia.
+            </HelpTip>
+          </div>
           {smartWallets}
         </section>
       ) : null}
 
       <figure className="token-detail__chart">
         <figcaption>
-          <span>Momentum score</span>
+          <span>
+            Impulso{' '}
+            <HelpTip topic="el impulso">
+              Un puntaje de 0 a 100: qué tan rápido crecen los compradores nuevos y el volumen de compra en los últimos
+              minutos.
+            </HelpTip>
+          </span>
           {latest ? <strong>{formatScore(latest.score)}</strong> : null}
         </figcaption>
         {values.length > 1 ? (
@@ -129,27 +152,38 @@ export function TokenDetail({
         ) : (
           <p className="token-detail__note">
             {values.length === 1
-              ? 'One reading so far. The line appears after the next minute.'
-              : 'No momentum readings yet. Scores are recorded once a minute while the token trades.'}
+              ? 'Una lectura por ahora. La línea aparece después del próximo minuto.'
+              : 'Todavía no hay lecturas de impulso. Se registra una por minuto mientras el token se opera.'}
           </p>
         )}
       </figure>
 
       {snapshots ? (
         <section className="token-detail__section" aria-labelledby="token-detail-snapshots">
-          <h3 id="token-detail-snapshots" className="token-detail__subtitle">
-            Snapshots over time
-          </h3>
+          <div className="token-detail__heading">
+            <h3 id="token-detail-snapshots" className="token-detail__subtitle">
+              Registros en el tiempo
+            </h3>
+            <HelpTip topic="un registro">
+              El estado del token guardado en momentos clave: al crearse, a los 5 minutos, a la hora, al migrar y otros.
+            </HelpTip>
+          </div>
           {snapshots}
         </section>
       ) : null}
 
       <section className="token-detail__section" aria-labelledby="token-detail-safety">
-      <h3 id="token-detail-safety" className="token-detail__subtitle">
-        Safety check history
-      </h3>
+      <div className="token-detail__heading">
+        <h3 id="token-detail-safety" className="token-detail__subtitle">
+          Historial de controles de seguridad
+        </h3>
+        <HelpTip topic="los controles de seguridad">
+          Revisan cuánto tienen los 10 mayores holders, cuánto tiene el creador y los permisos del token. Pasarlos no
+          significa que el token vaya a subir.
+        </HelpTip>
+      </div>
       {screenings.length === 0 ? (
-        <p className="token-detail__note">Not checked yet. Safety checks run shortly after a token is detected.</p>
+        <p className="token-detail__note">Todavía sin revisar. Los controles de seguridad se hacen poco después de detectar el token.</p>
       ) : (
         <ol className="token-detail__history">
           {screenings.map((screening) => (
@@ -165,7 +199,7 @@ export function TokenDetail({
               ) : null}
               {screening.reason ? <p className="token-detail__reason">{screening.reason}</p> : null}
               <p className="token-detail__stats">
-                Top 10 {formatPercent(screening.top10Pct)}, creator {formatPercent(screening.creatorPct)},{' '}
+                Top 10 {formatPercent(screening.top10Pct)}, creador {formatPercent(screening.creatorPct)},{' '}
                 {formatCount(screening.totalHolders)} holders
               </p>
             </li>

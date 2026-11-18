@@ -162,22 +162,22 @@ describe('auth error mapping', () => {
 
 describe('authFailureMessage', () => {
   it('words each failure for the login form', () => {
-    expect(authFailureMessage({ kind: 'invalidCredentials' })).toBe('Wrong username or password');
-    expect(authFailureMessage({ kind: 'network' })).toBe('Cannot reach the server');
+    expect(authFailureMessage({ kind: 'invalidCredentials' })).toBe('Usuario o contraseña incorrectos');
+    expect(authFailureMessage({ kind: 'network' })).toBe('No se puede conectar con el servidor');
     expect(authFailureMessage({ kind: 'tooManyAttempts', retryAfterSeconds: 840 })).toBe(
-      'Too many attempts. Try again in 14 minutes',
+      'Demasiados intentos. Intenta de nuevo en 14 minutos.',
     );
   });
 
   it('rounds the wait up to whole minutes and handles one minute', () => {
     expect(authFailureMessage({ kind: 'tooManyAttempts', retryAfterSeconds: 61 })).toBe(
-      'Too many attempts. Try again in 2 minutes',
+      'Demasiados intentos. Intenta de nuevo en 2 minutos.',
     );
     expect(authFailureMessage({ kind: 'tooManyAttempts', retryAfterSeconds: 30 })).toBe(
-      'Too many attempts. Try again in 1 minute',
+      'Demasiados intentos. Intenta de nuevo en 1 minuto.',
     );
     expect(authFailureMessage({ kind: 'tooManyAttempts', retryAfterSeconds: null })).toBe(
-      'Too many attempts. Try again in a few minutes',
+      'Demasiados intentos. Intenta de nuevo en unos minutos.',
     );
   });
 });

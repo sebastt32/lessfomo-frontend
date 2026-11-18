@@ -6,7 +6,7 @@ import { ThemeToggleContainer } from '../containers/ThemeToggleContainer';
 /** The sign-in page. It never reads or changes the URL, so a shared link still opens its view after signing in. */
 export function LoginPage() {
   return (
-    <SessionPage footnote="There is no public sign-up. Accounts are created by the administrator.">
+    <SessionPage footnote="No hay registro abierto. El administrador crea las cuentas.">
       <LoginContainer />
     </SessionPage>
   );

@@ -8,7 +8,7 @@ export interface DateTimeProps {
   layout?: 'stacked' | 'inline';
 }
 
-/** A creation date and time, e.g. "Nov 14, 2026 03:15". */
+/** A creation date and time, e.g. "14 nov 2026 03:15". */
 export function DateTime({ iso, layout = 'inline' }: DateTimeProps) {
   return (
     <time className={`date-time date-time--${layout}`} dateTime={iso} title={iso}>
