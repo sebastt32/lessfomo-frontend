@@ -43,6 +43,9 @@ for each token, and shows:
   picker and "Today" move between days.
 - **Smart-wallet counts**: conviction wallets first, then every good-history wallet and how many still hold
   (e.g. "3 conviction · 7 good · 2 holding"), in the movers and safety checks.
+- **Small screens**: below 40rem (phones), Live's top movers and the daily record's tokens are cards with the
+  essentials (name, market cap, cycle or result, conviction wallets, peak) instead of wide tables; tapping a card
+  opens the token. Panel actions wrap under their title.
 - **Dollars first**: market caps, liquidity, volumes and wallet amounts are shown in USD as the main figure with
   SOL below (e.g. "$45.2K" over "301 SOL"), using the SOL/USD price of the live stream (`sol-price`); while that
   price is unknown they are shown in SOL. Market cap is the price per token × pump.fun's supply of one billion.

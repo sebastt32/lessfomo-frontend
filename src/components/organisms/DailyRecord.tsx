@@ -7,7 +7,7 @@ import { MoneyValue } from '../molecules/MoneyValue';
 import { TokenName } from '../molecules/TokenName';
 import { marketCapSol } from '../../lib/money';
 import './DailyRecord.css';
-import './TokenHistoryTable.css';
+import './DataTable.css';
 
 export interface DailyRecordProps {
   /** "November 17, 2026". */
@@ -18,6 +18,8 @@ export interface DailyRecordProps {
   /** Reference time (ms since epoch): tokens younger than 24 hours are still tracked. */
   now: number;
   onSelect: (mint: string) => void;
+  /** table on wide screens; cards with the essentials on small ones. */
+  layout?: 'table' | 'cards';
 }
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
@@ -45,7 +47,7 @@ function SuccessCard({ title, summary, note }: SuccessCardProps) {
 }
 
 /** One day of tokens that appeared in lessfomo, what each one did next, and the day's and month's success. */
-export function DailyRecord({ dayLabel, monthLabel, data, now, onSelect }: DailyRecordProps) {
+export function DailyRecord({ dayLabel, monthLabel, data, now, onSelect, layout = 'table' }: DailyRecordProps) {
   const outcomes = data.tokens.map((item) => recordOutcome(item.cycle, now));
   const tracking = outcomes.filter((outcome) => outcome === 'tracking').length;
   const trackingNote =
@@ -66,6 +68,48 @@ export function DailyRecord({ dayLabel, monthLabel, data, now, onSelect }: Daily
 
       {data.tokens.length === 0 ? (
         <p className="daily-record__empty">No token appeared in lessfomo on this day.</p>
+      ) : layout === 'cards' ? (
+        <ul className="record-cards" aria-label={`Tokens of ${dayLabel}`}>
+          {data.tokens.map((item, index) => {
+            const { token, cycle } = item;
+            const outcome = outcomes[index]!;
+            return (
+              <li key={token.mint} className="record-card">
+                <button
+                  type="button"
+                  className="record-card__button"
+                  aria-label={`Show details for ${token.symbol || token.mint}`}
+                  onClick={() => onSelect(token.mint)}
+                >
+                  <span className="record-card__top">
+                    <TokenName symbol={token.symbol} name={token.name} />
+                    <span className={`daily-record__outcome daily-record__outcome--${outcome}`} title={OUTCOME_HINTS[outcome]}>
+                      {OUTCOME_LABELS[outcome]}
+                    </span>
+                  </span>
+                  <span className="record-card__facts">
+                    <span>
+                      <span className="record-card__label">Appeared</span>
+                      {cycle ? formatTimeWithSeconds(cycle.appearedAt) : '—'}
+                    </span>
+                    <span>
+                      <span className="record-card__label">Entry</span>
+                      <MoneyValue sol={marketCapSol(cycle?.appearedPriceSol)} layout="inline" />
+                    </span>
+                    <span>
+                      <span className="record-card__label">Peak</span>
+                      {formatMultiple(cycle?.peakX)}
+                    </span>
+                    <span>
+                      <span className="record-card__label">Last</span>
+                      {formatMultiple(cycle?.lastPriceX)}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       ) : (
         <div className="history-table__scroll" tabIndex={0} role="region" aria-label={`Tokens of ${dayLabel}`}>
           <table className="history-table">

@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
 import { Panel } from '../components/molecules/Panel';
 import { EmptyState, ErrorState, LoadingState } from '../components/molecules/SectionState';
+import { MoverCards } from '../components/organisms/MoverCards';
 import { MoversTable } from '../components/organisms/MoversTable';
+import { SMALL_SCREEN, useMediaQuery } from '../hooks/useMediaQuery';
 import { formatRelativeTime } from '../lib/format';
 import { isNetworkError } from '../state/errors';
 import { selectCycle } from '../state/cycleFeed';
@@ -19,6 +21,7 @@ export interface MoversContainerProps {
 export function MoversContainer({ onSelect, now }: MoversContainerProps) {
   const { state, smartWallets, cycles, actions } = useLiveFeedContext();
   const [min] = useMinConvictionWallets();
+  const small = useMediaQuery(SMALL_SCREEN);
   const { status, at, error } = state.movers;
   const visible = selectVisibleMovers(state, smartWallets, min);
   // A `cycle` event can be newer than the minute's ranking: show whichever reading was updated last.
@@ -37,7 +40,11 @@ export function MoversContainer({ onSelect, now }: MoversContainerProps) {
 
   let body;
   if (items.length > 0) {
-    body = <MoversTable movers={items} onSelect={onSelect} now={now} />;
+    body = small ? (
+      <MoverCards movers={items} onSelect={onSelect} now={now} />
+    ) : (
+      <MoversTable movers={items} onSelect={onSelect} now={now} />
+    );
   } else if (status === 'loading') {
     body = <LoadingState>Loading the latest ranking…</LoadingState>;
   } else if (status === 'error') {

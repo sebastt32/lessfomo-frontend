@@ -44,6 +44,28 @@ describe('DailyRecord', () => {
     ]);
   });
 
+  it('shows the same tokens as cards on small screens, opened with a tap', () => {
+    const onSelect = vi.fn();
+    render(
+      <DailyRecord
+        dayLabel="November 13, 2026"
+        monthLabel="November 2026"
+        data={{ tokens: [hit, tracking], day: { tokens: 2, hits: 1, pct: 50 }, month: { tokens: 40, hits: 9, pct: 22.5 } }}
+        now={NOW}
+        onSelect={onSelect}
+        layout="cards"
+      />,
+    );
+    expect(screen.queryByRole('table')).toBeNull();
+    const cards = within(screen.getByRole('list', { name: 'Tokens of November 13, 2026' })).getAllByRole('listitem');
+    expect(cards.map((card) => card.textContent)).toEqual([
+      expect.stringMatching(/HIT.*Reached 2×.*Peak3\.20×.*Last1\.40×/),
+      expect.stringMatching(/WAIT.*Tracking.*Peak—.*Last0\.80×/),
+    ]);
+    fireEvent.click(within(cards[1]!).getByRole('button', { name: /WAIT/ }));
+    expect(onSelect).toHaveBeenCalledWith(MINT_B);
+  });
+
   it('opens a token from its row', () => {
     const onSelect = vi.fn();
     render(

@@ -6,6 +6,7 @@ import type { StreamOptions } from '../api/stream';
 import { LiveFeedProvider } from '../containers/LiveFeedProvider';
 import { fakeClient } from '../test/fakeClient';
 import { makeMover } from '../test/fixtures';
+import { stubMatchMedia } from '../test/matchMedia';
 import { AppShell } from './AppShell';
 
 const notFound = () => new ApiError(404, 'NOT_FOUND', 'Route not found');
@@ -85,5 +86,23 @@ describe('AppShell navigation', () => {
     expect(within(panel).getByText('Liquidity is not reported for this token yet.')).toBeInTheDocument();
     await waitFor(() => expect(client.getStats).toHaveBeenCalled());
     expect(screen.queryByRole('region', { name: 'Screener totals' })).not.toBeInTheDocument();
+  });
+});
+
+describe('small screens', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('shows cards instead of tables in Live and in the daily record', async () => {
+    stubMatchMedia(true);
+    const user = userEvent.setup();
+    renderApp(fakeClient());
+
+    const movers = await screen.findByRole('list', { name: 'Top movers' });
+    expect(within(movers).getAllByRole('listitem')).toHaveLength(1);
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('link', { name: 'Daily record' }));
+    expect(await screen.findByRole('list', { name: /^Tokens of / })).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
 });

@@ -7,6 +7,7 @@
 
 .panel__header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--space-3);
@@ -37,8 +38,15 @@
   font-size: var(--text-sm);
 }
 
+/* The title takes the line; on narrow screens the actions wrap below it instead of squeezing it. */
+.panel__header > :first-child {
+  flex: 1 1 16rem;
+  min-inline-size: 0;
+}
+
 .panel__actions {
-  flex: none;
+  flex: 0 1 auto;
+  min-inline-size: 0;
 }
 
 .panel__body {

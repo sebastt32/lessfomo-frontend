@@ -4,6 +4,7 @@ import { ErrorState, LoadingState } from '../components/molecules/SectionState';
 import { DailyRecord } from '../components/organisms/DailyRecord';
 import { openToken } from '../hooks/tokenNavigation';
 import { useDailyRecord } from '../hooks/useDailyRecord';
+import { SMALL_SCREEN, useMediaQuery } from '../hooks/useMediaQuery';
 import { navigate, useLocationSearch } from '../hooks/useLocationSearch';
 import { useNow } from '../hooks/useNow';
 import { dayKey, describeRecordDay, describeRecordMonth, parseRecordDay, withRecordDay } from '../lib/dailyRecord';
@@ -18,6 +19,7 @@ export function DailyRecordContainer() {
   const today = dayKey(new Date(now));
   const day = parseRecordDay(search, new Date(now));
   const { state, retry } = useDailyRecord(meta.client, day);
+  const small = useMediaQuery(SMALL_SCREEN);
   const dayLabel = describeRecordDay(day);
 
   let body;
@@ -29,6 +31,7 @@ export function DailyRecordContainer() {
         data={state.data!}
         now={now}
         onSelect={openToken}
+        layout={small ? 'cards' : 'table'}
       />
     );
   } else if (state.status === 'error') {
