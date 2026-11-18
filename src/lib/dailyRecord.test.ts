@@ -13,7 +13,7 @@ import {
   successSummary,
   withRecordDay,
 } from './dailyRecord';
-import { parseAppLocation, serializeAppLocation, DEFAULT_HISTORY } from './historyQuery';
+import { parseAppLocation, serializeAppLocation } from './appLocation';
 
 const NOW = new Date(2026, 10, 17, 15, 30);
 
@@ -43,7 +43,7 @@ describe('the selected day in the URL', () => {
 
   it('is a view of its own that serializes without history filters', () => {
     expect(parseAppLocation('?view=record&day=2026-11-03').view).toBe('record');
-    expect(serializeAppLocation({ view: 'record', history: DEFAULT_HISTORY })).toBe('?view=record');
+    expect(serializeAppLocation({ view: 'record' })).toBe('?view=record');
   });
 });
 

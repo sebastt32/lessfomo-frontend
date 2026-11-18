@@ -1,4 +1,4 @@
-import { parseAppLocation, type AppView } from './historyQuery';
+import { parseAppLocation, type AppView } from './appLocation';
 import { parseMinConvictionWallets, withMinConvictionWallets } from './smartWalletFilter';
 
 /**
@@ -40,15 +40,13 @@ function rememberedSearch(state: unknown): string | null {
 
 const VIEW_NAMES: Record<Exclude<AppView, 'token'>, string> = {
   live: 'Live',
-  history: 'History',
   record: 'Daily record',
-  insights: 'Insights',
 };
 
 export interface BackTarget {
   /** '' (the live view) or a search starting with '?'. */
   search: string;
-  /** "Back to History". */
+  /** "Back to Daily record". */
   label: string;
 }
 

@@ -1,6 +1,5 @@
 import type { TokenListQuery } from '../api/client';
 import type { CyclesAnalysisResponse, TokenCycle } from '../api/types';
-import { describeDateFilter, parseDay, type DateBounds } from './dateRange';
 
 /**
  * The daily record: the tokens that appeared in lessfomo on one local calendar day, and the share of them
@@ -17,6 +16,22 @@ export const TRACKING_MS = 24 * 3_600_000;
 export const RECORD_PAGE_SIZE = 200;
 
 const pad = (value: number) => String(value).padStart(2, '0');
+
+export interface DayBounds {
+  /** ISO instant, inclusive. */
+  from: string;
+  /** ISO instant, exclusive. */
+  to: string;
+}
+
+/** Parses YYYY-MM-DD into its parts, or null when it is not a real calendar day. */
+export function parseDay(value: string): { year: number; month: number; day: number } | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const valid = month >= 1 && month <= 12 && day >= 1 && day <= new Date(year, month, 0).getDate();
+  return valid ? { year, month, day } : null;
+}
 
 /** The local calendar day of a date, as YYYY-MM-DD. */
 export function dayKey(date: Date): string {
@@ -50,12 +65,12 @@ export function shiftDay(day: string, days: number): string {
 }
 
 /** API bounds of the local day: midnight (inclusive) to the next midnight (exclusive). */
-export function dayBounds(day: string): Required<DateBounds> {
+export function dayBounds(day: string): DayBounds {
   return { from: localDate(day).toISOString(), to: localDate(day, 1).toISOString() };
 }
 
 /** API bounds of the local month that holds the day. */
-export function monthBounds(day: string): Required<DateBounds> {
+export function monthBounds(day: string): DayBounds {
   const { year, month } = parseDay(day)!;
   return { from: new Date(year, month - 1, 1).toISOString(), to: new Date(year, month, 1).toISOString() };
 }
@@ -111,14 +126,18 @@ export function successSummary(analysis: CyclesAnalysisResponse): SuccessSummary
   return { tokens: analysis.tokens, hits: pct === null ? 0 : Math.round((pct * analysis.tokens) / 100), pct };
 }
 
+// Calendar labels do not depend on the viewer's timezone: format the parts as a UTC date.
+const longDay = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+const monthYear = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+
 /** "November 17, 2026". */
 export function describeRecordDay(day: string): string {
   const { year, month, day: date } = parseDay(day)!;
-  return describeDateFilter({ kind: 'period', year, month, day: date });
+  return longDay.format(Date.UTC(year, month - 1, date));
 }
 
 /** "November 2026". */
 export function describeRecordMonth(day: string): string {
   const { year, month } = parseDay(day)!;
-  return describeDateFilter({ kind: 'period', year, month, day: null });
+  return monthYear.format(Date.UTC(year, month - 1, 1));
 }

@@ -1,16 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ANALYSIS_BY_PARAM,
   CONVICTION_WALLET_OPTIONS,
   DEFAULT_MIN_CONVICTION_WALLETS,
   convictionOptionLabel,
   describeConvictionFilter,
-  parseAnalysisBy,
   parseMinConvictionWallets,
-  withAnalysisBy,
   withMinConvictionWallets,
 } from './smartWalletFilter';
-import { parseAppLocation } from './historyQuery';
 
 describe('parseMinConvictionWallets', () => {
   it('defaults to 3 conviction wallets, the public minimum', () => {
@@ -48,10 +44,10 @@ describe('withMinConvictionWallets', () => {
     expect(withMinConvictionWallets('?view=history&minSmartWallets=20', 5)).toBe('?view=history&minConvictionWallets=5');
   });
 
-  it('round-trips with parseMinConvictionWallets without disturbing the history filters', () => {
-    const search = withMinConvictionWallets('?view=history&minScore=50', 10);
+  it('round-trips with parseMinConvictionWallets without disturbing the day', () => {
+    const search = withMinConvictionWallets('?view=record&day=2026-11-16', 10);
     expect(parseMinConvictionWallets(search)).toBe(10);
-    expect(parseAppLocation(search).history.minScore).toBe(50);
+    expect(new URLSearchParams(search).get('day')).toBe('2026-11-16');
   });
 });
 
@@ -65,21 +61,5 @@ describe('describeConvictionFilter', () => {
   it('says which tokens are shown', () => {
     expect(describeConvictionFilter(3)).toBe('Showing tokens bought by ≥3 conviction wallets');
     expect(describeConvictionFilter(10)).toBe('Showing tokens bought by ≥10 conviction wallets');
-  });
-});
-
-describe('analysis grouping in the URL', () => {
-  it('defaults to good-history wallets and reads by=conviction', () => {
-    expect(ANALYSIS_BY_PARAM).toBe('by');
-    expect(parseAnalysisBy('?view=insights')).toBe('smartWallets');
-    expect(parseAnalysisBy('?view=insights&by=conviction')).toBe('conviction');
-    expect(parseAnalysisBy('?view=insights&by=other')).toBe('smartWallets');
-  });
-
-  it('sets by=conviction and removes it for the default, keeping other parameters', () => {
-    expect(withAnalysisBy('?view=insights', 'conviction')).toBe('?view=insights&by=conviction');
-    expect(withAnalysisBy('?view=insights&by=conviction&minConvictionWallets=5', 'smartWallets')).toBe(
-      '?view=insights&minConvictionWallets=5',
-    );
   });
 });

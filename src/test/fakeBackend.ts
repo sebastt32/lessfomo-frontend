@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import { createApiClient, type FetchLike } from '../api/client';
 import type { StreamOptions } from '../api/stream';
-import { makeListItem, makeMover, makeScreening, makeStats, MINT_B } from './fixtures';
+import { makeListItem, makeMover, makeScreening, makeStats, MINT_B, makeCyclesAnalysis } from './fixtures';
 
 export const USERNAME = 'superadmin';
 export const PASSWORD = 'correct horse battery staple';
@@ -92,6 +92,7 @@ export function fakeBackend({ signedIn = false, auth = true }: FakeBackendOption
     if (path.startsWith('/api/tokens?') || path === '/api/tokens') {
       return json({ tokens: [makeListItem()], page: 1, pageSize: 50, total: 1 });
     }
+    if (path.startsWith('/api/analysis/cycles')) return json(makeCyclesAnalysis());
     return apiError(404, 'NOT_FOUND');
   };
 

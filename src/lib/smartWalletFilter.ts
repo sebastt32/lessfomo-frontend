@@ -47,20 +47,3 @@ export function convictionOptionLabel(min: number): string {
 export function describeConvictionFilter(min: number): string {
   return `Showing tokens bought by ≥${min} conviction ${min === 1 ? 'wallet' : 'wallets'}`;
 }
-
-/** How the Insights analysis groups tokens: by good-history wallets (default) or by conviction wallets. */
-export type AnalysisBy = 'smartWallets' | 'conviction';
-
-export const ANALYSIS_BY_PARAM = 'by';
-
-export function parseAnalysisBy(search: string): AnalysisBy {
-  return new URLSearchParams(search).get(ANALYSIS_BY_PARAM) === 'conviction' ? 'conviction' : 'smartWallets';
-}
-
-/** `search` with the grouping set; the default (good-history wallets) is omitted. */
-export function withAnalysisBy(search: string, by: AnalysisBy): string {
-  const params = new URLSearchParams(search);
-  params.delete(ANALYSIS_BY_PARAM);
-  if (by === 'conviction') params.set(ANALYSIS_BY_PARAM, 'conviction');
-  return toSearch(params);
-}

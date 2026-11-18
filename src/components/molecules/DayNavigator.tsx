@@ -1,5 +1,4 @@
-import { parseDay } from '../../lib/dateRange';
-import { shiftDay } from '../../lib/dailyRecord';
+import { parseDay, shiftDay } from '../../lib/dailyRecord';
 import './DayNavigator.css';
 
 export interface DayNavigatorProps {

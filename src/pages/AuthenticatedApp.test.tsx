@@ -125,9 +125,9 @@ describe('login page', () => {
     const user = userEvent.setup();
     const backend = fakeBackend();
     const logged = [vi.spyOn(console, 'log'), vi.spyOn(console, 'error'), vi.spyOn(console, 'warn')];
-    renderApp(backend, '/?view=history');
+    renderApp(backend, '/?view=record');
     await signIn(user);
-    await screen.findByRole('region', { name: 'Token history' });
+    await screen.findByRole('region', { name: /Daily record/ });
 
     expect(document.documentElement.outerHTML).not.toContain(PASSWORD);
     for (const input of document.querySelectorAll('input')) expect(input.value).not.toBe(PASSWORD);
@@ -213,17 +213,17 @@ describe('login page', () => {
   it('keeps the shared link: the URL is untouched while signed out and opens its view after signing in', async () => {
     const user = userEvent.setup();
     const backend = fakeBackend();
-    const url = '/?view=history&status=passed&minScore=50';
+    const url = '/?view=record&day=2026-11-16';
     renderApp(backend, url);
     await loginForm();
     expect(window.location.pathname + window.location.search).toBe(url);
 
     await signIn(user);
-    expect(await screen.findByRole('region', { name: 'Token history' })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: /Daily record/ })).toBeInTheDocument();
     expect(window.location.pathname + window.location.search).toBe(url);
     const listCall = backend.dataCalls().find((call) => call.path.startsWith('/api/tokens?'));
-    expect(listCall?.path).toContain('status=passed');
-    expect(listCall?.path).toContain('minScore=50');
+    expect(listCall?.path).toContain(`from=${new Date(2026, 10, 16).toISOString()}`);
+    expect(listCall?.path).toContain('dateField=appearedAt');
   });
 });
 
@@ -235,12 +235,12 @@ describe('session lost', () => {
     await platformShown();
 
     backend.state.signedIn = false;
-    await user.click(screen.getByRole('link', { name: 'History' }));
+    await user.click(screen.getByRole('link', { name: 'Daily record' }));
 
     expect(await loginForm()).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('Your session expired. Sign in again.');
     expect(backend.streams[0]?.close).toHaveBeenCalled();
-    expect(screen.queryByRole('region', { name: 'Token history' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /Daily record/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Views' })).not.toBeInTheDocument();
 
     const before = backend.state.calls.length;
@@ -316,14 +316,14 @@ describe('sign out', () => {
 describe('backend without authentication (older version)', () => {
   it('shows the platform as before when /api/auth/me does not exist', async () => {
     const backend = fakeBackend({ auth: false });
-    renderApp(backend, '/?view=history');
+    renderApp(backend, '/?view=record');
 
-    expect(await screen.findByRole('region', { name: 'Token history' })).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: /Daily record/ })).toBeInTheDocument();
     expect(backend.connect).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('form', { name: 'Sign in' })).not.toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'Account' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
-    expect(window.location.search).toBe('?view=history');
+    expect(window.location.search).toBe('?view=record');
   });
 
   it('asks for a login as soon as that backend starts requiring one', async () => {
@@ -333,7 +333,7 @@ describe('backend without authentication (older version)', () => {
     await platformShown();
 
     backend.state.intercept = () => apiError(401, 'UNAUTHENTICATED');
-    await user.click(screen.getByRole('link', { name: 'History' }));
+    await user.click(screen.getByRole('link', { name: 'Daily record' }));
     expect(await loginForm()).toBeInTheDocument();
   });
 });

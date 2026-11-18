@@ -1,7 +1,7 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError, type ApiClient, type TokenListQuery } from '../api/client';
+import { ApiError, type ApiClient } from '../api/client';
 import type { StreamOptions } from '../api/stream';
 import { LiveFeedProvider } from '../containers/LiveFeedProvider';
 import { fakeBackend, PASSWORD, USERNAME } from '../test/fakeBackend';
@@ -82,8 +82,6 @@ function cycleClient(overrides: Partial<ApiClient> = {}) {
 }
 
 const tokenHeading = (name: string) => screen.findByRole('heading', { level: 1, name });
-const lastQuery = (client: ApiClient): TokenListQuery =>
-  (client.listTokens as ReturnType<typeof vi.fn>).mock.lastCall?.[0] as TokenListQuery;
 
 beforeEach(() => {
   FakeEventSource.instances = [];
@@ -124,49 +122,42 @@ describe('token view: navigation', () => {
     expect(await screen.findByRole('article')).toBeInTheDocument();
   });
 
-  it('opens from the history and Back returns to the same filters, sort and page', async () => {
+  it('opens from the daily record and Back returns to the same day', async () => {
     const user = userEvent.setup();
     const client = fakeClient();
-    const history = '?view=history&status=passed&sort=maxScore:asc&page=2&minConvictionWallets=5';
-    renderApp(client, `/${history}`);
+    const record = '?view=record&day=2026-11-16&minConvictionWallets=5';
+    renderApp(client, `/${record}`);
 
     await user.click(await screen.findByRole('button', { name: 'Show details for FROG' }));
     // The token's URL keeps only the conviction filter, which applies to every view.
     expect(window.location.search).toBe(`?view=token&mint=${MINT_A}&minConvictionWallets=5`);
     await tokenHeading('FROG');
-    expect(screen.queryByRole('region', { name: 'Token history' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /Daily record/ })).not.toBeInTheDocument();
 
-    const back = screen.getByRole('link', { name: 'Back to History' });
-    expect(back).toHaveAttribute('href', history);
+    const back = screen.getByRole('link', { name: 'Back to Daily record' });
+    expect(back).toHaveAttribute('href', record);
     await user.click(back);
-    expect(window.location.search).toBe(history);
-    expect(await screen.findByRole('region', { name: 'Token history' })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: 'Passed' })).toBeChecked();
-    expect(lastQuery(client)).toMatchObject({
-      status: ['passed'],
-      sort: { field: 'maxScore', direction: 'asc' },
-      page: 2,
-      minConvictionWallets: 5,
-    });
+    expect(window.location.search).toBe(record);
+    expect(await screen.findByRole('region', { name: 'Daily record · November 16, 2026' })).toBeInTheDocument();
   });
 
   it('returns to the list with the browser Back button too', async () => {
     const user = userEvent.setup();
-    renderApp(fakeClient(), '/?view=history&lifecycle=dead');
+    renderApp(fakeClient(), '/?view=record&day=2026-11-15');
 
     await user.click(await screen.findByRole('button', { name: 'Show details for FROG' }));
     await tokenHeading('FROG');
     window.history.back();
-    await waitFor(() => expect(window.location.search).toBe('?view=history&lifecycle=dead'));
-    expect(await screen.findByRole('region', { name: 'Token history' })).toBeInTheDocument();
+    await waitFor(() => expect(window.location.search).toBe('?view=record&day=2026-11-15'));
+    expect(await screen.findByRole('region', { name: /Daily record/ })).toBeInTheDocument();
     expect(screen.queryByRole('article')).not.toBeInTheDocument();
 
     // And forward again shows the token, still remembering where it came from.
     window.history.forward();
     await waitFor(() => expect(window.location.search).toBe(`?view=token&mint=${MINT_A}`));
-    expect(await screen.findByRole('link', { name: 'Back to History' })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: 'Back to Daily record' })).toHaveAttribute(
       'href',
-      '?view=history&lifecycle=dead',
+      '?view=record&day=2026-11-15',
     );
   });
 
