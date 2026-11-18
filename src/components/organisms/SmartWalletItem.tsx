@@ -6,6 +6,8 @@ import { BotBadge, WalletStyleBadge, WalletTierBadge } from '../atoms/Tag';
 import { formatSolAmount, shortenMint } from '../../lib/format';
 import { solscanAccountUrl } from '../../lib/links';
 import { describeWalletRecord, formatEntrySeconds } from '../../lib/smartWallets';
+import { formatUsdCompact, solToUsd } from '../../lib/money';
+import { useSolUsd } from '../../state/solUsd';
 import './SmartWallets.css';
 
 export interface SmartWalletItemProps {
@@ -14,18 +16,25 @@ export interface SmartWalletItemProps {
   children?: ReactNode;
 }
 
-function tradeSummary(wallet: SmartWalletInToken): string {
-  const bought = `Bought ${formatSolAmount(wallet.boughtSol)} ${formatEntrySeconds(wallet.entrySeconds)} after launch`;
+/** "$120 (0.80 SOL)", or the SOL amount alone while the SOL/USD price is unknown. */
+function money(sol: number, solUsd: number | null): string {
+  const usd = solToUsd(sol, solUsd);
+  return usd === null ? formatSolAmount(sol) : `${formatUsdCompact(usd)} (${formatSolAmount(sol)})`;
+}
+
+function tradeSummary(wallet: SmartWalletInToken, solUsd: number | null): string {
+  const bought = `Bought ${money(wallet.boughtSol, solUsd)} ${formatEntrySeconds(wallet.entrySeconds)} after launch`;
   if (wallet.stillHolding) {
-    return wallet.soldSol > 0 ? `${bought}, sold ${formatSolAmount(wallet.soldSol)}, still holding` : `${bought}, still holding`;
+    return wallet.soldSol > 0 ? `${bought}, sold ${money(wallet.soldSol, solUsd)}, still holding` : `${bought}, still holding`;
   }
-  return `${bought}, sold ${formatSolAmount(wallet.soldSol)}, no longer holding`;
+  return `${bought}, sold ${money(wallet.soldSol, solUsd)}, no longer holding`;
 }
 
 /** One good-history wallet in a token: who it is, what it did here, how it trades and why its record is good. */
 export function SmartWalletItem({ wallet, children }: SmartWalletItemProps) {
   const [open, setOpen] = useState(false);
   const resultsId = useId();
+  const solUsd = useSolUsd();
   const { record } = wallet;
 
   return (
@@ -54,7 +63,7 @@ export function SmartWalletItem({ wallet, children }: SmartWalletItemProps) {
         <span className={wallet.stillHolding ? 'smart-wallet__holding' : 'smart-wallet__sold'}>
           {wallet.stillHolding ? 'Holding' : 'Sold'}
         </span>{' '}
-        {tradeSummary(wallet)}.
+        {tradeSummary(wallet, solUsd)}.
       </p>
       <p className="smart-wallet__why">
         <span className="smart-wallet__why-label">Why it counts as good: </span>

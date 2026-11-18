@@ -1,6 +1,7 @@
 import type { TokenCycle } from '../../api/types';
 import { CYCLE_UNAVAILABLE, cycleFacts, investWindowSentence } from '../../lib/cycle';
-import { formatChartNumber } from '../../lib/candles';
+import { marketCapSol } from '../../lib/money';
+import { MoneyValue } from '../molecules/MoneyValue';
 import { formatDate, formatTimeWithSeconds } from '../../lib/format';
 import { LateBadge, PhaseBadge } from '../atoms/Tag';
 import './CycleSummary.css';
@@ -40,7 +41,12 @@ export function CycleSummary({ cycle, now }: CycleSummaryProps) {
             </time>
             {cycle.appearedPriceSol === null
               ? '.'
-              : `, at ${formatChartNumber(cycle.appearedPriceSol)} SOL per token (the base price).`}
+              : (
+                <>
+                  , with a market cap of <MoneyValue sol={marketCapSol(cycle.appearedPriceSol)} layout="inline" /> (the
+                  base price).
+                </>
+              )}
           </p>
           <dl className="cycle-summary__facts">
             {cycleFacts(cycle).map((fact) => (

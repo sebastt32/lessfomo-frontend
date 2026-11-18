@@ -43,7 +43,11 @@ for each token, and shows:
   picker and "Today" move between days.
 - **Smart-wallet counts**: conviction wallets first, then every good-history wallet and how many still hold
   (e.g. "3 conviction · 7 good · 2 holding"), in the movers and safety checks.
-- **Live chart**: candles with volume for 1s, 1m, 5m, 15m or 1h intervals, as price or market cap, in SOL or USD, with the
+- **Dollars first**: market caps, liquidity, volumes and wallet amounts are shown in USD as the main figure with
+  SOL below (e.g. "$45.2K" over "301 SOL"), using the SOL/USD price of the live stream (`sol-price`); while that
+  price is unknown they are shown in SOL. Market cap is the price per token × pump.fun's supply of one billion.
+  Live shows each mover's market cap and the daily record each token's market cap when it appeared.
+- **Live chart**: candles with volume for 1s, 1m, 5m, 15m or 1h intervals, as market cap in USD by default, or as price, or in SOL, with the
   creator's (dev) buys and sells marked. New trades update it as they happen.
 - **Connection status**: whether the live feed is connected and the state of each data source.
 

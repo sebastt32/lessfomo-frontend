@@ -1,5 +1,6 @@
 import type { WalletTokenResult } from '../../api/types';
-import { formatRelativeTime, formatSolAmount, shortenMint } from '../../lib/format';
+import { formatRelativeTime, shortenMint } from '../../lib/format';
+import { MoneyValue } from '../molecules/MoneyValue';
 import { formatEntrySeconds, formatSignedSol } from '../../lib/smartWallets';
 import './SmartWallets.css';
 
@@ -46,8 +47,12 @@ export function WalletResults({ results, now, limit = 10 }: WalletResultsProps) 
                   {result.symbol || shortenMint(result.mint)}
                 </th>
                 <td className="wallet-results__num">{formatEntrySeconds(result.entrySeconds)}</td>
-                <td className="wallet-results__num">{formatSolAmount(result.boughtSol)}</td>
-                <td className="wallet-results__num">{formatSolAmount(result.soldSol)}</td>
+                <td className="wallet-results__num">
+                  <MoneyValue sol={result.boughtSol} />
+                </td>
+                <td className="wallet-results__num">
+                  <MoneyValue sol={result.soldSol} />
+                </td>
                 <td
                   className={`wallet-results__num ${result.pnlSol > 0 ? 'wallet-results__win' : result.pnlSol < 0 ? 'wallet-results__loss' : ''}`}
                 >

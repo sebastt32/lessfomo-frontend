@@ -39,6 +39,8 @@ export interface LiveFeedState {
   /** Creation time (TokenView.detectedAt) per mint seen in token events or rankings, oldest entries dropped first. */
   createdAt: Record<string, string>;
   tokensDetected: number;
+  /** Latest SOL/USD price from the live stream; null until known. Turns SOL amounts into USD. */
+  solUsd: number | null;
 }
 
 export type LiveFeedAction =
@@ -63,6 +65,7 @@ export const initialLiveFeedState: LiveFeedState = {
   scoreHistory: {},
   createdAt: {},
   tokensDetected: 0,
+  solUsd: null,
 };
 
 const EMPTY_HISTORY: readonly ScorePoint[] = [];
@@ -173,6 +176,8 @@ function applyStreamEvent(state: LiveFeedState, event: StreamEvent): LiveFeedSta
     case 'cycle':
       // Cycles live in their own reducer (state/cycleFeed.ts).
       return state;
+    case 'sol-price':
+      return { ...state, solUsd: event.data.solUsd };
     case 'token':
       return {
         ...state,

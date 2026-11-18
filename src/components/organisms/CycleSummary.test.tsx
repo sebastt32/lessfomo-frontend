@@ -13,7 +13,7 @@ describe('CycleSummary', () => {
     expect(summary).toHaveTextContent('Crashed');
     expect(summary).not.toHaveTextContent('Appeared late');
     expect(summary).toHaveTextContent('Could be bought for 6 min 20 s before the run-up');
-    expect(summary).toHaveTextContent('at 0.0₇3 SOL per token (the base price)');
+    expect(summary).toHaveTextContent('with a market cap of 30.00 SOL (the base price)');
     expect(summary).toHaveTextContent('Rise before appearing1.50× its launch price');
     expect(summary).toHaveTextContent('Peak3.20× the base price');
     expect(summary).toHaveTextContent('Time to peak10 min after it appeared');

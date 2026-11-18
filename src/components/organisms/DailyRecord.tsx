@@ -3,7 +3,9 @@ import type { DailyRecordData } from '../../hooks/useDailyRecord';
 import { formatMultiple } from '../../lib/cycle';
 import { OUTCOME_HINTS, OUTCOME_LABELS, recordOutcome, type SuccessSummary } from '../../lib/dailyRecord';
 import { formatPercent, formatTimeWithSeconds } from '../../lib/format';
+import { MoneyValue } from '../molecules/MoneyValue';
 import { TokenName } from '../molecules/TokenName';
+import { marketCapSol } from '../../lib/money';
 import './DailyRecord.css';
 import './TokenHistoryTable.css';
 
@@ -71,6 +73,9 @@ export function DailyRecord({ dayLabel, monthLabel, data, now, onSelect }: Daily
               <tr>
                 <th scope="col">Appeared</th>
                 <th scope="col">Token</th>
+                <th scope="col" className="history-table__num" title="Market cap when the token appeared in lessfomo">
+                  Entry market cap
+                </th>
                 <th scope="col" className="history-table__num" title="Highest price after the 2×, over the appearance price">
                   Peak
                 </th>
@@ -108,6 +113,9 @@ export function DailyRecord({ dayLabel, monthLabel, data, now, onSelect }: Daily
                         <TokenName symbol={token.symbol} name={token.name} />
                       </button>
                     </th>
+                    <td className="history-table__num">
+                      <MoneyValue sol={marketCapSol(cycle?.appearedPriceSol)} />
+                    </td>
                     <td className="history-table__num">{formatMultiple(cycle?.peakX)}</td>
                     <td className="history-table__num">{formatMultiple(cycle?.lastPriceX)}</td>
                     <td>

@@ -1,7 +1,8 @@
 import type { TokenSnapshot } from '../../api/types';
 import { DateTime } from '../atoms/DateTime';
 import { LiquidityCell } from '../molecules/Liquidity';
-import { formatCount, formatPercent, formatPriceSol, formatSolAmount } from '../../lib/format';
+import { formatCount, formatPercent } from '../../lib/format';
+import { MoneyValue } from '../molecules/MoneyValue';
 import { describeMilestone, isEventMilestone } from '../../lib/milestones';
 import './TokenSnapshots.css';
 
@@ -34,9 +35,6 @@ export function TokenSnapshots({ snapshots, symbol }: TokenSnapshotsProps) {
           <tr>
             <th scope="col">Milestone</th>
             <th scope="col">Taken</th>
-            <th scope="col" className="token-snapshots__num">
-              Price
-            </th>
             <th scope="col" className="token-snapshots__num">
               Market cap
             </th>
@@ -80,9 +78,12 @@ export function TokenSnapshots({ snapshots, symbol }: TokenSnapshotsProps) {
               <td>
                 <DateTime iso={snapshot.at} layout="stacked" />
               </td>
-              <td className="token-snapshots__num">{formatPriceSol(snapshot.priceSol)}</td>
-              <td className="token-snapshots__num">{formatSolAmount(snapshot.marketCapSol)}</td>
-              <td className="token-snapshots__num">{formatSolAmount(snapshot.volumeSol)}</td>
+              <td className="token-snapshots__num">
+                <MoneyValue sol={snapshot.marketCapSol} />
+              </td>
+              <td className="token-snapshots__num">
+                <MoneyValue sol={snapshot.volumeSol} />
+              </td>
               <td className="token-snapshots__num">{pair(snapshot.buys, snapshot.sells)}</td>
               <td className="token-snapshots__num">{formatCount(snapshot.uniqueBuyers)}</td>
               <td className="token-snapshots__num">{formatCount(snapshot.holders)}</td>

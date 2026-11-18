@@ -127,7 +127,7 @@ describe('DashboardPage', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Show details for FROG' }));
     const view = await screen.findByRole('article', { name: 'FROG' });
-    const chart = await within(view).findByRole('img', { name: 'Price of FROG in SOL, 1m candles, 2 candles' });
+    const chart = await within(view).findByRole('img', { name: 'Market cap of FROG in USD, 1m candles, 2 candles' });
     expect(client.getCandles).toHaveBeenCalledWith(MINT_A, expect.objectContaining({ interval: '1m' }));
 
     const history = within(view).getByText('Safety check history');

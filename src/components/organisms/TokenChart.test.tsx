@@ -19,11 +19,25 @@ function props(overrides: Partial<TokenChartProps> = {}): TokenChartProps {
     connection: 'connected',
     errorMessage: null,
     onRetry: () => {},
+    // These tests check the conversions from the raw price in SOL; the default view is tested on its own.
+    initialMetric: 'price',
+    initialCurrency: 'SOL',
     ...overrides,
   };
 }
 
 describe('TokenChart', () => {
+  it('shows the market cap in USD by default, and in SOL while the SOL/USD price is unknown', () => {
+    const { initialMetric: _metric, initialCurrency: _currency, ...defaults } = props();
+    const view = render(<TokenChart {...defaults} />);
+    expect(screen.getByRole('img', { name: 'Market cap of FROG in USD, 1m candles, 2 candles' })).toBeInTheDocument();
+    expect(lastChart().candles().data[0]?.open).toBeCloseTo(0.00000003 * 1_000_000_000 * 140);
+    view.unmount();
+
+    render(<TokenChart {...defaults} solUsd={null} />);
+    expect(screen.getByRole('img', { name: 'Market cap of FROG in SOL, 1m candles, 2 candles' })).toBeInTheDocument();
+  });
+
   it('draws candles and volume in SOL, coloring volume by the dominant side, with the attribution logo', () => {
     render(<TokenChart {...props()} />);
 

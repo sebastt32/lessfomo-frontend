@@ -6,6 +6,8 @@ import { DateTime } from '../atoms/DateTime';
 import { StatusBadge } from '../atoms/StatusBadge';
 import { CycleCell } from '../molecules/CycleCell';
 import { LiquidityCell } from '../molecules/Liquidity';
+import { MoneyValue } from '../molecules/MoneyValue';
+import { marketCapSol } from '../../lib/money';
 import { SmartWalletCount } from '../molecules/SmartWalletCount';
 import { TokenLinks } from '../molecules/TokenLinks';
 import { TokenName } from '../molecules/TokenName';
@@ -38,6 +40,9 @@ export function MoversTable({ movers, selectedMint, onSelect, now = Date.now() }
               #
             </th>
             <th scope="col">Token</th>
+            <th scope="col" className="movers-table__num">
+              Market cap
+            </th>
             <th scope="col">Created</th>
             <th scope="col">Score</th>
             <th scope="col">
@@ -87,6 +92,9 @@ export function MoversTable({ movers, selectedMint, onSelect, now = Date.now() }
                     <TokenName symbol={mover.symbol} name={mover.name} />
                   </button>
                 </th>
+                <td className="movers-table__num">
+                  <MoneyValue sol={marketCapSol(mover.metrics.lastPriceSol)} />
+                </td>
                 <td>
                   <DateTime iso={mover.detectedAt} layout="stacked" />
                 </td>

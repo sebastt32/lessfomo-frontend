@@ -265,7 +265,7 @@ describe('token view: chart and cycle', () => {
     renderApp(client, `/?view=token&mint=${MINT_A}`);
     await tokenHeading('FROG');
 
-    await screen.findByRole('img', { name: 'Price of FROG in SOL, 1m candles, 16 candles' });
+    await screen.findByRole('img', { name: 'Market cap of FROG in USD, 1m candles, 16 candles' });
     // Enough candles to reach back to the creation of a token tracked for 24 hours.
     expect(client.getCandles).toHaveBeenCalledWith(MINT_A, expect.objectContaining({ interval: '1m', limit: 1500 }));
     expect(lastChart().candles().markers.map((marker) => [marker.time, marker.text])).toEqual([
@@ -276,7 +276,8 @@ describe('token view: chart and cycle', () => {
       [T0 + 720, 'Peak'],
       [T0 + 900, 'Crash'],
     ]);
-    expect(lastChart().candles().priceLines).toEqual([expect.objectContaining({ price: 0.00000003, title: 'Base price' })]);
+    // The chart opens on the market cap in USD: the base price is drawn in those units (× supply × SOL/USD).
+    expect(lastChart().candles().priceLines).toEqual([expect.objectContaining({ price: 0.00000003 * 1_000_000_000 * 140, title: 'Base price' })]);
     const shade = document.querySelector<HTMLElement>('.candlestick-chart__shade')!;
     expect(shade).not.toHaveAttribute('hidden');
     expect(shade.style.width).toBe('70px');
@@ -320,7 +321,7 @@ describe('token view: chart and cycle', () => {
     const summary = screen.getByRole('region', { name: 'Cycle' });
     expect(within(summary).getByText('Stable')).toBeInTheDocument();
     expect(summary).toHaveTextContent(/Still stable: .+ since it appeared/);
-    await screen.findByRole('img', { name: /Price of FROG/ });
+    await screen.findByRole('img', { name: /Market cap of FROG/ });
     expect(lastChart().candles().markers.map((marker) => marker.text)).toEqual(['Created', 'Appeared']);
 
     await waitFor(() => expect(tokenStream(MINT_A)).toBeDefined());
@@ -374,7 +375,7 @@ describe('token view: backend without cycles', () => {
     await user.click(within(movers).getByRole('button', { name: 'Show details for FROG' }));
     await tokenHeading('FROG');
     expect(screen.getByRole('region', { name: 'Cycle' })).toHaveTextContent('Cycle data not available yet');
-    expect(await screen.findByRole('img', { name: 'Price of FROG in SOL, 1m candles, 2 candles' })).toBeInTheDocument();
+    expect(await screen.findByRole('img', { name: 'Market cap of FROG in USD, 1m candles, 2 candles' })).toBeInTheDocument();
     expect(lastChart().candles().priceLines).toEqual([]);
     expect(document.querySelector('.candlestick-chart__shade')).toHaveAttribute('hidden');
     const details = screen.getByRole('region', { name: 'Token details' });

@@ -42,6 +42,9 @@ export interface TokenChartProps {
   investRange?: InvestRange | null;
   /** Price when the token appeared in lessfomo (SOL per token), drawn as a dashed line. */
   basePriceSol?: number | null;
+  /** What the chart shows first; market cap in USD by default (SOL while the SOL/USD price is unknown). */
+  initialMetric?: ChartMetric;
+  initialCurrency?: ChartCurrency;
 }
 
 const NO_MARKS: readonly CycleMark[] = [];
@@ -90,9 +93,12 @@ export function TokenChart({
   marks = NO_MARKS,
   investRange = null,
   basePriceSol = null,
+  initialMetric = 'marketCap',
+  initialCurrency = 'USD',
 }: TokenChartProps) {
-  const [metric, setMetric] = useState<ChartMetric>('price');
-  const [currencyChoice, setCurrency] = useState<ChartCurrency>('SOL');
+  // Market cap in dollars first: easier to read than a price per token in SOL. USD falls back to SOL while unknown.
+  const [metric, setMetric] = useState<ChartMetric>(initialMetric);
+  const [currencyChoice, setCurrency] = useState<ChartCurrency>(initialCurrency);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const currency = effectiveCurrency(currencyChoice, solUsd);
 

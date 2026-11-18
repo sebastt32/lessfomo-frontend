@@ -142,7 +142,9 @@ export type StreamEvent =
   | { type: 'momentum'; data: MomentumEvent }
   | { type: 'status'; data: StatusEvent }
   | { type: 'smart-wallet'; data: SmartWalletEvent }
-  | { type: 'cycle'; data: CycleEvent };
+  | { type: 'cycle'; data: CycleEvent }
+  /** The SOL/USD price: right after connecting when known, then whenever it changes. */
+  | { type: 'sol-price'; data: SolPriceEvent };
 
 // Candles and per-token stream (GET /api/tokens/:mint/candles, GET /api/tokens/:mint/stream)
 

@@ -1,7 +1,8 @@
 import { useId } from 'react';
 import type { Liquidity } from '../../api/types';
-import { formatCurvePct, formatLiquiditySol } from '../../lib/format';
+import { formatCurvePct } from '../../lib/format';
 import { MigratedBadge } from '../atoms/Tag';
+import { MoneyValue } from './MoneyValue';
 import './Liquidity.css';
 
 export interface LiquidityProps {
@@ -13,7 +14,7 @@ export interface LiquidityProps {
 export function LiquidityCell({ liquidity }: LiquidityProps) {
   return (
     <span className="liquidity-cell">
-      <span className="liquidity-cell__sol">{formatLiquiditySol(liquidity)}</span>
+      <MoneyValue sol={liquidity?.sol ?? null} />
       {liquidity?.migrated ? (
         <MigratedBadge />
       ) : liquidity && liquidity.bondingCurvePct !== null ? (
@@ -33,7 +34,9 @@ export function LiquidityMeter({ liquidity }: LiquidityProps) {
     <div className="liquidity-meter">
       <div className="liquidity-meter__top">
         <span className="liquidity-meter__label">Liquidity</span>
-        <strong className="liquidity-meter__sol">{formatLiquiditySol(liquidity)}</strong>
+        <strong className="liquidity-meter__sol">
+          <MoneyValue sol={liquidity?.sol ?? null} layout="inline" />
+        </strong>
         {liquidity?.migrated ? <MigratedBadge /> : null}
       </div>
       {clamped === null ? (

@@ -5,6 +5,7 @@ import type { LiveFeedState } from '../state/liveFeed';
 import type { CycleFeedState } from '../state/cycleFeed';
 import type { SmartWalletFeedState } from '../state/smartWalletFeed';
 import { DEFAULT_MIN_CONVICTION_WALLETS } from '../lib/smartWalletFilter';
+import { SolUsdContext } from '../state/solUsd';
 
 export interface LiveFeedContextValue {
   state: LiveFeedState;
@@ -40,7 +41,11 @@ export function LiveFeedProvider({
     () => ({ state, smartWallets, cycles, actions: { reload }, meta: { client, minConvictionWallets } }),
     [state, smartWallets, cycles, reload, client, minConvictionWallets],
   );
-  return <LiveFeedContext value={value}>{children}</LiveFeedContext>;
+  return (
+    <LiveFeedContext value={value}>
+      <SolUsdContext value={state.solUsd}>{children}</SolUsdContext>
+    </LiveFeedContext>
+  );
 }
 
 export function useLiveFeedContext(): LiveFeedContextValue {

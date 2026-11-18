@@ -30,7 +30,19 @@ describe('initial state', () => {
       scoreHistory: {},
       createdAt: {},
       tokensDetected: 0,
+      solUsd: null,
     });
+  });
+});
+
+describe('SOL/USD price', () => {
+  it('keeps the latest price from sol-price events, also across reloads', () => {
+    const state = run(
+      { type: 'stream/event', event: { type: 'sol-price', data: { solUsd: 142.31 } } },
+      { type: 'stream/event', event: { type: 'sol-price', data: { solUsd: 150.5 } } },
+      { type: 'reload/started' },
+    );
+    expect(state.solUsd).toBe(150.5);
   });
 });
 

@@ -3,7 +3,7 @@ import type { StreamEvent, TokenStreamEvent } from './types';
 /** Connection state of the live SSE feed, as shown to the user. */
 export type ConnectionState = 'connecting' | 'connected' | 'reconnecting' | 'offline';
 
-const EVENT_TYPES = ['token', 'screening', 'momentum', 'status', 'smart-wallet', 'cycle'] as const satisfies readonly StreamEvent['type'][];
+const EVENT_TYPES = ['token', 'screening', 'momentum', 'status', 'smart-wallet', 'cycle', 'sol-price'] as const satisfies readonly StreamEvent['type'][];
 const TOKEN_EVENT_TYPES = ['trade', 'sol-price', 'cycle'] as const satisfies readonly TokenStreamEvent['type'][];
 
 const CLOSED = 2;
@@ -58,7 +58,7 @@ function defaultEventSource(): EventSourceConstructor | undefined {
   return typeof EventSource === 'undefined' ? undefined : (EventSource as unknown as EventSourceConstructor);
 }
 
-/** Subscribes to GET /api/stream (token, screening, momentum, status, smart-wallet and cycle events). */
+/** Subscribes to GET /api/stream (token, screening, momentum, status, smart-wallet, cycle and sol-price events). */
 export function connectStream(options: StreamOptions): StreamHandle {
   return connectEventSource(options, EVENT_TYPES);
 }

@@ -14,9 +14,9 @@ import {
   formatPercent,
   formatRelativeTime,
   formatScore,
-  formatSol,
   shortenMint,
 } from '../../lib/format';
+import { MoneyValue } from '../molecules/MoneyValue';
 import './TokenDetail.css';
 
 export interface TokenDetailProps {
@@ -88,11 +88,15 @@ export function TokenDetail({
         </div>
         <div>
           <dt>Creator's first buy</dt>
-          <dd>{formatSol(token.initialBuySol)}</dd>
+          <dd>
+            <MoneyValue sol={token.initialBuySol} layout="inline" />
+          </dd>
         </div>
         <div>
           <dt>Market cap at launch</dt>
-          <dd>{formatSol(token.marketCapSol)}</dd>
+          <dd>
+            <MoneyValue sol={token.marketCapSol} layout="inline" />
+          </dd>
         </div>
         {isHttpsUrl(token.metadataUri) ? (
           <div>

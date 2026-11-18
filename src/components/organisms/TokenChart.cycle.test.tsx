@@ -25,6 +25,9 @@ function props(overrides: Partial<TokenChartProps> = {}): TokenChartProps {
     marks: cycleMarks(isoAt(T0), cycle),
     investRange: investWindowRange(cycle, NOW),
     basePriceSol: cycle.appearedPriceSol,
+    // These tests check the conversions from the raw price in SOL; the default view is tested on its own.
+    initialMetric: 'price',
+    initialCurrency: 'SOL',
     ...overrides,
   };
 }
